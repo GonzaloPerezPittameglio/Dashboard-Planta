@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-900 text-slate-100">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Planta Depuradora Hurlingham</title>
+
+    <!-- Fuentes e Iconos -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Librerías Externas (Tailwind, Chart.js, PapaParse) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: { colors: { aysa: { cyan: '#0099DA' } } }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <!-- Tu archivo de Estilos Propios -->
+    <link rel="stylesheet" href="./css/style.css">
+</head>
+
+<body class="h-full bg-slate-950 text-slate-100 flex flex-col">
+
+    <!-- Header Principal -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-30 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+
+            <!-- Título y Subtítulo (Sin Imagen) -->
+            <div>
+                <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                    Planta Depuradora Hurlingham
+                    <span
+                        class="text-xs px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">AySA</span>
+                </h1>
+                <p class="text-xs text-slate-400">Tablero Gerencial Integrado por Sectores</p>
+            </div>
+
+            <!-- Botón Cargar CSV -->
+            <button onclick="document.getElementById('csvFileInput').click()"
+                class="px-3 py-1.5 text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg flex items-center gap-1.5 transition">
+                <i data-lucide="upload" class="w-3.5 h-3.5"></i> Cargar CSV
+            </button>
+            <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="handleFileSelect(event)">
+
+        </div>
+    </header>
+
+    <!-- Navegación de Pestañas -->
+    <div class="bg-slate-900 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4">
+            <nav class="flex space-x-6 overflow-x-auto" aria-label="Tabs">
+                <button onclick="openTab('tab-inicio', event)"
+                    class="tab-btn border-cyan-500 text-cyan-400 py-4 px-1 border-b-2 font-semibold text-sm flex items-center gap-2">
+                    <i data-lucide="home" class="w-4 h-4"></i> Inicio
+                </button>
+                <button onclick="openTab('tab-proceso', event)"
+                    class="tab-btn border-transparent text-slate-400 hover:text-slate-300 py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
+                    <i data-lucide="waves" class="w-4 h-4"></i> Proceso
+                </button>
+                <button onclick="openTab('tab-funcionamiento', event)"
+                    class="tab-btn border-transparent text-slate-400 hover:text-slate-300 py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
+                    <i data-lucide="settings" class="w-4 h-4"></i> Funcionamiento
+                </button>
+                <button onclick="openTab('tab-mantenimiento', event)"
+                    class="tab-btn border-transparent text-slate-400 hover:text-slate-300 py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
+                    <i data-lucide="hammer" class="w-4 h-4"></i> Mantenimiento
+                </button>
+                <button onclick="openTab('tab-gestion', event)"
+                    class="tab-btn border-transparent text-slate-400 hover:text-slate-300 py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
+                    <i data-lucide="sliders" class="w-4 h-4"></i> Control y Gestión
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Contenido Principal -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6 space-y-6">
+
+        <!-- Barra Estado CSV -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center gap-3">
+            <span class="relative flex h-2.5 w-2.5"><span
+                    class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span
+                    class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span></span>
+            <span class="text-xs font-medium text-slate-300">Archivo: <span id="dataSourceLabel"
+                    class="text-cyan-400">Esperando datos...</span></span>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- PESTAÑA 1: INICIO (RESUMEN GENERAL)        -->
+        <!-- ========================================== -->
+        <div id="tab-inicio" class="tab-content block space-y-6">
+
+            <!-- SECCIÓN 1: CALIDAD Y PARÁMETROS -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <!-- Tarjeta MÓDULO 1 -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
+                    <h2
+                        class="text-lg font-bold text-cyan-400 mb-4 border-b border-slate-800 pb-2 flex items-center gap-2">
+                        <i data-lucide="droplet" class="w-5 h-5"></i> MÓDULO 1 - PROMEDIOS (mg/L)
+                    </h2>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div
+                            class="bg-slate-950 p-3 rounded-lg border border-slate-800/60 flex flex-col justify-center">
+                            <p class="text-xs text-slate-400 uppercase font-semibold text-center mb-2">DBO</p>
+                            <div class="flex justify-between items-center text-sm px-1 mb-1"><span
+                                    class="text-slate-500 text-[11px]">Ent:</span><span class="font-bold text-slate-200"
+                                    id="m1_dbo_ent">--</span></div>
+                            <div class="flex justify-between items-center text-sm px-1"><span
+                                    class="text-slate-500 text-[11px]">Sal:</span><span
+                                    class="font-bold text-emerald-400" id="m1_dbo_sal">--</span></div>
+                        </div>
+                        <div
+                            class="bg-slate-950 p-3 rounded-lg border border-slate-800/60 flex flex-col justify-center">
+                            <p class="text-xs text-slate-400 uppercase font-semibold text-center mb-2">DQO</p>
+                            <div class="flex justify-between items-center text-sm px-1 mb-1"><span
+                                    class="text-slate-500 text-[11px]">Ent:</span><span class="font-bold text-slate-200"
+                                    id="m1_dqo_ent">--</span></div>
+                            <div class="flex justify-between items-center text-sm px-1"><span
+                                    class="text-slate-500 text-[11px]">Sal:</span><span
+                                    class="font-bold text-emerald-400" id="m1_dqo_sal">--</span></div>
+                        </div>
+                        <div
+                            class="bg-slate-950 p-3 rounded-lg border border-slate-800/60 flex flex-col justify-center">
+                            <p class="text-xs text-slate-400 uppercase font-semibold text-center mb-2">MES</p>
+                            <div class="flex justify-between items-center text-sm px-1 mb-1"><span
+                                    class="text-slate-500 text-[11px]">Ent:</span><span class="font-bold text-slate-200"
+                                    id="m1_mes_ent">--</span></div>
+                            <div class="flex justify-between items-center text-sm px-1"><span
+                                    class="text-slate-500 text-[11px]">Sal:</span><span
+                                    class="font-bold text-emerald-400" id="m1_mes_sal">--</span></div>
+                        </div>
+                        <div
+                            class="bg-slate-950 p-3 rounded-lg border border-rose-900/30 text-center flex flex-col justify-center">
+                            <p class="text-[11px] text-rose-400 uppercase font-semibold mb-1">Fuera de Norma</p>
+                            <p class="text-2xl font-bold text-rose-400" id="m1_norma">--</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tarjeta MÓDULO 2 -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
+                    <h2
+                        class="text-lg font-bold text-emerald-400 mb-4 border-b border-slate-800 pb-2 flex items-center gap-2">
+                        <i data-lucide="droplet" class="w-5 h-5"></i> MÓDULO 2 - PROMEDIOOS (mg/L)
+                    </h2>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div
+                            class="bg-slate-950 p-3 rounded-lg border border-slate-800/60 flex flex-col justify-center">
+                            <p class="text-xs text-slate-400 uppercase font-semibold text-center mb-2">DBO</p>
+                            <div class="flex justify-between items-center text-sm px-1 mb-1"><span
+                                    class="text-slate-500 text-[11px]">Ent:</span><span class="font-bold text-slate-200"
+                                    id="m2_dbo_ent">--</span></div>
+                            <div class="flex justify-between items-center text-sm px-1"><span
+                                    class="text-slate-500 text-[11px]">Sal:</span><span
+                                    class="font-bold text-emerald-400" id="m2_dbo_sal">--</span></div>
+                        </div>
+                        <div
+                            class="bg-slate-950 p-3 rounded-lg border border-slate-800/60 flex flex-col justify-center">
+                            <p class="text-xs text-slate-400 uppercase font-semibold text-center mb-2">DQO</p>
+                            <div class="flex justify-between items-center text-sm px-1 mb-1"><span
+                                    class="text-slate-500 text-[11px]">Ent:</span><span class="font-bold text-slate-200"
+                                    id="m2_dqo_ent">--</span></div>
+                            <div class="flex justify-between items-center text-sm px-1"><span
+                                    class="text-slate-500 text-[11px]">Sal:</span><span
+                                    class="font-bold text-emerald-400" id="m2_dqo_sal">--</span></div>
+                        </div>
+                        <div
+                            class="bg-slate-950 p-3 rounded-lg border border-slate-800/60 flex flex-col justify-center">
+                            <p class="text-xs text-slate-400 uppercase font-semibold text-center mb-2">MES</p>
+                            <div class="flex justify-between items-center text-sm px-1 mb-1"><span
+                                    class="text-slate-500 text-[11px]">Ent:</span><span class="font-bold text-slate-200"
+                                    id="m2_mes_ent">--</span></div>
+                            <div class="flex justify-between items-center text-sm px-1"><span
+                                    class="text-slate-500 text-[11px]">Sal:</span><span
+                                    class="font-bold text-emerald-400" id="m2_mes_sal">--</span></div>
+                        </div>
+                        <div
+                            class="bg-slate-950 p-3 rounded-lg border border-rose-900/30 text-center flex flex-col justify-center">
+                            <p class="text-[11px] text-rose-400 uppercase font-semibold mb-1">Fuera de Norma</p>
+                            <p class="text-2xl font-bold text-rose-400" id="m2_norma">--</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: ACUMULADOS MENSUALES -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div
+                    class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase">Energía General</p>
+                        <p class="text-2xl font-bold text-amber-400" id="tot_energia">--</p>
+                        <p class="text-[10px] text-slate-500">kWh Acumulado Mes</p>
+                    </div>
+                    <i data-lucide="zap" class="w-8 h-8 text-amber-500/20"></i>
+                </div>
+                <div
+                    class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase">Biosólidos Totales</p>
+                        <p class="text-2xl font-bold text-slate-100" id="tot_biosolidos">--</p>
+                        <p class="text-[10px] text-slate-500">Ton Acumuladas</p>
+                    </div>
+                    <i data-lucide="package" class="w-8 h-8 text-slate-500/20"></i>
+                </div>
+                <div
+                    class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase">Arenas Totales</p>
+                        <p class="text-2xl font-bold text-slate-100" id="tot_arenas">--</p>
+                        <p class="text-[10px] text-slate-500">Ton Acumuladas</p>
+                    </div>
+                    <i data-lucide="layers" class="w-8 h-8 text-slate-500/20"></i>
+                </div>
+                <div
+                    class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-400 uppercase">Polímero Consumido</p>
+                        <p class="text-2xl font-bold text-slate-100" id="tot_polimero">--</p>
+                        <p class="text-[10px] text-slate-500">Kg Acumulados</p>
+                    </div>
+                    <i data-lucide="flask-conical" class="w-8 h-8 text-slate-500/20"></i>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 3: GRÁFICOS Y RESUMEN -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Energía por sector -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
+                    <h3 class="text-sm font-semibold text-slate-200 mb-3">ENERGÍA ACUMULADA POR SECTOR</h3>
+                    <div class="h-48 relative"><canvas id="chartEnergiaSectores"></canvas></div>
+                </div>
+                <!-- RRHH -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
+                    <h3 class="text-sm font-semibold text-slate-200 mb-3">DOTACIÓN RRHH POR SECTOR</h3>
+                    <div class="h-48 relative"><canvas id="chartRRHH"></canvas></div>
+                    <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between">
+                        <span class="text-xs text-slate-400">Total Dotación: <b class="text-slate-200"
+                                id="rrhh_total_lbl">--</b></span>
+                        <span class="text-xs text-slate-400">Horas Extra Acum.: <b class="text-amber-400"
+                                id="hs_extra_lbl">--</b> hs</span>
+                    </div>
+                </div>
+                <!-- Mantenimiento -->
+                <div
+                    class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+                    <h3 class="text-sm font-semibold text-slate-200 mb-3">RESUMEN MANTENIMIENTO MENSUAL</h3>
+                    <div class="space-y-4">
+                        <div
+                            class="flex justify-between items-center bg-slate-950 p-3 rounded-lg border border-slate-800">
+                            <span class="text-xs text-slate-400">Actividades Realizadas</span>
+                            <span class="text-lg font-bold text-slate-100" id="mant_act">--</span>
+                        </div>
+                        <div
+                            class="flex justify-between items-center bg-slate-950 p-3 rounded-lg border border-slate-800">
+                            <span class="text-xs text-slate-400">Mant. Preventivos</span>
+                            <span class="text-lg font-bold text-emerald-400" id="mant_prev">--</span>
+                        </div>
+                        <div
+                            class="flex justify-between items-center bg-slate-950 p-3 rounded-lg border border-rose-900/30">
+                            <span class="text-xs text-rose-400">Mant. Correctivos</span>
+                            <span class="text-lg font-bold text-rose-400" id="mant_corr">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- OTRAS PESTAÑAS (EN CONSTRUCCIÓN)           -->
+        <!-- ========================================== -->
+        <div id="tab-proceso" class="tab-content hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-10 text-center">
+                <i data-lucide="waves" class="w-12 h-12 text-slate-600 mx-auto mb-3"></i>
+                <h2 class="text-xl font-bold text-slate-300">Sector: Proceso</h2>
+                <p class="text-slate-500 mt-2">Aquí se desarrollarán los reportes detallados y específicos de la línea
+                    de proceso de agua.</p>
+            </div>
+        </div>
+
+        <div id="tab-funcionamiento" class="tab-content hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-10 text-center">
+                <i data-lucide="settings" class="w-12 h-12 text-slate-600 mx-auto mb-3"></i>
+                <h2 class="text-xl font-bold text-slate-300">Sector: Funcionamiento</h2>
+                <p class="text-slate-500 mt-2">Tableros de operación diaria de equipos auxiliares e insumos de planta.
+                </p>
+            </div>
+        </div>
+
+        <div id="tab-mantenimiento" class="tab-content hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-10 text-center">
+                <i data-lucide="tool" class="w-12 h-12 text-slate-600 mx-auto mb-3"></i>
+                <h2 class="text-xl font-bold text-slate-300">Sector: Mantenimiento</h2>
+                <p class="text-slate-500 mt-2">Aquí irá el listado completo de Órdenes de Trabajo (OT) extraídas del
+                    sistema Máximo.</p>
+            </div>
+        </div>
+
+        <div id="tab-gestion" class="tab-content hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-10 text-center">
+                <i data-lucide="briefcase" class="w-12 h-12 text-slate-600 mx-auto mb-3"></i>
+                <h2 class="text-xl font-bold text-slate-300">Sector: Control y Gestión</h2>
+                <p class="text-slate-500 mt-2">Reportes financieros, presupuesto, auditorías y recursos humanos
+                    detallados.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 border-t border-slate-800 py-4 mt-auto text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4 flex justify-between">
+            <span>AySA - Tablero Planta Depuradora Hurlingham </span><span>© 2026</span>
+        </div>
+    </footer>
+
+    <!-- Archivo JS con la lógica -->
+    <script src="./js/main.js"></script>
+</body>
+
+</html>
