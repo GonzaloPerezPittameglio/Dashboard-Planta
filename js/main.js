@@ -1,10 +1,10 @@
 let rawData = [];
 let cEnergia = null, cRrhh = null;
 
-// LINK DE GOOGLE SHEETS EN VIVO
+// LINK DE TU GOOGLE SHEETS EN VIVO
 const urlGoogleSheet = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=0&single=true&output=csv";
 
-// INICIA LOS ICONOS Y CARGA AUTOMATICAMENTE LOS DATOS DE LA BASE DE GOOGLE SHEET 
+// Iniciar los íconos y cargar los datos de Google Sheets automáticamente al abrir la página
 window.onload = () => {
     lucide.createIcons();
     cargarDatosDesdeGoogle();
@@ -12,7 +12,8 @@ window.onload = () => {
 
 // Función para conectar y descargar los datos desde Google Sheets en tiempo real
 function cargarDatosDesdeGoogle() {
-    document.getElementById('dataSourceLabel').textContent = "Conectando con Google Sheets...";
+    const dataSourceLabel = document.getElementById('dataSourceLabel');
+    if (dataSourceLabel) dataSourceLabel.textContent = "Conectando con Google Sheets...";
     
     Papa.parse(urlGoogleSheet, {
         download: true,
@@ -22,20 +23,20 @@ function cargarDatosDesdeGoogle() {
         complete: function(results) {
             if (results.data && results.data.length > 0) {
                 rawData = results.data;
-                document.getElementById('dataSourceLabel').textContent = "Datos en vivo (Google Sheets)";
+                if (dataSourceLabel) dataSourceLabel.textContent = "Datos en vivo (Google Sheets)";
                 calcularYRenderizarResumen();
             } else {
-                document.getElementById('dataSourceLabel').textContent = "La planilla está vacía";
+                if (dataSourceLabel) dataSourceLabel.textContent = "La planilla está vacía";
             }
         },
         error: function(err) {
             console.error("Error al conectar con la planilla:", err);
-            document.getElementById('dataSourceLabel').textContent = "Error de conexión con la planilla";
+            if (dataSourceLabel) dataSourceLabel.textContent = "Error de conexión con la planilla";
         }
     });
 }
 
-// CAMBIAR LAS PESTAÑAS
+// Función para cambiar de pestañas (Tabs)
 function openTab(tabId, event) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('block'));
@@ -50,28 +51,7 @@ function openTab(tabId, event) {
     event.currentTarget.classList.add('border-cyan-500', 'text-cyan-400');
 }
 
-// ACA SE MANTIENE EL INPUT POR SI QUEREMOS SUBIR UN CSV MANUAL
-function handleFileSelect(event) {
-    const file = event.target.files[0];
-    if (file) {
-        document.getElementById('dataSourceLabel').textContent = file.name;
-        Papa.parse(file, {
-            header: true, 
-            dynamicTyping: true, 
-            skipEmptyLines: true,
-            complete: function(results) {
-                if (results.data && results.data.length > 0) {
-                    rawData = results.data;
-                    calcularYRenderizarResumen();
-                } else {
-                    alert('El archivo CSV está vacío.');
-                }
-            }
-        });
-    }
-}
-
-// FUNCIONES MATEMATICAS AUXILIARES
+// Funciones matemáticas auxiliares
 function getSum(arr, col) { 
     return arr.reduce((acc, val) => acc + (Number(val[col]) || 0), 0); 
 }
@@ -81,12 +61,12 @@ function getAvg(arr, col) {
     return arr.length ? (sum / arr.length).toFixed(1) : 0; 
 }
 
-// FUNCION DONDE CARGA LOS DATOS Y REALIZA LOS GRAFICOS CORRESPONDIENTES
+// Función principal que inyecta datos y dibuja gráficos
 function calcularYRenderizarResumen() {
     if (!rawData.length) return;
     const lastRow = rawData[rawData.length - 1]; 
 
-    // 1. PROMEDIOS M1 (ENTRADA Y SALIDA)
+    // 1. Promedios M1 (Entrada y Salida)
     document.getElementById('m1_dbo_ent').textContent = getAvg(rawData, 'dbo_ent_m1');
     document.getElementById('m1_dbo_sal').textContent = getAvg(rawData, 'dbo_sal_m1');
     document.getElementById('m1_dqo_ent').textContent = getAvg(rawData, 'dqo_ent_m1');
@@ -95,7 +75,7 @@ function calcularYRenderizarResumen() {
     document.getElementById('m1_mes_sal').textContent = getAvg(rawData, 'mes_sal_m1');
     document.getElementById('m1_norma').textContent = getSum(rawData, 'fuera_norma_m1');
 
-    // 2. PROMEDIOS M2 (ENTRADA Y SALIDA)
+    // 2. Promedios M2 (Entrada y Salida)
     document.getElementById('m2_dbo_ent').textContent = getAvg(rawData, 'dbo_ent_m2');
     document.getElementById('m2_dbo_sal').textContent = getAvg(rawData, 'dbo_sal_m2');
     document.getElementById('m2_dqo_ent').textContent = getAvg(rawData, 'dqo_ent_m2');
@@ -104,24 +84,24 @@ function calcularYRenderizarResumen() {
     document.getElementById('m2_mes_sal').textContent = getAvg(rawData, 'mes_sal_m2');
     document.getElementById('m2_norma').textContent = getSum(rawData, 'fuera_norma_m2');
 
-    // 3. ACUMULADOS MENSUALES
+    // 3. Acumulados Mensuales
     document.getElementById('tot_energia').textContent = getSum(rawData, 'energia_total').toLocaleString('es-AR');
     document.getElementById('tot_biosolidos').textContent = getSum(rawData, 'biosolidos_ton').toLocaleString('es-AR');
     document.getElementById('tot_arenas').textContent = getSum(rawData, 'arenas_ton').toLocaleString('es-AR');
     document.getElementById('tot_polimero').textContent = getSum(rawData, 'polimero_kg').toLocaleString('es-AR');
 
-    // 4. MANTENIMIENTO y RRHH ACUMULADOS
+    // 4. Mantenimiento y RRHH Acumulados
     document.getElementById('mant_act').textContent = getSum(rawData, 'mant_actividades');
     document.getElementById('mant_prev').textContent = getSum(rawData, 'mant_preventivos');
     document.getElementById('mant_corr').textContent = getSum(rawData, 'mant_correctivos');
     document.getElementById('hs_extra_lbl').textContent = getSum(rawData, 'hs_extra');
     document.getElementById('rrhh_total_lbl').textContent = lastRow['rrhh_total'] || 0;
 
-    // 5. RENDERIZAR GRAFICOS 
+    // 5. Renderizar Gráficos de Resumen
     Chart.defaults.color = '#94a3b8';
     Chart.defaults.font.family = 'Inter';
 
-    // GRAFICO ENERGIA POR SECTOR
+    // Gráfico Energía por Sector (Doughnut)
     if(cEnergia) cEnergia.destroy();
     const e_m1 = getSum(rawData, 'energia_m1');
     const e_m2 = getSum(rawData, 'energia_m2');
@@ -147,7 +127,7 @@ function calcularYRenderizarResumen() {
         }
     });
 
-    // GRAFICOS RRHH POR SECTOR (Barras Horizontales)
+    // Gráfico RRHH por Sector (Barras Horizontales)
     if(cRrhh) cRrhh.destroy();
     cRrhh = new Chart(document.getElementById('chartRRHH').getContext('2d'), {
         type: 'bar',
