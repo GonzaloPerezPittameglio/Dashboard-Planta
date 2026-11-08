@@ -90,23 +90,60 @@ function calcularYRenderizarResumen() {
     document.getElementById('m2_caudal_trat').textContent = lastRow['caudal_trat_m2'] || 0;
     document.getElementById('m2_energia_val').textContent = getSum(rawData, 'energia_m2').toLocaleString('es-AR');
 
+    // Totales Generales
+    document.getElementById('tot_energia').textContent = getSum(rawData, 'energia_total').toLocaleString('es-AR');
+    document.getElementById('tot_biosolidos').textContent = getSum(rawData, 'biosolidos_ton').toLocaleString('es-AR');
+    document.getElementById('tot_arenas').textContent = getSum(rawData, 'arenas_ton').toLocaleString('es-AR');
+    document.getElementById('tot_polimero').textContent = getSum(rawData, 'polimero_kg').toLocaleString('es-AR');
+
+    // RRHH
     document.getElementById('rrhh_total_lbl').textContent = lastRow['rrhh_total'] || 0;
     document.getElementById('rrhh_admin_lbl').textContent = lastRow['rrhh_admin'] || 0;
     document.getElementById('rrhh_operativo_lbl').textContent = lastRow['rrhh_operativo'] || 0;
     document.getElementById('hs_extra_lbl').textContent = getSum(rawData, 'hs_extra').toLocaleString('es-AR');
+    document.getElementById('hs_normales_lbl').textContent = getSum(rawData, 'hs_normales').toLocaleString('es-AR');
 
+    // Mantenimiento
     document.getElementById('mant_prev').textContent = getSum(rawData, 'mant_preventivos');
     document.getElementById('mant_corr').textContent = getSum(rawData, 'mant_correctivos');
     document.getElementById('mant_act').textContent = getSum(rawData, 'mant_actividades');
 
+    // Gráfico Energía Total (Desglose M1 y M2 por TS)
     if(cEnergia) cEnergia.destroy();
+    
+    const e_m1_ts1 = getSum(rawData, 'energia_m1_ts1');
+    const e_m1_ts2 = getSum(rawData, 'energia_m1_ts2');
+    const e_m1_ts3 = getSum(rawData, 'energia_m1_ts3');
+    
+    const e_m2_ts1 = getSum(rawData, 'energia_m2_ts1');
+    const e_m2_ts2 = getSum(rawData, 'energia_m2_ts2');
+    const e_m2_ts3 = getSum(rawData, 'energia_m2_ts3');
+    
     cEnergia = new Chart(document.getElementById('chartEnergiaSectores').getContext('2d'), {
         type: 'doughnut',
         data: {
-            labels: ['Módulo 1', 'Módulo 2', 'Auxiliares'],
-            datasets: [{ data: [getSum(rawData, 'energia_m1'), getSum(rawData, 'energia_m2'), getSum(rawData, 'energia_auxiliares')], backgroundColor: ['#0099DA', '#3be3b0', '#8b5cf6'], borderWidth: 0 }]
+            labels: ['M1 - TS1', 'M1 - TS2', 'M1 - TS3', 'M2 - TS1', 'M2 - TS2', 'M2 - TS3'],
+            datasets: [{ 
+                data: [e_m1_ts1, e_m1_ts2, e_m1_ts3, e_m2_ts1, e_m2_ts2, e_m2_ts3], 
+                backgroundColor: [
+                    '#0284c7', '#0ea5e9', '#38bdf8', // 3 tonos de azul para M1
+                    '#059669', '#10b981', '#34d399'  // 3 tonos de verde para M2
+                ], 
+                borderWidth: 2,
+                borderColor: '#1e293b' // Borde oscuro para separar
+            }]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10 } } }, cutout: '70%' }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { 
+                legend: { 
+                    position: 'right', 
+                    labels: { boxWidth: 12, color: '#94a3b8', padding: 15 } 
+                } 
+            }, 
+            cutout: '65%' 
+        }
     });
 
     // === PESTAÑA 2: PROCESO ===
@@ -128,10 +165,14 @@ function calcularYRenderizarResumen() {
     document.getElementById('bio_ms_m2').textContent = getAvg(rawData, 'porc_ms_m2');
     document.getElementById('bio_ton_m2').textContent = getSum(rawData, 'ton_ms_m2').toLocaleString('es-AR');
 
-    // Gráfico de Caudales M1 y M2
+    // Gráfico de Caudales M1 y M2 (con líneas de diseño)
     const fechas = rawData.map(r => r.fecha || ''); 
     const caudalesM1 = rawData.map(r => r.caudal_trat_m1 || 0);
     const caudalesM2 = rawData.map(r => r.caudal_trat_m2 || 0);
+    
+    // Líneas constantes para los Caudales de Diseño (m³/s)
+    const disenoM1 = Array(fechas.length).fill(0.3);
+    const disenoM2 = Array(fechas.length).fill(0.9);
 
     if(cCaudales) cCaudales.destroy();
     cCaudales = new Chart(document.getElementById('chartCaudalesLine').getContext('2d'), {
@@ -139,11 +180,53 @@ function calcularYRenderizarResumen() {
         data: {
             labels: fechas,
             datasets: [
-                { label: 'Caudal M1 (m³/h)', data: caudalesM1, borderColor: '#22d3ee', backgroundColor: 'rgba(34, 211, 238, 0.1)', fill: true, tension: 0.4 },
-                { label: 'Caudal M2 (m³/h)', data: caudalesM2, borderColor: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.1)', fill: true, tension: 0.4 }
+                { 
+                    label: 'Caudal Tratado M1', 
+                    data: caudalesM1, 
+                    borderColor: '#22d3ee', 
+                    backgroundColor: 'rgba(34, 211, 238, 0.1)', 
+                    fill: true, 
+                    tension: 0.4 
+                },
+                { 
+                    label: 'Diseño M1 (0.3)', 
+                    data: disenoM1, 
+                    borderColor: '#0284c7', 
+                    borderWidth: 2, 
+                    borderDash: [5, 5], // Línea punteada
+                    pointRadius: 0, 
+                    fill: false 
+                },
+                { 
+                    label: 'Caudal Tratado M2', 
+                    data: caudalesM2, 
+                    borderColor: '#34d399', 
+                    backgroundColor: 'rgba(52, 211, 153, 0.1)', 
+                    fill: true, 
+                    tension: 0.4 
+                },
+                { 
+                    label: 'Diseño M2 (0.9)', 
+                    data: disenoM2, 
+                    borderColor: '#059669', 
+                    borderWidth: 2, 
+                    borderDash: [5, 5], // Línea punteada
+                    pointRadius: 0, 
+                    fill: false 
+                }
             ]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { legend: { position: 'top' } },
+            scales: {
+                y: {
+                    suggestedMax: 1.2, 
+                    title: { display: true, text: 'Caudal (m³/s)', color: '#94a3b8' }
+                }
+            }
+        }
     });
 
     // Control de 37 Días (Fuera de Norma)
@@ -153,26 +236,23 @@ function calcularYRenderizarResumen() {
     let labelRestantes = document.getElementById('dias_restantes_norma');
     labelRestantes.textContent = diasRestantes;
     
-    // Cambiar a rojo si quedan pocos días
     if(diasRestantes <= 10) labelRestantes.classList.add('text-red-500');
     else labelRestantes.classList.remove('text-red-500');
 
     let divFechas = document.getElementById('fechas_fuera_norma');
     if (diasFuera.length === 0) {
-        divFechas.innerHTML = '<span class="bg-green-900/30 text-green-400 px-3 py-1 rounded border border-green-800 text-sm">Planta 100% en norma este año.</span>';
+        divFechas.innerHTML = '<span class="bg-green-900/30 text-green-400 px-3 py-1 rounded border border-green-800 text-sm">Planta 100% en norma.</span>';
     } else {
         divFechas.innerHTML = diasFuera.map(d => `<span class="bg-red-900/40 text-red-300 px-3 py-1 rounded border border-red-800 text-sm font-medium shadow-sm">${d.fecha || 'Sin fecha'}</span>`).join('');
     }
 
-    // Dibujar el gráfico de límites (por defecto DBO Ent)
+    // Dibujar el gráfico de límites interactivo
     updateChartLimites('dbo_ent', document.querySelector('.chart-btn.active'));
 }
 
-// Función global para actualizar el gráfico interactivo de Límites
 window.updateChartLimites = function(param, btnElement) {
     if (!rawData || rawData.length === 0) return;
     
-    // Actualizar botones (colores)
     if (btnElement) {
         document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active', 'bg-sky-500', 'text-white', 'border-sky-500'));
         btnElement.classList.add('active', 'bg-sky-500', 'text-white', 'border-sky-500');
@@ -195,7 +275,6 @@ window.updateChartLimites = function(param, btnElement) {
         maxLimit = 35; title = 'MES Salida';
     }
 
-    // Crear arreglo constante para la línea roja del Límite Máximo
     const limitLine = Array(fechas.length).fill(maxLimit);
 
     if (cLimites) cLimites.destroy();
@@ -212,7 +291,7 @@ window.updateChartLimites = function(param, btnElement) {
         options: {
             responsive: true, maintainAspectRatio: false,
             plugins: { legend: { position: 'top' } },
-            scales: { y: { suggestedMax: maxLimit * 1.2 } } // Para que la línea roja nunca quede tocando el techo visual del gráfico
+            scales: { y: { suggestedMax: maxLimit * 1.2 } } 
         }
     });
 };
