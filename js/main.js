@@ -125,23 +125,13 @@ function calcularYRenderizarResumen() {
             labels: ['M1 - TS1', 'M1 - TS2', 'M1 - TS3', 'M2 - TS1', 'M2 - TS2', 'M2 - TS3'],
             datasets: [{ 
                 data: [e_m1_ts1, e_m1_ts2, e_m1_ts3, e_m2_ts1, e_m2_ts2, e_m2_ts3], 
-                backgroundColor: [
-                    '#0284c7', '#0ea5e9', '#38bdf8', // 3 tonos de azul para M1
-                    '#059669', '#10b981', '#34d399'  // 3 tonos de verde para M2
-                ], 
-                borderWidth: 2,
-                borderColor: '#1e293b' // Borde oscuro para separar
+                backgroundColor: ['#0284c7', '#0ea5e9', '#38bdf8', '#059669', '#10b981', '#34d399'], 
+                borderWidth: 2, borderColor: '#1e293b' 
             }]
         },
         options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            plugins: { 
-                legend: { 
-                    position: 'right', 
-                    labels: { boxWidth: 12, color: '#94a3b8', padding: 15 } 
-                } 
-            }, 
+            responsive: true, maintainAspectRatio: false, 
+            plugins: { legend: { position: 'right', labels: { boxWidth: 12, color: '#94a3b8', padding: 15 } } }, 
             cutout: '65%' 
         }
     });
@@ -165,12 +155,11 @@ function calcularYRenderizarResumen() {
     document.getElementById('bio_ms_m2').textContent = getAvg(rawData, 'porc_ms_m2');
     document.getElementById('bio_ton_m2').textContent = getSum(rawData, 'ton_ms_m2').toLocaleString('es-AR');
 
-    // Gráfico de Caudales M1 y M2 (con líneas de diseño)
+    // Gráfico de Caudales M1 y M2 (con líneas de diseño en m³/s)
     const fechas = rawData.map(r => r.fecha || ''); 
     const caudalesM1 = rawData.map(r => r.caudal_trat_m1 || 0);
     const caudalesM2 = rawData.map(r => r.caudal_trat_m2 || 0);
     
-    // Líneas constantes para los Caudales de Diseño (m³/s)
     const disenoM1 = Array(fechas.length).fill(0.3);
     const disenoM2 = Array(fechas.length).fill(0.9);
 
@@ -180,56 +169,19 @@ function calcularYRenderizarResumen() {
         data: {
             labels: fechas,
             datasets: [
-                { 
-                    label: 'Caudal Tratado M1', 
-                    data: caudalesM1, 
-                    borderColor: '#22d3ee', 
-                    backgroundColor: 'rgba(34, 211, 238, 0.1)', 
-                    fill: true, 
-                    tension: 0.4 
-                },
-                { 
-                    label: 'Diseño M1 (0.3)', 
-                    data: disenoM1, 
-                    borderColor: '#0284c7', 
-                    borderWidth: 2, 
-                    borderDash: [5, 5], // Línea punteada
-                    pointRadius: 0, 
-                    fill: false 
-                },
-                { 
-                    label: 'Caudal Tratado M2', 
-                    data: caudalesM2, 
-                    borderColor: '#34d399', 
-                    backgroundColor: 'rgba(52, 211, 153, 0.1)', 
-                    fill: true, 
-                    tension: 0.4 
-                },
-                { 
-                    label: 'Diseño M2 (0.9)', 
-                    data: disenoM2, 
-                    borderColor: '#059669', 
-                    borderWidth: 2, 
-                    borderDash: [5, 5], // Línea punteada
-                    pointRadius: 0, 
-                    fill: false 
-                }
+                { label: 'Caudal Tratado M1', data: caudalesM1, borderColor: '#22d3ee', backgroundColor: 'rgba(34, 211, 238, 0.1)', fill: true, tension: 0.4 },
+                { label: 'Diseño M1 (0.3)', data: disenoM1, borderColor: '#0284c7', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false },
+                { label: 'Caudal Tratado M2', data: caudalesM2, borderColor: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.1)', fill: true, tension: 0.4 },
+                { label: 'Diseño M2 (0.9)', data: disenoM2, borderColor: '#059669', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false }
             ]
         },
         options: { 
-            responsive: true, 
-            maintainAspectRatio: false, 
-            plugins: { legend: { position: 'top' } },
-            scales: {
-                y: {
-                    suggestedMax: 1.2, 
-                    title: { display: true, text: 'Caudal (m³/s)', color: '#94a3b8' }
-                }
-            }
+            responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } },
+            scales: { y: { suggestedMax: 1.2, title: { display: true, text: 'Caudal (m³/s)', color: '#94a3b8' } } }
         }
     });
 
-    // Control de 37 Días (Fuera de Norma)
+    // Control de 37 Días (Fuera de Norma con BOTONES interactivos)
     const diasFuera = rawData.filter(r => r.fuera_norma_m1 > 0 || r.fuera_norma_m2 > 0);
     const diasRestantes = 37 - diasFuera.length;
     
@@ -243,12 +195,25 @@ function calcularYRenderizarResumen() {
     if (diasFuera.length === 0) {
         divFechas.innerHTML = '<span class="bg-green-900/30 text-green-400 px-3 py-1 rounded border border-green-800 text-sm">Planta 100% en norma.</span>';
     } else {
-        divFechas.innerHTML = diasFuera.map(d => `<span class="bg-red-900/40 text-red-300 px-3 py-1 rounded border border-red-800 text-sm font-medium shadow-sm">${d.fecha || 'Sin fecha'}</span>`).join('');
+        // Acá se generan los botones que llaman a la función mostrarMotivo()
+        divFechas.innerHTML = diasFuera.map(d => {
+            const fechaTxt = d.fecha || 'Sin fecha';
+            // Escapamos comillas simples en el motivo para evitar romper el HTML
+            const motivoTxt = (d.motivo_desvio || 'Sin motivo registrado').replace(/'/g, "\\'"); 
+            return `<button onclick="mostrarMotivo('${fechaTxt}', '${motivoTxt}')" class="bg-red-900/40 hover:bg-red-800/80 text-red-300 px-3 py-1.5 rounded-lg border border-red-800 text-sm font-medium shadow-sm transition cursor-pointer">${fechaTxt}</button>`;
+        }).join('');
     }
 
     // Dibujar el gráfico de límites interactivo
     updateChartLimites('dbo_ent', document.querySelector('.chart-btn.active'));
 }
+
+// Función para abrir la ventana emergente con el motivo del desvío
+window.mostrarMotivo = function(fecha, motivo) {
+    document.getElementById('modalFecha').textContent = 'Desvío: ' + fecha;
+    document.getElementById('modalMotivo').textContent = motivo;
+    document.getElementById('modalDesvio').classList.remove('hidden');
+};
 
 window.updateChartLimites = function(param, btnElement) {
     if (!rawData || rawData.length === 0) return;
@@ -289,8 +254,7 @@ window.updateChartLimites = function(param, btnElement) {
             ]
         },
         options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { position: 'top' } },
+            responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } },
             scales: { y: { suggestedMax: maxLimit * 1.2 } } 
         }
     });
