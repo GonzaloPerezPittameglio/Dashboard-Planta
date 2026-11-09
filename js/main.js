@@ -75,11 +75,12 @@ function calcularYRenderizarResumen() {
     document.getElementById('m1_dqo_sal').textContent = getAvg(rawData, 'dqo_sal_m1');
     document.getElementById('m1_mes_ent').textContent = getAvg(rawData, 'mes_ent_m1');
     document.getElementById('m1_mes_sal').textContent = getAvg(rawData, 'mes_sal_m1');
-    document.getElementById('m1_norma').textContent = getSum(rawData, 'fuera_norma_m1');
+    
+    // Aquí sacamos el document.getElementById('m1_norma') porque lo borramos del HTML del resumen
+    
     document.getElementById('m1_caudal_dis').textContent = lastRow['caudal_dis_m1'] || 0.3; // Fijo si no está
     document.getElementById('m1_caudal_trat').textContent = lastRow['caudal_trat_m1'] || 0;
     
-    // Suma de consumos M1 para el cuadro resumen
     const energiaTotalM1 = getSum(rawData, 'energia_m1_ts1') + getSum(rawData, 'energia_m1_ts2') + getSum(rawData, 'energia_m1_ts3');
     document.getElementById('m1_energia_val').textContent = energiaTotalM1.toLocaleString('es-AR');
 
@@ -89,11 +90,12 @@ function calcularYRenderizarResumen() {
     document.getElementById('m2_dqo_sal').textContent = getAvg(rawData, 'dqo_sal_m2');
     document.getElementById('m2_mes_ent').textContent = getAvg(rawData, 'mes_ent_m2');
     document.getElementById('m2_mes_sal').textContent = getAvg(rawData, 'mes_sal_m2');
-    document.getElementById('m2_norma').textContent = getSum(rawData, 'fuera_norma_m2');
+    
+    // Aquí sacamos el document.getElementById('m2_norma') porque lo borramos del HTML del resumen
+
     document.getElementById('m2_caudal_dis').textContent = lastRow['caudal_dis_m2'] || 0.9; // Fijo si no está
     document.getElementById('m2_caudal_trat').textContent = lastRow['caudal_trat_m2'] || 0;
     
-    // Suma de consumos M2 para el cuadro resumen
     const energiaTotalM2 = getSum(rawData, 'energia_m2_ts1') + getSum(rawData, 'energia_m2_ts2') + getSum(rawData, 'energia_m2_ts3');
     document.getElementById('m2_energia_val').textContent = energiaTotalM2.toLocaleString('es-AR');
 
@@ -153,9 +155,14 @@ function calcularYRenderizarResumen() {
     document.getElementById('proc_rem_dqo_m1').textContent = calcRemocion(getAvg(rawData, 'dqo_ent_m1'), getAvg(rawData, 'dqo_sal_m1'));
     document.getElementById('proc_rem_mes_m1').textContent = calcRemocion(getAvg(rawData, 'mes_ent_m1'), getAvg(rawData, 'mes_sal_m1'));
     
+    // Estos "fuera de norma" sí se quedan porque están en la pestaña Proceso
+    document.getElementById('proc_norma_m1').textContent = getSum(rawData, 'fuera_norma_m1');
+    
     document.getElementById('proc_rem_dbo_m2').textContent = calcRemocion(getAvg(rawData, 'dbo_ent_m2'), getAvg(rawData, 'dbo_sal_m2'));
     document.getElementById('proc_rem_dqo_m2').textContent = calcRemocion(getAvg(rawData, 'dqo_ent_m2'), getAvg(rawData, 'dqo_sal_m2'));
     document.getElementById('proc_rem_mes_m2').textContent = calcRemocion(getAvg(rawData, 'mes_ent_m2'), getAvg(rawData, 'mes_sal_m2'));
+
+    document.getElementById('proc_norma_m2').textContent = getSum(rawData, 'fuera_norma_m2');
 
     // Biosólidos (Acumulados y promedios)
     document.getElementById('bio_vol_m1').textContent = getSum(rawData, 'biosolidos_m1').toLocaleString('es-AR');
