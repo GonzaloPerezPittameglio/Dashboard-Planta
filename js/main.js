@@ -3,6 +3,7 @@ let cEnergia = null;
 let cCaudales = null;
 let cLimites = null;
 
+// LINK DE TU GOOGLE SHEETS EN VIVO
 const urlGoogleSheet = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=0&single=true&output=csv";
 
 window.onload = () => {
@@ -75,9 +76,12 @@ function calcularYRenderizarResumen() {
     document.getElementById('m1_mes_ent').textContent = getAvg(rawData, 'mes_ent_m1');
     document.getElementById('m1_mes_sal').textContent = getAvg(rawData, 'mes_sal_m1');
     document.getElementById('m1_norma').textContent = getSum(rawData, 'fuera_norma_m1');
-    document.getElementById('m1_caudal_dis').textContent = lastRow['caudal_dis_m1'] || 0;
+    document.getElementById('m1_caudal_dis').textContent = lastRow['caudal_dis_m1'] || 0.3; // Fijo si no está
     document.getElementById('m1_caudal_trat').textContent = lastRow['caudal_trat_m1'] || 0;
-    document.getElementById('m1_energia_val').textContent = getSum(rawData, 'energia_m1').toLocaleString('es-AR');
+    
+    // Suma de consumos M1 para el cuadro resumen
+    const energiaTotalM1 = getSum(rawData, 'energia_m1_ts1') + getSum(rawData, 'energia_m1_ts2') + getSum(rawData, 'energia_m1_ts3');
+    document.getElementById('m1_energia_val').textContent = energiaTotalM1.toLocaleString('es-AR');
 
     document.getElementById('m2_dbo_ent').textContent = getAvg(rawData, 'dbo_ent_m2');
     document.getElementById('m2_dbo_sal').textContent = getAvg(rawData, 'dbo_sal_m2');
@@ -86,9 +90,12 @@ function calcularYRenderizarResumen() {
     document.getElementById('m2_mes_ent').textContent = getAvg(rawData, 'mes_ent_m2');
     document.getElementById('m2_mes_sal').textContent = getAvg(rawData, 'mes_sal_m2');
     document.getElementById('m2_norma').textContent = getSum(rawData, 'fuera_norma_m2');
-    document.getElementById('m2_caudal_dis').textContent = lastRow['caudal_dis_m2'] || 0;
+    document.getElementById('m2_caudal_dis').textContent = lastRow['caudal_dis_m2'] || 0.9; // Fijo si no está
     document.getElementById('m2_caudal_trat').textContent = lastRow['caudal_trat_m2'] || 0;
-    document.getElementById('m2_energia_val').textContent = getSum(rawData, 'energia_m2').toLocaleString('es-AR');
+    
+    // Suma de consumos M2 para el cuadro resumen
+    const energiaTotalM2 = getSum(rawData, 'energia_m2_ts1') + getSum(rawData, 'energia_m2_ts2') + getSum(rawData, 'energia_m2_ts3');
+    document.getElementById('m2_energia_val').textContent = energiaTotalM2.toLocaleString('es-AR');
 
     // Totales Generales
     document.getElementById('tot_energia').textContent = getSum(rawData, 'energia_total').toLocaleString('es-AR');
@@ -125,8 +132,12 @@ function calcularYRenderizarResumen() {
             labels: ['M1 - TS1', 'M1 - TS2', 'M1 - TS3', 'M2 - TS1', 'M2 - TS2', 'M2 - TS3'],
             datasets: [{ 
                 data: [e_m1_ts1, e_m1_ts2, e_m1_ts3, e_m2_ts1, e_m2_ts2, e_m2_ts3], 
-                backgroundColor: ['#0284c7', '#0ea5e9', '#38bdf8', '#059669', '#10b981', '#34d399'], 
-                borderWidth: 2, borderColor: '#1e293b' 
+                backgroundColor: [
+                    '#0284c7', '#0ea5e9', '#38bdf8', // 3 tonos de azul para M1
+                    '#059669', '#10b981', '#34d399'  // 3 tonos de verde para M2
+                ], 
+                borderWidth: 2, 
+                borderColor: '#1e293b' 
             }]
         },
         options: { 
@@ -195,10 +206,9 @@ function calcularYRenderizarResumen() {
     if (diasFuera.length === 0) {
         divFechas.innerHTML = '<span class="bg-green-900/30 text-green-400 px-3 py-1 rounded border border-green-800 text-sm">Planta 100% en norma.</span>';
     } else {
-        // Acá se generan los botones que llaman a la función mostrarMotivo()
+        // Genera los botones que abren el modal emergente con el motivo
         divFechas.innerHTML = diasFuera.map(d => {
             const fechaTxt = d.fecha || 'Sin fecha';
-            // Escapamos comillas simples en el motivo para evitar romper el HTML
             const motivoTxt = (d.motivo_desvio || 'Sin motivo registrado').replace(/'/g, "\\'"); 
             return `<button onclick="mostrarMotivo('${fechaTxt}', '${motivoTxt}')" class="bg-red-900/40 hover:bg-red-800/80 text-red-300 px-3 py-1.5 rounded-lg border border-red-800 text-sm font-medium shadow-sm transition cursor-pointer">${fechaTxt}</button>`;
         }).join('');
@@ -208,13 +218,14 @@ function calcularYRenderizarResumen() {
     updateChartLimites('dbo_ent', document.querySelector('.chart-btn.active'));
 }
 
-// Función para abrir la ventana emergente con el motivo del desvío
+// Función global para abrir la ventana emergente con el motivo del desvío
 window.mostrarMotivo = function(fecha, motivo) {
     document.getElementById('modalFecha').textContent = 'Desvío: ' + fecha;
     document.getElementById('modalMotivo').textContent = motivo;
     document.getElementById('modalDesvio').classList.remove('hidden');
 };
 
+// Función global para el gráfico de DBO/DQO/MES
 window.updateChartLimites = function(param, btnElement) {
     if (!rawData || rawData.length === 0) return;
     
