@@ -61,9 +61,12 @@
     <!-- Contenido Principal -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         
-        <!-- PESTAÑA: RESUMEN GENERAL -->
+        <!-- ============================================== -->
+        <!-- PESTAÑA: RESUMEN GENERAL (Activa por defecto)  -->
+        <!-- ============================================== -->
         <div id="tab-resumen" class="tab-content block">
             
+            <!-- Fila 1: Indicadores Módulo 1 y Módulo 2 -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 <!-- Tarjeta Módulo 1 -->
                 <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
@@ -92,6 +95,7 @@
                             <div id="m1_norma" class="text-xl font-bold text-red-400">0</div>
                         </div>
                     </div>
+                    <!-- Caudales y Energía M1 -->
                     <div class="grid grid-cols-3 gap-3 mt-4">
                         <div class="bg-slate-900 rounded-xl p-3 border border-slate-700 text-center">
                             <div class="text-xs text-slate-400 mb-1">Caudal de Diseño</div>
@@ -135,6 +139,7 @@
                             <div id="m2_norma" class="text-xl font-bold text-red-400">0</div>
                         </div>
                     </div>
+                    <!-- Caudales y Energía M2 -->
                     <div class="grid grid-cols-3 gap-3 mt-4">
                         <div class="bg-slate-900 rounded-xl p-3 border border-slate-700 text-center">
                             <div class="text-xs text-slate-400 mb-1">Caudal de Diseño</div>
@@ -225,7 +230,7 @@
                 </div>
             </div>
 
-            <!-- Gráfico de Energía -->
+            <!-- Gráfico de Energía (TS1, TS2, TS3) -->
             <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
                 <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">ENERGÍA TOTAL</h3>
                 <div class="h-64 relative">
