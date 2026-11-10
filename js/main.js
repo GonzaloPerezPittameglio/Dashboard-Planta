@@ -3,8 +3,8 @@ let cEnergia = null;
 let cCaudales = null;
 let cLimites = null;
 
-// Enlace oficial de publicación CSV
-const urlGoogleSheet = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?output=csv";
+// Enlace CSV publicado oficialmente para Hoja 1
+const urlGoogleSheet = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=0&single=true&output=csv";
 
 window.onload = () => {
     lucide.createIcons();
@@ -15,6 +15,7 @@ function cargarDatosDesdeGoogle() {
     const dsLabel = document.getElementById('dataSourceLabel');
     if (dsLabel) dsLabel.textContent = "Conectando con Google Sheets...";
     
+    // Evitamos problemas de caché agregando parámetro de tiempo dinámico
     const conCache = urlGoogleSheet + (urlGoogleSheet.includes('?') ? '&' : '?') + '_t=' + Date.now();
 
     Papa.parse(conCache, {
