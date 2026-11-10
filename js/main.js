@@ -3,7 +3,7 @@ let cEnergia = null;
 let cCaudales = null;
 let cLimites = null;
 
-// Enlace oficial de tu Google Sheets publicado como CSV
+// Enlace oficial publicado como CSV desde tu Google Sheets
 const urlGoogleSheet = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?output=csv";
 
 window.onload = () => {
@@ -15,6 +15,7 @@ function cargarDatosDesdeGoogle() {
     const dsLabel = document.getElementById('dataSourceLabel');
     if (dsLabel) dsLabel.textContent = "Conectando con Google Sheets...";
     
+    // Evitamos caché del navegador agregando un parámetro dinámico de tiempo
     const conCache = urlGoogleSheet + (urlGoogleSheet.includes('?') ? '&' : '?') + '_t=' + Date.now();
 
     Papa.parse(conCache, {
@@ -31,7 +32,7 @@ function cargarDatosDesdeGoogle() {
                 }
                 calcularYRenderizarResumen();
             } else {
-                if (dsLabel) dsLabel.textContent = "Error: Planilla vacía";
+                if (dsLabel) dsLabel.textContent = "Error: Planilla vacía o sin publicar";
             }
         },
         error: function(err) {
