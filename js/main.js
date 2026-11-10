@@ -3,8 +3,8 @@ let cEnergia = null;
 let cCaudales = null;
 let cLimites = null;
 
-// LINK DE TU GOOGLE SHEETS EN VIVO - ¡REEMPLAZÁ ESTE LINK POR EL TUYO!
-const urlGoogleSheet = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=0&single=true&output=csv";
+// LINK DE TU GOOGLE SHEETS YA TRANSFORMADO A FORMATO CSV
+const urlGoogleSheet = "https://docs.google.com/spreadsheets/d/17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA/export?format=csv&gid=0";
 
 window.onload = () => {
     lucide.createIcons();
@@ -26,11 +26,11 @@ function cargarDatosDesdeGoogle() {
                 if (dsLabel) dsLabel.textContent = "Datos en vivo (Google Sheets)";
                 calcularYRenderizarResumen();
             } else {
-                if (dsLabel) dsLabel.textContent = "Error: El Google Sheets está vacío o el link es incorrecto";
+                if (dsLabel) dsLabel.textContent = "Error: El Google Sheets está vacío o es privado";
             }
         },
         error: function() {
-            if (dsLabel) dsLabel.textContent = "Error de conexión con Google Sheets";
+            if (dsLabel) dsLabel.textContent = "Error de conexión. Revisá que el Excel esté público.";
         }
     });
 }
@@ -188,4 +188,64 @@ function calcularYRenderizarResumen() {
         });
 
         // Semáforo con filtrado estricto
-        const diasFuera = rawData.filter(r => Number(
+        const diasFuera = rawData.filter(r => Number(r.fuera_norma_m1) === 1 || Number(r.fuera_norma_m2) === 1);
+        const diasRestantes = 37 - diasFuera.length;
+        
+        const labelRestantes = document.getElementById('dias_restantes_norma');
+        if (labelRestantes) {
+            labelRestantes.textContent = diasRestantes;
+            if(diasRestantes <= 10) labelRestantes.classList.add('text-red-500');
+            else labelRestantes.classList.remove('text-red-500');
+        }
+
+        const divFechas = document.getElementById('fechas_fuera_norma');
+        if (divFechas) {
+            if (diasFuera.length === 0) {
+                divFechas.innerHTML = '<span class="bg-green-900/30 text-green-400 px-3 py-1 rounded border border-green-800 text-sm">Planta 100% en norma.</span>';
+            } else {
+                divFechas.innerHTML = diasFuera.map(d => {
+                    const fechaTxt = d.fecha || 'Sin fecha';
+                    const motivoTxt = (d.motivo_desvio || 'Sin motivo registrado').replace(/'/g, "\\'"); 
+                    return `<button onclick="mostrarMotivo('${fechaTxt}', '${motivoTxt}')" class="bg-red-900/40 hover:bg-red-800/80 text-red-300 px-3 py-1.5 rounded-lg border border-red-800 text-sm font-medium shadow-sm transition cursor-pointer">${fechaTxt}</button>`;
+                }).join('');
+            }
+        }
+
+        updateChartLimites('dbo_ent', document.querySelector('.chart-btn.active'));
+
+    } catch (e) {
+        console.error("Error al renderizar los gráficos:", e);
+    }
+}
+
+window.mostrarMotivo = function(fecha, motivo) {
+    const elFecha = document.getElementById('modalFecha');
+    const elMotivo = document.getElementById('modalMotivo');
+    const elModal = document.getElementById('modalDesvio');
+    if (elFecha && elMotivo && elModal) {
+        elFecha.textContent = 'Desvío: ' + fecha;
+        elMotivo.textContent = motivo;
+        elModal.classList.remove('hidden');
+    }
+};
+
+window.updateChartLimites = function(param, btnElement) {
+    if (!rawData || rawData.length === 0) return;
+    
+    if (btnElement) {
+        document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active', 'bg-sky-500', 'text-white', 'border-sky-500'));
+        btnElement.classList.add('active', 'bg-sky-500', 'text-white', 'border-sky-500');
+    }
+
+    const fechas = rawData.map(r => r.fecha || '');
+    let dataM1 = [], dataM2 = [], maxLimit = 0, title = '';
+
+    if (param === 'dbo_ent') {
+        dataM1 = rawData.map(r => r.dbo_ent_m1 || 0); dataM2 = rawData.map(r => r.dbo_ent_m2 || 0);
+        maxLimit = 200; title = 'DBO Entrada';
+    } else if (param === 'dbo_sal') {
+        dataM1 = rawData.map(r => r.dbo_sal_m1 || 0); dataM2 = rawData.map(r => r.dbo_sal_m2 || 0);
+        maxLimit = 30; title = 'DBO Salida';
+    } else if (param === 'dqo_sal') {
+        dataM1 = rawData.map(r => r.dqo_sal_m1 || 0); dataM2 = rawData.map(r => r.dqo_sal_m2 || 0);
+        maxLimit = 125; title = '
