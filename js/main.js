@@ -3,8 +3,9 @@ let cEnergia = null;
 let cCaudales = null;
 let cLimites = null;
 
-// Enlace oficial de tu Google Sheets publicado como CSV
-const urlGoogleSheet = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?output=csv";
+// Conector oficial de Google Sheets (Infalible contra bloqueos de red)
+const sheetId = "17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA";
+const urlGoogleSheet = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=0`;
 
 window.onload = () => {
     lucide.createIcons();
@@ -15,8 +16,8 @@ function cargarDatosDesdeGoogle() {
     const dsLabel = document.getElementById('dataSourceLabel');
     if (dsLabel) dsLabel.textContent = "Conectando con Google Sheets...";
     
-    // Evitamos caché del navegador agregando un parámetro dinámico
-    const conCache = urlGoogleSheet + (urlGoogleSheet.includes('?') ? '&' : '?') + '_t=' + Date.now();
+    // Evitamos caché del navegador
+    const conCache = urlGoogleSheet + "&_t=" + Date.now();
 
     Papa.parse(conCache, {
         download: true,
@@ -29,12 +30,12 @@ function cargarDatosDesdeGoogle() {
                 if (dsLabel) dsLabel.textContent = "Datos en vivo (Google Sheets)";
                 calcularYRenderizarResumen();
             } else {
-                if (dsLabel) dsLabel.textContent = "Error: Planilla vacía o sin publicar";
+                if (dsLabel) dsLabel.textContent = "Error: Planilla vacía";
             }
         },
         error: function(err) {
             console.error("Error PapaParse:", err);
-            if (dsLabel) dsLabel.textContent = "Error de lectura de datos";
+            if (dsLabel) dsLabel.textContent = "Error de conexión con la planilla";
         }
     });
 }
@@ -216,4 +217,109 @@ function calcularYRenderizarResumen() {
             data: {
                 labels: fechas,
                 datasets: [
-                    { label: 'Caudal Tratado M1', data: caudalesM1, borderColor: '#22d3ee', backgroundColor: 'rgba
+                    { label: 'Caudal Tratado M1', data: caudalesM1, borderColor: '#22d3ee', backgroundColor: 'rgba(34, 211, 238, 0.1)', fill: true, tension: 0.4 },
+                    { label: 'Diseño M1 (0.3)', data: disenoM1, borderColor: '#0284c7', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false },
+                    { label: 'Caudal Tratado M2', data: caudalesM2, borderColor: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.1)', fill: true, tension: 0.4 },
+                    { label: 'Diseño M2 (0.9)', data: disenoM2, borderColor: '#059669', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMax: 1.2 } } }
+        });
+
+        // Semáforo de Desvíos
+        const diasFuera = rawData.filter(r => {
+            const fn1 = getCleanNumber(getVal(r, 'fuera_norma_m1'));
+            const fn2 = getCleanNumber(getVal(r, 'fuera_norma_m2'));
+            const motivo = getVal(r, 'motivo_desvio');
+            const tieneMotivo = motivo && String(motivo).trim() !== '';
+            return fn1 > 0 || fn2 > 0 || tieneMotivo;
+        });
+        
+        const diasRestantes = 37 - diasFuera.length;
+        
+        const labelRestantes = document.getElementById('dias_restantes_norma');
+        if (labelRestantes) {
+            labelRestantes.textContent = diasRestantes;
+            if(diasRestantes <= 10) labelRestantes.classList.add('text-red-500');
+            else labelRestantes.classList.remove('text-red-500');
+        }
+
+        const divFechas = document.getElementById('fechas_fuera_norma');
+        if (divFechas) {
+            if (diasFuera.length === 0) {
+                divFechas.innerHTML = '<span class="bg-green-900/30 text-green-400 px-3 py-1 rounded border border-green-800 text-sm">Planta 100% en norma.</span>';
+            } else {
+                divFechas.innerHTML = diasFuera.map(d => {
+                    const fechaTxt = getVal(d, 'fecha') || 'Sin fecha';
+                    const motivoTxt = String(getVal(d, 'motivo_desvio') || 'Sin motivo registrado').replace(/'/g, "\\'"); 
+                    return `<button onclick="mostrarMotivo('${fechaTxt}', '${motivoTxt}')" class="bg-red-900/40 hover:bg-red-800/80 text-red-300 px-3 py-1.5 rounded-lg border border-red-800 text-sm font-medium shadow-sm transition cursor-pointer">${fechaTxt}</button>`;
+                }).join('');
+            }
+        }
+
+        updateChartLimites('dbo_ent', document.querySelector('.chart-btn.active'));
+
+    } catch (e) {
+        console.error("Error al renderizar los gráficos:", e);
+    }
+}
+
+window.mostrarMotivo = function(fecha, motivo) {
+    const elFecha = document.getElementById('modalFecha');
+    const elMotivo = document.getElementById('modalMotivo');
+    const elModal = document.getElementById('modalDesvio');
+    if (elFecha && elMotivo && elModal) {
+        elFecha.textContent = 'Desvío: ' + fecha;
+        elMotivo.textContent = motivo;
+        elModal.classList.remove('hidden');
+    }
+};
+
+window.updateChartLimites = function(param, btnElement) {
+    if (!rawData || rawData.length === 0) return;
+    
+    if (btnElement) {
+        document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active', 'bg-sky-500', 'text-white', 'border-sky-500'));
+        btnElement.classList.add('active', 'bg-sky-500', 'text-white', 'border-sky-500');
+    }
+
+    const fechas = rawData.map(r => getVal(r, 'fecha') || '');
+    let dataM1 = [], dataM2 = [], maxLimit = 0, title = '';
+
+    if (param === 'dbo_ent') {
+        dataM1 = rawData.map(r => getCleanNumber(getVal(r, 'dbo_ent_m1')));
+        dataM2 = rawData.map(r => getCleanNumber(getVal(r, 'dbo_ent_m2')));
+        maxLimit = 200; title = 'DBO Entrada';
+    } else if (param === 'dbo_sal') {
+        dataM1 = rawData.map(r => getCleanNumber(getVal(r, 'dbo_sal_m1')));
+        dataM2 = rawData.map(r => getCleanNumber(getVal(r, 'dbo_sal_m2')));
+        maxLimit = 30; title = 'DBO Salida';
+    } else if (param === 'dqo_sal') {
+        dataM1 = rawData.map(r => getCleanNumber(getVal(r, 'dqo_sal_m1')));
+        dataM2 = rawData.map(r => getCleanNumber(getVal(r, 'dqo_sal_m2')));
+        maxLimit = 125; title = 'DQO Salida';
+    } else if (param === 'mes_sal') {
+        dataM1 = rawData.map(r => getCleanNumber(getVal(r, 'mes_sal_m1')));
+        dataM2 = rawData.map(r => getCleanNumber(getVal(r, 'mes_sal_m2')));
+        maxLimit = 35; title = 'MES Salida';
+    }
+
+    const limitLine = Array(fechas.length).fill(maxLimit);
+
+    if (cLimites) cLimites.destroy();
+    const ctx = document.getElementById('chartLimitesLine');
+    if (!ctx) return;
+    
+    cLimites = new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: fechas,
+            datasets: [
+                { label: `${title} M1`, data: dataM1, borderColor: '#22d3ee', borderWidth: 2, tension: 0.2 },
+                { label: `${title} M2`, data: dataM2, borderColor: '#34d399', borderWidth: 2, tension: 0.2 },
+                { label: `Límite Legal (${maxLimit})`, data: limitLine, borderColor: '#ef4444', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { suggestedMax: maxLimit * 1.2 } } }
+    });
+};
