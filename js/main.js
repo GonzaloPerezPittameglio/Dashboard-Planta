@@ -3,20 +3,20 @@ let cEnergia = null;
 let cCaudales = null;
 let cLimites = null;
 
-// Enlace CSV publicado oficialmente de Google Sheets
-const urlGoogleSheet = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=0&single=true&output=csv";
+// Endpoint directo GViz API (evita el error CORS del enlace publicado de Google)
+const urlPrimary = "https://docs.google.com/spreadsheets/d/17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA/gviz/tq?tqx=out:csv";
+const urlBackup = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=0&single=true&output=csv";
 
 window.onload = () => {
     lucide.createIcons();
-    cargarDatosDesdeGoogle();
+    cargarDatosDesdeGoogle(urlPrimary);
 };
 
-function cargarDatosDesdeGoogle() {
+function cargarDatosDesdeGoogle(urlTarget) {
     const dsLabel = document.getElementById('dataSourceLabel');
     if (dsLabel) dsLabel.textContent = "Conectando con Google Sheets...";
     
-    // Evitamos problemas de caché agregando parámetro de tiempo dinámico
-    const conCache = urlGoogleSheet + (urlGoogleSheet.includes('?') ? '&' : '?') + '_t=' + Date.now();
+    const conCache = urlTarget + (urlTarget.includes('?') ? '&' : '?') + '_t=' + Date.now();
 
     Papa.parse(conCache, {
         download: true,
@@ -31,45 +31,23 @@ function cargarDatosDesdeGoogle() {
                     dsLabel.className = "text-xs font-medium px-3 py-1.5 bg-green-900/40 text-green-300 rounded-full border border-green-700";
                 }
                 calcularYRenderizarResumen();
+            } else if (urlTarget !== urlBackup) {
+                cargarDatosDesdeGoogle(urlBackup);
             } else {
-                if (dsLabel) dsLabel.textContent = "Planilla vacía o sin publicar";
-            }
-        },
-        error: function(err) {
-            console.error("Error de lectura:", err);
-            if (dsLabel) {
-                dsLabel.textContent = "Bloqueado por Red de Oficina. Usar CSV Manual";
-                dsLabel.className = "text-xs font-medium px-3 py-1.5 bg-yellow-900/50 text-yellow-300 rounded-full border border-yellow-700";
-            }
-        }
-    });
-}
-
-function cargarArchivoLocal(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const dsLabel = document.getElementById('dataSourceLabel');
-    if (dsLabel) dsLabel.textContent = "Leyendo archivo local...";
-
-    Papa.parse(file, {
-        header: true,
-        dynamicTyping: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-            if (results.data && results.data.length > 0) {
-                rawData = results.data;
                 if (dsLabel) {
-                    dsLabel.textContent = "Modo Local (Archivo cargado)";
-                    dsLabel.className = "text-xs font-medium px-3 py-1.5 bg-cyan-900/40 text-cyan-300 rounded-full border border-cyan-700";
+                    dsLabel.textContent = "Planilla vacía o sin publicar";
+                    dsLabel.className = "text-xs font-medium px-3 py-1.5 bg-red-900/40 text-red-300 rounded-full border border-red-700";
                 }
-                calcularYRenderizarResumen();
-            } else {
-                alert("El archivo CSV está vacío o tiene un formato incorrecto.");
             }
         },
         error: function(err) {
-            alert("Error al leer el archivo local: " + err.message);
+            console.error("Error al conectar:", err);
+            if (urlTarget !== urlBackup) {
+                cargarDatosDesdeGoogle(urlBackup);
+            } else if (dsLabel) {
+                dsLabel.textContent = "Error de conexión con Google Sheets";
+                dsLabel.className = "text-xs font-medium px-3 py-1.5 bg-red-900/40 text-red-300 rounded-full border border-red-700";
+            }
         }
     });
 }
@@ -193,7 +171,7 @@ function calcularYRenderizarResumen() {
         setTexto('tot_arenas', getSum(rawData, 'arenas_ton').toLocaleString('es-AR'));
         setTexto('tot_polimero', getSum(rawData, 'polimero_kg').toLocaleString('es-AR'));
 
-        // RRHH & MANTENIMIENTO
+        // RRHH Y MANTENIMIENTO
         setTexto('rrhh_total_lbl', getCleanNumber(getVal(lastRow, 'rrhh_total')));
         setTexto('rrhh_admin_lbl', getCleanNumber(getVal(lastRow, 'rrhh_admin')));
         setTexto('rrhh_operativo_lbl', getCleanNumber(getVal(lastRow, 'rrhh_operativo')));
@@ -204,7 +182,7 @@ function calcularYRenderizarResumen() {
         setTexto('mant_corr', getSum(rawData, 'mant_correctivos'));
         setTexto('mant_act', getSum(rawData, 'mant_actividades'));
 
-        // GRÁFICO DOUGHNUT ENERGÍA
+        // GRÁFICO DE ENERGÍA
         if(cEnergia) cEnergia.destroy();
         const ctxEnergia = document.getElementById('chartEnergiaSectores');
         if (ctxEnergia) {
@@ -229,7 +207,7 @@ function calcularYRenderizarResumen() {
             });
         }
 
-        // REMOCIÓN Y DESVÍOS PESTAÑA PROCESO
+        // REMOCIÓN Y DESVÍOS EN PROCESO
         setTexto('proc_rem_dbo_m1', calcRemocion(getAvg(rawData, 'dbo_ent_m1'), getAvg(rawData, 'dbo_sal_m1')));
         setTexto('proc_rem_dqo_m1', calcRemocion(getAvg(rawData, 'dqo_ent_m1'), getAvg(rawData, 'dqo_sal_m1')));
         setTexto('proc_rem_mes_m1', calcRemocion(getAvg(rawData, 'mes_ent_m1'), getAvg(rawData, 'mes_sal_m1')));
@@ -249,7 +227,7 @@ function calcularYRenderizarResumen() {
         setTexto('bio_ms_m2', getAvg(rawData, 'porc_ms_m2'));
         setTexto('bio_ton_m2', getSum(rawData, 'ton_ms_m2').toLocaleString('es-AR'));
 
-        // GRÁFICO LÍNEA DE CAUDALES
+        // LÍNEA DE CAUDALES
         const fechas = rawData.map(r => getVal(r, 'fecha') || ''); 
         const caudalesM1 = rawData.map(r => getCleanNumber(getVal(r, 'caudal_trat_m1')));
         const caudalesM2 = rawData.map(r => getCleanNumber(getVal(r, 'caudal_trat_m2')));
@@ -274,7 +252,7 @@ function calcularYRenderizarResumen() {
             });
         }
 
-        // SEMÁFORO Y BOTONES INTERACTIVOS DE DESVÍO
+        // SEMÁFORO NORMATIVO
         const diasFuera = rawData.filter(r => {
             const fn1 = getCleanNumber(getVal(r, 'fuera_norma_m1'));
             const fn2 = getCleanNumber(getVal(r, 'fuera_norma_m2'));
