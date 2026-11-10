@@ -23,13 +23,9 @@
             <div class="flex justify-between h-16 items-center flex-wrap gap-4 py-2">
                 <div>
                     <h1 class="text-xl font-bold text-white tracking-tight">Planta Depuradora Hurlingham</h1>
-                    <p class="text-xs text-slate-400">Tablero Gerencial de Control (AySA)</p>
+                    <p class="text-xs text-slate-400">Tablero de Control (AySA)</p>
                 </div>
                 <div class="flex items-center gap-3 flex-wrap">
-                    <label class="cursor-pointer bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition shadow flex items-center gap-1.5">
-                        <i data-lucide="upload" class="w-3.5 h-3.5"></i> Cargar CSV Manual
-                        <input type="file" id="csvFileInput" accept=".csv" class="hidden" onchange="cargarArchivoLocal(event)">
-                    </label>
                     <span id="dataSourceLabel" class="text-xs font-medium px-3 py-1.5 bg-slate-800 text-slate-300 rounded-full border border-slate-700">
                         Conectando...
                     </span>
@@ -229,7 +225,6 @@
         <div id="tab-proceso" class="tab-content hidden space-y-6">
             
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Remoción M1 -->
                 <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
                     <div class="flex items-center gap-2 mb-4 border-b border-slate-700 pb-2">
                         <i data-lucide="activity" class="w-5 h-5 text-cyan-400"></i>
@@ -255,7 +250,6 @@
                     </div>
                 </div>
 
-                <!-- Remoción M2 -->
                 <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
                     <div class="flex items-center gap-2 mb-4 border-b border-slate-700 pb-2">
                         <i data-lucide="activity" class="w-5 h-5 text-emerald-400"></i>
@@ -316,7 +310,7 @@
                 </div>
             </div>
 
-            <!-- Gráficos de Caudal y Límites -->
+            <!-- Gráficos -->
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
                     <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Evolución de Caudales M1 y M2 (m³/s)</h3>
@@ -340,7 +334,7 @@
                 </div>
             </div>
 
-            <!-- Semáforo: Control Normativo Anual -->
+            <!-- Semáforo Normativo -->
             <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl relative overflow-hidden">
                 <div class="absolute top-0 right-0 p-4 opacity-10 pointer-events-none"><i data-lucide="alert-triangle" class="w-32 h-32 text-red-500"></i></div>
                 <div class="flex justify-between items-center mb-4 relative z-10">
@@ -387,7 +381,6 @@
                 <p class="text-slate-500 mt-2">Reportes gerenciales y presupuesto.</p>
             </div>
         </div>
-
     </main>
 
     <!-- Modal Emergente de Desvíos -->
@@ -402,6 +395,6 @@
     </div>
 
     <!-- Script Principal -->
-    <script src="main.js"></script>
+    <script src="main.js/"></script>
 </body>
 </html>
