@@ -3,7 +3,7 @@ let cEnergia = null;
 let cCaudales = null;
 let cLimites = null;
 
-// Enlace oficial publicado como CSV desde tu Google Sheets
+// Enlace oficial de publicación CSV
 const urlGoogleSheet = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?output=csv";
 
 window.onload = () => {
@@ -15,7 +15,6 @@ function cargarDatosDesdeGoogle() {
     const dsLabel = document.getElementById('dataSourceLabel');
     if (dsLabel) dsLabel.textContent = "Conectando con Google Sheets...";
     
-    // Evitamos caché del navegador agregando un parámetro dinámico de tiempo
     const conCache = urlGoogleSheet + (urlGoogleSheet.includes('?') ? '&' : '?') + '_t=' + Date.now();
 
     Papa.parse(conCache, {
@@ -32,12 +31,44 @@ function cargarDatosDesdeGoogle() {
                 }
                 calcularYRenderizarResumen();
             } else {
-                if (dsLabel) dsLabel.textContent = "Error: Planilla vacía o sin publicar";
+                if (dsLabel) dsLabel.textContent = "Planilla vacía o sin publicar";
             }
         },
         error: function(err) {
-            console.error("Error PapaParse:", err);
-            if (dsLabel) dsLabel.textContent = "Error de lectura de datos";
+            console.error("Error de lectura:", err);
+            if (dsLabel) {
+                dsLabel.textContent = "Bloqueado por Red de Oficina. Usar CSV Manual";
+                dsLabel.className = "text-xs font-medium px-3 py-1.5 bg-yellow-900/50 text-yellow-300 rounded-full border border-yellow-700";
+            }
+        }
+    });
+}
+
+function cargarArchivoLocal(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const dsLabel = document.getElementById('dataSourceLabel');
+    if (dsLabel) dsLabel.textContent = "Leyendo archivo local...";
+
+    Papa.parse(file, {
+        header: true,
+        dynamicTyping: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+            if (results.data && results.data.length > 0) {
+                rawData = results.data;
+                if (dsLabel) {
+                    dsLabel.textContent = "Modo Local (Archivo cargado)";
+                    dsLabel.className = "text-xs font-medium px-3 py-1.5 bg-cyan-900/40 text-cyan-300 rounded-full border border-cyan-700";
+                }
+                calcularYRenderizarResumen();
+            } else {
+                alert("El archivo CSV está vacío o tiene un formato incorrecto.");
+            }
+        },
+        error: function(err) {
+            alert("Error al leer el archivo local: " + err.message);
         }
     });
 }
@@ -127,7 +158,6 @@ function calcularYRenderizarResumen() {
     Chart.defaults.font.family = 'Inter';
 
     try {
-        // === PESTAÑA 1: RESUMEN GENERAL ===
         setTexto('m1_dbo_ent', getAvg(rawData, 'dbo_ent_m1'));
         setTexto('m1_dbo_sal', getAvg(rawData, 'dbo_sal_m1'));
         setTexto('m1_dqo_ent', getAvg(rawData, 'dqo_ent_m1'));
@@ -154,39 +184,35 @@ function calcularYRenderizarResumen() {
         const energiaTotalM2 = getSum(rawData, 'energia_m2_ts1') + getSum(rawData, 'energia_m2_ts2') + getSum(rawData, 'energia_m2_ts3');
         setTexto('m2_energia_val', energiaTotalM2.toLocaleString('es-AR'));
 
-        // Totales Generales
         setTexto('tot_energia', getSum(rawData, 'energia_total').toLocaleString('es-AR'));
         setTexto('tot_biosolidos', getSum(rawData, 'biosolidos_ton').toLocaleString('es-AR'));
         setTexto('tot_arenas', getSum(rawData, 'arenas_ton').toLocaleString('es-AR'));
         setTexto('tot_polimero', getSum(rawData, 'polimero_kg').toLocaleString('es-AR'));
 
-        // RRHH
         setTexto('rrhh_total_lbl', getCleanNumber(getVal(lastRow, 'rrhh_total')));
         setTexto('rrhh_admin_lbl', getCleanNumber(getVal(lastRow, 'rrhh_admin')));
         setTexto('rrhh_operativo_lbl', getCleanNumber(getVal(lastRow, 'rrhh_operativo')));
         setTexto('hs_extra_lbl', getSum(rawData, 'hs_extra').toLocaleString('es-AR'));
         setTexto('hs_normales_lbl', getSum(rawData, 'hs_normales').toLocaleString('es-AR'));
 
-        // Mantenimiento
         setTexto('mant_prev', getSum(rawData, 'mant_preventivos'));
         setTexto('mant_corr', getSum(rawData, 'mant_correctivos'));
         setTexto('mant_act', getSum(rawData, 'mant_actividades'));
 
-        // Gráfico de Energía
         if(cEnergia) cEnergia.destroy();
-        const e_m1_ts1 = getSum(rawData, 'energia_m1_ts1');
-        const e_m1_ts2 = getSum(rawData, 'energia_m1_ts2');
-        const e_m1_ts3 = getSum(rawData, 'energia_m1_ts3');
-        const e_m2_ts1 = getSum(rawData, 'energia_m2_ts1');
-        const e_m2_ts2 = getSum(rawData, 'energia_m2_ts2');
-        const e_m2_ts3 = getSum(rawData, 'energia_m2_ts3');
-        
         cEnergia = new Chart(document.getElementById('chartEnergiaSectores').getContext('2d'), {
             type: 'doughnut',
             data: {
                 labels: ['M1 - TS1', 'M1 - TS2', 'M1 - TS3', 'M2 - TS1', 'M2 - TS2', 'M2 - TS3'],
                 datasets: [{ 
-                    data: [e_m1_ts1, e_m1_ts2, e_m1_ts3, e_m2_ts1, e_m2_ts2, e_m2_ts3], 
+                    data: [
+                        getSum(rawData, 'energia_m1_ts1'),
+                        getSum(rawData, 'energia_m1_ts2'),
+                        getSum(rawData, 'energia_m1_ts3'),
+                        getSum(rawData, 'energia_m2_ts1'),
+                        getSum(rawData, 'energia_m2_ts2'),
+                        getSum(rawData, 'energia_m2_ts3')
+                    ], 
                     backgroundColor: ['#0284c7', '#0ea5e9', '#38bdf8', '#059669', '#10b981', '#34d399'], 
                     borderWidth: 2, borderColor: '#1e293b' 
                 }]
@@ -194,7 +220,6 @@ function calcularYRenderizarResumen() {
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } }, cutout: '65%' }
         });
 
-        // === PESTAÑA 2: PROCESO ===
         setTexto('proc_rem_dbo_m1', calcRemocion(getAvg(rawData, 'dbo_ent_m1'), getAvg(rawData, 'dbo_sal_m1')));
         setTexto('proc_rem_dqo_m1', calcRemocion(getAvg(rawData, 'dqo_ent_m1'), getAvg(rawData, 'dqo_sal_m1')));
         setTexto('proc_rem_mes_m1', calcRemocion(getAvg(rawData, 'mes_ent_m1'), getAvg(rawData, 'mes_sal_m1')));
@@ -213,7 +238,6 @@ function calcularYRenderizarResumen() {
         setTexto('bio_ms_m2', getAvg(rawData, 'porc_ms_m2'));
         setTexto('bio_ton_m2', getSum(rawData, 'ton_ms_m2').toLocaleString('es-AR'));
 
-        // Gráfico de Caudales
         const fechas = rawData.map(r => getVal(r, 'fecha') || ''); 
         const caudalesM1 = rawData.map(r => getCleanNumber(getVal(r, 'caudal_trat_m1')));
         const caudalesM2 = rawData.map(r => getCleanNumber(getVal(r, 'caudal_trat_m2')));
@@ -235,7 +259,6 @@ function calcularYRenderizarResumen() {
             options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMax: 1.2 } } }
         });
 
-        // Semáforo de Desvíos
         const diasFuera = rawData.filter(r => {
             const fn1 = getCleanNumber(getVal(r, 'fuera_norma_m1'));
             const fn2 = getCleanNumber(getVal(r, 'fuera_norma_m2'));
@@ -245,7 +268,6 @@ function calcularYRenderizarResumen() {
         });
         
         const diasRestantes = 37 - diasFuera.length;
-        
         const labelRestantes = document.getElementById('dias_restantes_norma');
         if (labelRestantes) {
             labelRestantes.textContent = diasRestantes;
