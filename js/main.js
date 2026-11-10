@@ -3,9 +3,9 @@ let cEnergia = null;
 let cCaudales = null;
 let cLimites = null;
 
-// ID directo de tu Google Sheets (Integrado y blindado)
+// Enlace directo configurado para exportación CSV desde tu planilla
 const sheetId = "17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA";
-const urlGoogleSheet = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=0`;
+const urlGoogleSheet = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=0`;
 
 window.onload = () => {
     lucide.createIcons();
@@ -16,7 +16,7 @@ function cargarDatosDesdeGoogle() {
     const dsLabel = document.getElementById('dataSourceLabel');
     if (dsLabel) dsLabel.textContent = "Conectando con Google Sheets...";
     
-    // Forzamos evitar caché del navegador agregando un timestamp al enlace
+    // Evita la caché guardada agregando una marca de tiempo dinámica
     const cacheBusterUrl = urlGoogleSheet + "&_t=" + Date.now();
 
     Papa.parse(cacheBusterUrl, {
@@ -30,12 +30,12 @@ function cargarDatosDesdeGoogle() {
                 if (dsLabel) dsLabel.textContent = "Datos en vivo (Google Sheets)";
                 calcularYRenderizarResumen();
             } else {
-                if (dsLabel) dsLabel.textContent = "Error: El Google Sheets está vacío o no es público";
+                if (dsLabel) dsLabel.textContent = "Error: Planilla vacía o sin acceso público";
             }
         },
         error: function(err) {
             console.error(err);
-            if (dsLabel) dsLabel.textContent = "Error de conexión. Revisá permisos del Sheets.";
+            if (dsLabel) dsLabel.textContent = "Error de acceso a Google Sheets";
         }
     });
 }
@@ -54,7 +54,7 @@ function openTab(tabId, event) {
     event.currentTarget.classList.add('border-cyan-500', 'text-cyan-400');
 }
 
-// HELPER ROBUS TO: Convierte comas "21,4", puntos "21.4" o espacios a números válidos sin dar NaN
+// Sanitiza valores numéricos con comas, puntos o espacios
 function getCleanNumber(val) {
     if (val === null || val === undefined || val === '') return 0;
     if (typeof val === 'number') return isNaN(val) ? 0 : val;
@@ -63,13 +63,32 @@ function getCleanNumber(val) {
     return isNaN(num) ? 0 : num;
 }
 
-// HELPER BUSCADOR: Busca columnas sin importar si están en Mayúsculas o Minúsculas en Google Sheets
+// Mapeo inteligente de nombres de columna (tolera "cuadal_trat" y variantes de mayúsculas/minúsculas)
 function getVal(row, colName) {
     if (!row) return undefined;
     if (row[colName] !== undefined) return row[colName];
+    
     const target = colName.toLowerCase().trim();
-    const key = Object.keys(row).find(k => k.toLowerCase().trim() === target);
-    return key ? row[key] : undefined;
+    for (let k of Object.keys(row)) {
+        if (k.toLowerCase().trim() === target) return row[k];
+    }
+
+    const aliasMap = {
+        'caudal_trat_m1': ['cuadal_trat_m1', 'caudal_m1', 'trat_m1'],
+        'caudal_trat_m2': ['cuadal_trat_m2', 'caudal_m2', 'trat_m2'],
+        'caudal_dis_m1': ['cuadal_dis_m1'],
+        'caudal_dis_m2': ['cuadal_dis_m2']
+    };
+
+    if (aliasMap[colName]) {
+        for (let alt of aliasMap[colName]) {
+            for (let k of Object.keys(row)) {
+                if (k.toLowerCase().trim() === alt) return row[k];
+            }
+        }
+    }
+
+    return undefined;
 }
 
 function getSum(arr, col) { 
@@ -204,4 +223,106 @@ function calcularYRenderizarResumen() {
                     { label: 'Caudal Tratado M1', data: caudalesM1, borderColor: '#22d3ee', backgroundColor: 'rgba(34, 211, 238, 0.1)', fill: true, tension: 0.4 },
                     { label: 'Diseño M1 (0.3)', data: disenoM1, borderColor: '#0284c7', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false },
                     { label: 'Caudal Tratado M2', data: caudalesM2, borderColor: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.1)', fill: true, tension: 0.4 },
-                    { label: 'Diseño M2 (0.9)', data: disenoM2, borderColor: '#059669', borderWidth: 2, borderDash: [5, 5], point
+                    { label: 'Diseño M2 (0.9)', data: disenoM2, borderColor: '#059669', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMax: 1.2 } } }
+        });
+
+        // Semáforo de Desvíos: detecta desvíos por valores numéricos > 0 o explicaciones registradas en motivo_desvio
+        const diasFuera = rawData.filter(r => {
+            const fn1 = getCleanNumber(getVal(r, 'fuera_norma_m1'));
+            const fn2 = getCleanNumber(getVal(r, 'fuera_norma_m2'));
+            const motivo = getVal(r, 'motivo_desvio');
+            const tieneMotivo = motivo && String(motivo).trim() !== '';
+            return fn1 > 0 || fn2 > 0 || tieneMotivo;
+        });
+        
+        const diasRestantes = 37 - diasFuera.length;
+        
+        const labelRestantes = document.getElementById('dias_restantes_norma');
+        if (labelRestantes) {
+            labelRestantes.textContent = diasRestantes;
+            if(diasRestantes <= 10) labelRestantes.classList.add('text-red-500');
+            else labelRestantes.classList.remove('text-red-500');
+        }
+
+        const divFechas = document.getElementById('fechas_fuera_norma');
+        if (divFechas) {
+            if (diasFuera.length === 0) {
+                divFechas.innerHTML = '<span class="bg-green-900/30 text-green-400 px-3 py-1 rounded border border-green-800 text-sm">Planta 100% en norma.</span>';
+            } else {
+                divFechas.innerHTML = diasFuera.map(d => {
+                    const fechaTxt = getVal(d, 'fecha') || 'Sin fecha';
+                    const motivoTxt = String(getVal(d, 'motivo_desvio') || 'Sin motivo registrado').replace(/'/g, "\\'"); 
+                    return `<button onclick="mostrarMotivo('${fechaTxt}', '${motivoTxt}')" class="bg-red-900/40 hover:bg-red-800/80 text-red-300 px-3 py-1.5 rounded-lg border border-red-800 text-sm font-medium shadow-sm transition cursor-pointer">${fechaTxt}</button>`;
+                }).join('');
+            }
+        }
+
+        updateChartLimites('dbo_ent', document.querySelector('.chart-btn.active'));
+
+    } catch (e) {
+        console.error("Error al renderizar los gráficos:", e);
+    }
+}
+
+window.mostrarMotivo = function(fecha, motivo) {
+    const elFecha = document.getElementById('modalFecha');
+    const elMotivo = document.getElementById('modalMotivo');
+    const elModal = document.getElementById('modalDesvio');
+    if (elFecha && elMotivo && elModal) {
+        elFecha.textContent = 'Desvío: ' + fecha;
+        elMotivo.textContent = motivo;
+        elModal.classList.remove('hidden');
+    }
+};
+
+window.updateChartLimites = function(param, btnElement) {
+    if (!rawData || rawData.length === 0) return;
+    
+    if (btnElement) {
+        document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active', 'bg-sky-500', 'text-white', 'border-sky-500'));
+        btnElement.classList.add('active', 'bg-sky-500', 'text-white', 'border-sky-500');
+    }
+
+    const fechas = rawData.map(r => getVal(r, 'fecha') || '');
+    let dataM1 = [], dataM2 = [], maxLimit = 0, title = '';
+
+    if (param === 'dbo_ent') {
+        dataM1 = rawData.map(r => getCleanNumber(getVal(r, 'dbo_ent_m1')));
+        dataM2 = rawData.map(r => getCleanNumber(getVal(r, 'dbo_ent_m2')));
+        maxLimit = 200; title = 'DBO Entrada';
+    } else if (param === 'dbo_sal') {
+        dataM1 = rawData.map(r => getCleanNumber(getVal(r, 'dbo_sal_m1')));
+        dataM2 = rawData.map(r => getCleanNumber(getVal(r, 'dbo_sal_m2')));
+        maxLimit = 30; title = 'DBO Salida';
+    } else if (param === 'dqo_sal') {
+        dataM1 = rawData.map(r => getCleanNumber(getVal(r, 'dqo_sal_m1')));
+        dataM2 = rawData.map(r => getCleanNumber(getVal(r, 'dqo_sal_m2')));
+        maxLimit = 125; title = 'DQO Salida';
+    } else if (param === 'mes_sal') {
+        dataM1 = rawData.map(r => getCleanNumber(getVal(r, 'mes_sal_m1')));
+        dataM2 = rawData.map(r => getCleanNumber(getVal(r, 'mes_sal_m2')));
+        maxLimit = 35; title = 'MES Salida';
+    }
+
+    const limitLine = Array(fechas.length).fill(maxLimit);
+
+    if (cLimites) cLimites.destroy();
+    const ctx = document.getElementById('chartLimitesLine');
+    if (!ctx) return;
+    
+    cLimites = new Chart(ctx.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: fechas,
+            datasets: [
+                { label: `${title} M1`, data: dataM1, borderColor: '#22d3ee', borderWidth: 2, tension: 0.2 },
+                { label: `${title} M2`, data: dataM2, borderColor: '#34d399', borderWidth: 2, tension: 0.2 },
+                { label: `Límite Legal (${maxLimit})`, data: limitLine, borderColor: '#ef4444', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { suggestedMax: maxLimit * 1.2 } } }
+    });
+};
