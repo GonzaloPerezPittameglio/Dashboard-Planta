@@ -3,7 +3,7 @@ let cEnergia = null;
 let cCaudales = null;
 let cLimites = null;
 
-// Enlace CSV publicado de la planilla Google Sheets
+// Enlace CSV publicado oficialmente de Google Sheets
 const urlGoogleSheet = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=0&single=true&output=csv";
 
 window.onload = () => {
@@ -15,6 +15,7 @@ function cargarDatosDesdeGoogle() {
     const dsLabel = document.getElementById('dataSourceLabel');
     if (dsLabel) dsLabel.textContent = "Conectando con Google Sheets...";
     
+    // Evitamos problemas de caché agregando parámetro de tiempo dinámico
     const conCache = urlGoogleSheet + (urlGoogleSheet.includes('?') ? '&' : '?') + '_t=' + Date.now();
 
     Papa.parse(conCache, {
@@ -158,6 +159,7 @@ function calcularYRenderizarResumen() {
     Chart.defaults.font.family = 'Inter';
 
     try {
+        // MÓDULO 1
         setTexto('m1_dbo_ent', getAvg(rawData, 'dbo_ent_m1'));
         setTexto('m1_dbo_sal', getAvg(rawData, 'dbo_sal_m1'));
         setTexto('m1_dqo_ent', getAvg(rawData, 'dqo_ent_m1'));
@@ -171,6 +173,7 @@ function calcularYRenderizarResumen() {
         const energiaTotalM1 = getSum(rawData, 'energia_m1_ts1') + getSum(rawData, 'energia_m1_ts2') + getSum(rawData, 'energia_m1_ts3');
         setTexto('m1_energia_val', energiaTotalM1.toLocaleString('es-AR'));
 
+        // MÓDULO 2
         setTexto('m2_dbo_ent', getAvg(rawData, 'dbo_ent_m2'));
         setTexto('m2_dbo_sal', getAvg(rawData, 'dbo_sal_m2'));
         setTexto('m2_dqo_ent', getAvg(rawData, 'dqo_ent_m2'));
@@ -184,11 +187,13 @@ function calcularYRenderizarResumen() {
         const energiaTotalM2 = getSum(rawData, 'energia_m2_ts1') + getSum(rawData, 'energia_m2_ts2') + getSum(rawData, 'energia_m2_ts3');
         setTexto('m2_energia_val', energiaTotalM2.toLocaleString('es-AR'));
 
+        // TOTALES ACUMULADOS
         setTexto('tot_energia', getSum(rawData, 'energia_total').toLocaleString('es-AR'));
         setTexto('tot_biosolidos', getSum(rawData, 'biosolidos_ton').toLocaleString('es-AR'));
         setTexto('tot_arenas', getSum(rawData, 'arenas_ton').toLocaleString('es-AR'));
         setTexto('tot_polimero', getSum(rawData, 'polimero_kg').toLocaleString('es-AR'));
 
+        // RRHH & MANTENIMIENTO
         setTexto('rrhh_total_lbl', getCleanNumber(getVal(lastRow, 'rrhh_total')));
         setTexto('rrhh_admin_lbl', getCleanNumber(getVal(lastRow, 'rrhh_admin')));
         setTexto('rrhh_operativo_lbl', getCleanNumber(getVal(lastRow, 'rrhh_operativo')));
@@ -199,6 +204,7 @@ function calcularYRenderizarResumen() {
         setTexto('mant_corr', getSum(rawData, 'mant_correctivos'));
         setTexto('mant_act', getSum(rawData, 'mant_actividades'));
 
+        // GRÁFICO DOUGHNUT ENERGÍA
         if(cEnergia) cEnergia.destroy();
         const ctxEnergia = document.getElementById('chartEnergiaSectores');
         if (ctxEnergia) {
@@ -223,14 +229,18 @@ function calcularYRenderizarResumen() {
             });
         }
 
+        // REMOCIÓN Y DESVÍOS PESTAÑA PROCESO
         setTexto('proc_rem_dbo_m1', calcRemocion(getAvg(rawData, 'dbo_ent_m1'), getAvg(rawData, 'dbo_sal_m1')));
         setTexto('proc_rem_dqo_m1', calcRemocion(getAvg(rawData, 'dqo_ent_m1'), getAvg(rawData, 'dqo_sal_m1')));
         setTexto('proc_rem_mes_m1', calcRemocion(getAvg(rawData, 'mes_ent_m1'), getAvg(rawData, 'mes_sal_m1')));
+        setTexto('proc_norma_m1', getSum(rawData, 'fuera_norma_m1'));
         
         setTexto('proc_rem_dbo_m2', calcRemocion(getAvg(rawData, 'dbo_ent_m2'), getAvg(rawData, 'dbo_sal_m2')));
         setTexto('proc_rem_dqo_m2', calcRemocion(getAvg(rawData, 'dqo_ent_m2'), getAvg(rawData, 'dqo_sal_m2')));
         setTexto('proc_rem_mes_m2', calcRemocion(getAvg(rawData, 'mes_ent_m2'), getAvg(rawData, 'mes_sal_m2')));
+        setTexto('proc_norma_m2', getSum(rawData, 'fuera_norma_m2'));
 
+        // BIOSÓLIDOS ACUMULADOS
         setTexto('bio_vol_m1', getSum(rawData, 'biosolidos_m1').toLocaleString('es-AR'));
         setTexto('bio_ms_m1', getAvg(rawData, 'porc_ms_m1'));
         setTexto('bio_ton_m1', getSum(rawData, 'ton_ms_m1').toLocaleString('es-AR'));
@@ -239,6 +249,7 @@ function calcularYRenderizarResumen() {
         setTexto('bio_ms_m2', getAvg(rawData, 'porc_ms_m2'));
         setTexto('bio_ton_m2', getSum(rawData, 'ton_ms_m2').toLocaleString('es-AR'));
 
+        // GRÁFICO LÍNEA DE CAUDALES
         const fechas = rawData.map(r => getVal(r, 'fecha') || ''); 
         const caudalesM1 = rawData.map(r => getCleanNumber(getVal(r, 'caudal_trat_m1')));
         const caudalesM2 = rawData.map(r => getCleanNumber(getVal(r, 'caudal_trat_m2')));
@@ -263,6 +274,36 @@ function calcularYRenderizarResumen() {
             });
         }
 
+        // SEMÁFORO Y BOTONES INTERACTIVOS DE DESVÍO
+        const diasFuera = rawData.filter(r => {
+            const fn1 = getCleanNumber(getVal(r, 'fuera_norma_m1'));
+            const fn2 = getCleanNumber(getVal(r, 'fuera_norma_m2'));
+            const motivo = getVal(r, 'motivo_desvio');
+            const tieneMotivo = motivo && String(motivo).trim() !== '';
+            return fn1 > 0 || fn2 > 0 || tieneMotivo;
+        });
+        
+        const diasRestantes = 37 - diasFuera.length;
+        const labelRestantes = document.getElementById('dias_restantes_norma');
+        if (labelRestantes) {
+            labelRestantes.textContent = diasRestantes;
+            if(diasRestantes <= 10) labelRestantes.classList.add('text-red-500');
+            else labelRestantes.classList.remove('text-red-500');
+        }
+
+        const divFechas = document.getElementById('fechas_fuera_norma');
+        if (divFechas) {
+            if (diasFuera.length === 0) {
+                divFechas.innerHTML = '<span class="bg-green-900/30 text-green-400 px-3 py-1 rounded border border-green-800 text-sm">Planta 100% en norma.</span>';
+            } else {
+                divFechas.innerHTML = diasFuera.map(d => {
+                    const fechaTxt = getVal(d, 'fecha') || 'Sin fecha';
+                    const motivoTxt = String(getVal(d, 'motivo_desvio') || 'Sin motivo registrado').replace(/'/g, "\\'"); 
+                    return `<button onclick="mostrarMotivo('${fechaTxt}', '${motivoTxt}')" class="bg-red-900/40 hover:bg-red-800/80 text-red-300 px-3 py-1.5 rounded-lg border border-red-800 text-sm font-medium shadow-sm transition cursor-pointer">${fechaTxt}</button>`;
+                }).join('');
+            }
+        }
+
         const firstActiveBtn = document.querySelector('.chart-btn.active');
         updateChartLimites('dbo_ent', firstActiveBtn);
 
@@ -270,6 +311,17 @@ function calcularYRenderizarResumen() {
         console.error("Error al renderizar el resumen:", e);
     }
 }
+
+window.mostrarMotivo = function(fecha, motivo) {
+    const elFecha = document.getElementById('modalFecha');
+    const elMotivo = document.getElementById('modalMotivo');
+    const elModal = document.getElementById('modalDesvio');
+    if (elFecha && elMotivo && elModal) {
+        elFecha.textContent = 'Desvío: ' + fecha;
+        elMotivo.textContent = motivo;
+        elModal.classList.remove('hidden');
+    }
+};
 
 window.updateChartLimites = function(param, btnElement) {
     if (!rawData || rawData.length === 0) return;
