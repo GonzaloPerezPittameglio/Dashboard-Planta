@@ -3,8 +3,9 @@ let cEnergia = null;
 let cCaudales = null;
 let cLimites = null;
 
-// LINK DE TU GOOGLE SHEETS YA TRANSFORMADO A FORMATO CSV
-const urlGoogleSheet = "https://docs.google.com/spreadsheets/d/17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA/export?format=csv&gid=0";
+// ID directo de tu Google Sheets (Integrado y blindado)
+const sheetId = "17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA";
+const urlGoogleSheet = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&gid=0`;
 
 window.onload = () => {
     lucide.createIcons();
@@ -15,7 +16,10 @@ function cargarDatosDesdeGoogle() {
     const dsLabel = document.getElementById('dataSourceLabel');
     if (dsLabel) dsLabel.textContent = "Conectando con Google Sheets...";
     
-    Papa.parse(urlGoogleSheet, {
+    // Forzamos evitar caché del navegador agregando un timestamp al enlace
+    const cacheBusterUrl = urlGoogleSheet + "&_t=" + Date.now();
+
+    Papa.parse(cacheBusterUrl, {
         download: true,
         header: true, 
         dynamicTyping: true, 
@@ -26,11 +30,12 @@ function cargarDatosDesdeGoogle() {
                 if (dsLabel) dsLabel.textContent = "Datos en vivo (Google Sheets)";
                 calcularYRenderizarResumen();
             } else {
-                if (dsLabel) dsLabel.textContent = "Error: El Google Sheets está vacío o es privado";
+                if (dsLabel) dsLabel.textContent = "Error: El Google Sheets está vacío o no es público";
             }
         },
-        error: function() {
-            if (dsLabel) dsLabel.textContent = "Error de conexión. Revisá que el Excel esté público.";
+        error: function(err) {
+            console.error(err);
+            if (dsLabel) dsLabel.textContent = "Error de conexión. Revisá permisos del Sheets.";
         }
     });
 }
@@ -49,20 +54,38 @@ function openTab(tabId, event) {
     event.currentTarget.classList.add('border-cyan-500', 'text-cyan-400');
 }
 
+// HELPER ROBUS TO: Convierte comas "21,4", puntos "21.4" o espacios a números válidos sin dar NaN
+function getCleanNumber(val) {
+    if (val === null || val === undefined || val === '') return 0;
+    if (typeof val === 'number') return isNaN(val) ? 0 : val;
+    let clean = String(val).replace(',', '.').replace(/[^\d.-]/g, '').trim();
+    let num = parseFloat(clean);
+    return isNaN(num) ? 0 : num;
+}
+
+// HELPER BUSCADOR: Busca columnas sin importar si están en Mayúsculas o Minúsculas en Google Sheets
+function getVal(row, colName) {
+    if (!row) return undefined;
+    if (row[colName] !== undefined) return row[colName];
+    const target = colName.toLowerCase().trim();
+    const key = Object.keys(row).find(k => k.toLowerCase().trim() === target);
+    return key ? row[key] : undefined;
+}
+
 function getSum(arr, col) { 
-    return arr.reduce((acc, val) => acc + (Number(val[col]) || 0), 0); 
+    return arr.reduce((acc, row) => acc + getCleanNumber(getVal(row, col)), 0); 
 }
 
 function getAvg(arr, col) { 
-    const validRows = arr.filter(row => Number(row[col]) > 0);
+    const validRows = arr.filter(row => getCleanNumber(getVal(row, col)) > 0);
     if (validRows.length === 0) return 0;
-    const sum = validRows.reduce((acc, val) => acc + Number(val[col]), 0);
+    const sum = validRows.reduce((acc, row) => acc + getCleanNumber(getVal(row, col)), 0);
     return (sum / validRows.length).toFixed(1); 
 }
 
 function calcRemocion(ent, sal) {
-    let entrada = parseFloat(ent);
-    let salida = parseFloat(sal);
+    let entrada = getCleanNumber(ent);
+    let salida = getCleanNumber(sal);
     if (entrada > 0) return (((entrada - salida) / entrada) * 100).toFixed(1);
     return 0;
 }
@@ -87,8 +110,8 @@ function calcularYRenderizarResumen() {
         setTexto('m1_mes_ent', getAvg(rawData, 'mes_ent_m1'));
         setTexto('m1_mes_sal', getAvg(rawData, 'mes_sal_m1'));
         
-        setTexto('m1_caudal_dis', lastRow['caudal_dis_m1'] || 0.3);
-        setTexto('m1_caudal_trat', lastRow['caudal_trat_m1'] || 0);
+        setTexto('m1_caudal_dis', getCleanNumber(getVal(lastRow, 'caudal_dis_m1')) || 0.3);
+        setTexto('m1_caudal_trat', getCleanNumber(getVal(lastRow, 'caudal_trat_m1')) || 0);
         
         const energiaTotalM1 = getSum(rawData, 'energia_m1_ts1') + getSum(rawData, 'energia_m1_ts2') + getSum(rawData, 'energia_m1_ts3');
         setTexto('m1_energia_val', energiaTotalM1.toLocaleString('es-AR'));
@@ -100,8 +123,8 @@ function calcularYRenderizarResumen() {
         setTexto('m2_mes_ent', getAvg(rawData, 'mes_ent_m2'));
         setTexto('m2_mes_sal', getAvg(rawData, 'mes_sal_m2'));
 
-        setTexto('m2_caudal_dis', lastRow['caudal_dis_m2'] || 0.9);
-        setTexto('m2_caudal_trat', lastRow['caudal_trat_m2'] || 0);
+        setTexto('m2_caudal_dis', getCleanNumber(getVal(lastRow, 'caudal_dis_m2')) || 0.9);
+        setTexto('m2_caudal_trat', getCleanNumber(getVal(lastRow, 'caudal_trat_m2')) || 0);
         
         const energiaTotalM2 = getSum(rawData, 'energia_m2_ts1') + getSum(rawData, 'energia_m2_ts2') + getSum(rawData, 'energia_m2_ts3');
         setTexto('m2_energia_val', energiaTotalM2.toLocaleString('es-AR'));
@@ -113,9 +136,9 @@ function calcularYRenderizarResumen() {
         setTexto('tot_polimero', getSum(rawData, 'polimero_kg').toLocaleString('es-AR'));
 
         // RRHH
-        setTexto('rrhh_total_lbl', lastRow['rrhh_total'] || 0);
-        setTexto('rrhh_admin_lbl', lastRow['rrhh_admin'] || 0);
-        setTexto('rrhh_operativo_lbl', lastRow['rrhh_operativo'] || 0);
+        setTexto('rrhh_total_lbl', getCleanNumber(getVal(lastRow, 'rrhh_total')));
+        setTexto('rrhh_admin_lbl', getCleanNumber(getVal(lastRow, 'rrhh_admin')));
+        setTexto('rrhh_operativo_lbl', getCleanNumber(getVal(lastRow, 'rrhh_operativo')));
         setTexto('hs_extra_lbl', getSum(rawData, 'hs_extra').toLocaleString('es-AR'));
         setTexto('hs_normales_lbl', getSum(rawData, 'hs_normales').toLocaleString('es-AR'));
 
@@ -166,9 +189,9 @@ function calcularYRenderizarResumen() {
         setTexto('bio_ton_m2', getSum(rawData, 'ton_ms_m2').toLocaleString('es-AR'));
 
         // Gráfico de Caudales
-        const fechas = rawData.map(r => r.fecha || ''); 
-        const caudalesM1 = rawData.map(r => r.caudal_trat_m1 || 0);
-        const caudalesM2 = rawData.map(r => r.caudal_trat_m2 || 0);
+        const fechas = rawData.map(r => getVal(r, 'fecha') || ''); 
+        const caudalesM1 = rawData.map(r => getCleanNumber(getVal(r, 'caudal_trat_m1')));
+        const caudalesM2 = rawData.map(r => getCleanNumber(getVal(r, 'caudal_trat_m2')));
         const disenoM1 = Array(fechas.length).fill(0.3);
         const disenoM2 = Array(fechas.length).fill(0.9);
 
@@ -181,71 +204,4 @@ function calcularYRenderizarResumen() {
                     { label: 'Caudal Tratado M1', data: caudalesM1, borderColor: '#22d3ee', backgroundColor: 'rgba(34, 211, 238, 0.1)', fill: true, tension: 0.4 },
                     { label: 'Diseño M1 (0.3)', data: disenoM1, borderColor: '#0284c7', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false },
                     { label: 'Caudal Tratado M2', data: caudalesM2, borderColor: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.1)', fill: true, tension: 0.4 },
-                    { label: 'Diseño M2 (0.9)', data: disenoM2, borderColor: '#059669', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false }
-                ]
-            },
-            options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMax: 1.2 } } }
-        });
-
-        // Semáforo con filtrado estricto
-        const diasFuera = rawData.filter(r => Number(r.fuera_norma_m1) === 1 || Number(r.fuera_norma_m2) === 1);
-        const diasRestantes = 37 - diasFuera.length;
-        
-        const labelRestantes = document.getElementById('dias_restantes_norma');
-        if (labelRestantes) {
-            labelRestantes.textContent = diasRestantes;
-            if(diasRestantes <= 10) labelRestantes.classList.add('text-red-500');
-            else labelRestantes.classList.remove('text-red-500');
-        }
-
-        const divFechas = document.getElementById('fechas_fuera_norma');
-        if (divFechas) {
-            if (diasFuera.length === 0) {
-                divFechas.innerHTML = '<span class="bg-green-900/30 text-green-400 px-3 py-1 rounded border border-green-800 text-sm">Planta 100% en norma.</span>';
-            } else {
-                divFechas.innerHTML = diasFuera.map(d => {
-                    const fechaTxt = d.fecha || 'Sin fecha';
-                    const motivoTxt = (d.motivo_desvio || 'Sin motivo registrado').replace(/'/g, "\\'"); 
-                    return `<button onclick="mostrarMotivo('${fechaTxt}', '${motivoTxt}')" class="bg-red-900/40 hover:bg-red-800/80 text-red-300 px-3 py-1.5 rounded-lg border border-red-800 text-sm font-medium shadow-sm transition cursor-pointer">${fechaTxt}</button>`;
-                }).join('');
-            }
-        }
-
-        updateChartLimites('dbo_ent', document.querySelector('.chart-btn.active'));
-
-    } catch (e) {
-        console.error("Error al renderizar los gráficos:", e);
-    }
-}
-
-window.mostrarMotivo = function(fecha, motivo) {
-    const elFecha = document.getElementById('modalFecha');
-    const elMotivo = document.getElementById('modalMotivo');
-    const elModal = document.getElementById('modalDesvio');
-    if (elFecha && elMotivo && elModal) {
-        elFecha.textContent = 'Desvío: ' + fecha;
-        elMotivo.textContent = motivo;
-        elModal.classList.remove('hidden');
-    }
-};
-
-window.updateChartLimites = function(param, btnElement) {
-    if (!rawData || rawData.length === 0) return;
-    
-    if (btnElement) {
-        document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active', 'bg-sky-500', 'text-white', 'border-sky-500'));
-        btnElement.classList.add('active', 'bg-sky-500', 'text-white', 'border-sky-500');
-    }
-
-    const fechas = rawData.map(r => r.fecha || '');
-    let dataM1 = [], dataM2 = [], maxLimit = 0, title = '';
-
-    if (param === 'dbo_ent') {
-        dataM1 = rawData.map(r => r.dbo_ent_m1 || 0); dataM2 = rawData.map(r => r.dbo_ent_m2 || 0);
-        maxLimit = 200; title = 'DBO Entrada';
-    } else if (param === 'dbo_sal') {
-        dataM1 = rawData.map(r => r.dbo_sal_m1 || 0); dataM2 = rawData.map(r => r.dbo_sal_m2 || 0);
-        maxLimit = 30; title = 'DBO Salida';
-    } else if (param === 'dqo_sal') {
-        dataM1 = rawData.map(r => r.dqo_sal_m1 || 0); dataM2 = rawData.map(r => r.dqo_sal_m2 || 0);
-        maxLimit = 125; title = '
+                    { label: 'Diseño M2 (0.9)', data: disenoM2, borderColor: '#059669', borderWidth: 2, borderDash: [5, 5], point
