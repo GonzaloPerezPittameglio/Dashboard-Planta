@@ -13,32 +13,32 @@ let cMantTortas = null;
 let cCriticidad = null;
 let cSectores = null;
 
-// Catálogo oficial con múltiples formas de reconocimiento para que no falle nunca
+// Catálogo oficial de los 24 sectores de la planta
 const SECTORES_MAXIMO = [
-    { code: '0099', label: 'Báscula (0099)', keys: ['0099', 'báscula', 'bascula'] },
-    { code: '0100', label: 'Pretratamiento M1 (0100)', keys: ['0100', 'pretratamiento m1'] },
-    { code: '0101', label: 'Tratamiento Biológico M1 (0101)', keys: ['0101', 'tratamiento biologico m1', 'biológico m1'] },
-    { code: '0102', label: 'Sedimentación Secundaria M1 (0102)', keys: ['0102', 'sedimentacion secundaria m1'] },
-    { code: '0103', label: 'Salida de Liquido M1 (0103)', keys: ['0103', 'salida de liquido m1', 'liquido m1'] },
-    { code: '0104', label: 'Deshidratación de Lodos M1 (0104)', keys: ['0104', 'deshidratacion de lodos m1'] },
-    { code: '0105', label: 'Sistema de Provisión de Agua M1 (0105)', keys: ['0105', 'sistema de provision de agua m1'] },
-    { code: '0106', label: 'Sistema Eléctrico M1 (0106)', keys: ['0106', 'sistema electrico m1', 'electrico m1'] },
-    { code: '0107', label: 'Depósito (0107)', keys: ['0107', 'deposito'] },
-    { code: '0108', label: 'Laboratorio (0108)', keys: ['0108', 'laboratorio'] },
-    { code: '0109', label: 'Administración (0109)', keys: ['0109', 'administracion'] },
-    { code: '0110', label: 'Taller de Planta (0110)', keys: ['0110', 'taller de planta'] },
-    { code: '0111', label: 'Pañol (0111)', keys: ['0111', 'panol'] },
-    { code: '0200', label: 'Pretratamiento M2 (0200)', keys: ['0200', 'pretratamiento m2'] },
-    { code: '0201', label: 'Sedimentación Primaria (0201)', keys: ['0201', 'sedimentacion primaria'] },
-    { code: '020105', label: 'Agua de Servicio Pretratamiento (020105)', keys: ['020105', 'agua de servicio pretratamiento'] },
-    { code: '0202', label: 'Tratamiento Biológico (0202)', keys: ['0202', 'tratamiento biologico', 'biologico'] },
-    { code: '0203', label: 'Sedimentación Secundaria (0203)', keys: ['0203', 'sedimentacion secundaria'] },
-    { code: '020305', label: 'Agua de Servicio (020305)', keys: ['020305', 'agua de servicio'] },
-    { code: '0204', label: 'Espesamiento de Lodos (0204)', keys: ['0204', 'espesamiento de lodos'] },
-    { code: '0205', label: 'Flotación de Lodos (0205)', keys: ['0205', 'flotacion de lodos'] },
-    { code: '0206', label: 'Digestión y Producción de Gas (0206)', keys: ['0206', 'digestion y produccion de gas'] },
-    { code: '0207', label: 'Almacenamiento de Lodos (0207)', keys: ['0207', 'almacenamiento de lodos'] },
-    { code: '0208', label: 'Deshidratación (0208)', keys: ['0208', 'deshidratacion'] }
+    { code: '0099', name: 'Báscula', label: 'Báscula (0099)' },
+    { code: '0100', name: 'Pretratamiento M1', label: 'Pretratamiento M1 (0100)' },
+    { code: '0101', name: 'Tratamiento Biológico M1', label: 'Tratamiento Biológico M1 (0101)' },
+    { code: '0102', name: 'Sedimentación Secundaria M1', label: 'Sedimentación Secundaria M1 (0102)' },
+    { code: '0103', name: 'Salida de Liquido M1', label: 'Salida de Liquido M1 (0103)' },
+    { code: '0104', name: 'Deshidratación de Lodos M1', label: 'Deshidratación de Lodos M1 (0104)' },
+    { code: '0105', name: 'Sistema de Provisión de Agua M1', label: 'Sistema de Provisión de Agua M1 (0105)' },
+    { code: '0106', name: 'Sistema Eléctrico M1', label: 'Sistema Eléctrico M1 (0106)' },
+    { code: '0107', name: 'Depósito', label: 'Depósito (0107)' },
+    { code: '0108', name: 'Laboratorio', label: 'Laboratorio (0108)' },
+    { code: '0109', name: 'Administración', label: 'Administración (0109)' },
+    { code: '0110', name: 'Taller de Planta', label: 'Taller de Planta (0110)' },
+    { code: '0111', name: 'Pañol', label: 'Pañol (0111)' },
+    { code: '0200', name: 'Pretratamiento M2', label: 'Pretratamiento M2 (0200)' },
+    { code: '0201', name: 'Sedimentación Primaria', label: 'Sedimentación Primaria (0201)' },
+    { code: '020105', name: 'Agua de Servicio Pretratamiento', label: 'Agua de Servicio Pretratamiento (020105)' },
+    { code: '0202', name: 'Tratamiento Biológico', label: 'Tratamiento Biológico (0202)' },
+    { code: '0203', name: 'Sedimentación Secundaria', label: 'Sedimentación Secundaria (0203)' },
+    { code: '020305', name: 'Agua de Servicio', label: 'Agua de Servicio (020305)' },
+    { code: '0204', name: 'Espesamiento de Lodos', label: 'Espesamiento de Lodos (0204)' },
+    { code: '0205', name: 'Flotación de Lodos', label: 'Flotación de Lodos (0205)' },
+    { code: '0206', name: 'Digestión y Producción de Gas', label: 'Digestión y Producción de Gas (0206)' },
+    { code: '0207', name: 'Almacenamiento de Lodos', label: 'Almacenamiento de Lodos (0207)' },
+    { code: '0208', name: 'Deshidratación', label: 'Deshidratación (0208)' }
 ];
 
 const urlPrimary = "https://docs.google.com/spreadsheets/d/17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA/gviz/tq?tqx=out:csv";
@@ -152,8 +152,33 @@ function setTexto(id, valor) {
     if (el) el.textContent = valor;
 }
 
-function normalizar(str) {
-    return String(str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+function normalizarTexto(str) {
+    return String(str || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+}
+
+function identificarSectorMaximo(texto) {
+    if (!texto) return null;
+    const norm = normalizarTexto(texto);
+
+    // 1. Buscar por código exacto (ej: 0100, 0208)
+    const porCodigo = [...SECTORES_MAXIMO].sort((a, b) => b.code.length - a.code.length);
+    for (const sec of porCodigo) {
+        const regex = new RegExp(`(^|[^0-9])${sec.code}([^0-9]|$)`);
+        if (regex.test(norm)) return sec;
+    }
+
+    // 2. Buscar por nombre del sector
+    const porNombre = [...SECTORES_MAXIMO].sort((a, b) => b.name.length - a.name.length);
+    for (const sec of porNombre) {
+        const secNorm = normalizarTexto(sec.name);
+        if (norm.includes(secNorm)) return sec;
+    }
+
+    return null;
 }
 
 function getMonthYear(fechaRaw) {
@@ -292,20 +317,22 @@ function calcularYRenderizarResumen() {
         setTexto('kpi_horas_prev', getSum(rawData, 'horas_prev'));
         setTexto('kpi_horas_corr', getSum(rawData, 'horas_corr'));
 
-        // Búsqueda inteligente y tolerante de las columnas de los 24 sectores en el CSV
+        // Lectura de Sectores desde la columna 'sectores_intervenidos' (Leyendo texto y sumando ocurrencias o números)
         const conteoSectores = {};
-        const availableCols = rawData.length > 0 ? Object.keys(rawData[0]) : [];
+        SECTORES_MAXIMO.forEach(s => { conteoSectores[s.code] = 0; });
 
-        SECTORES_MAXIMO.forEach(sec => {
-            let totalSec = 0;
-            availableCols.forEach(col => {
-                const colNorm = normalizar(col);
-                const matchFound = sec.keys.some(k => colNorm.includes(normalizar(k)));
-                if (matchFound) {
-                    totalSec += getSum(rawData, col);
-                }
-            });
-            conteoSectores[sec.code] = totalSec;
+        rawData.forEach(r => {
+            let secStr = getVal(r, 'sectores_intervenidos');
+            if (secStr !== undefined && secStr !== null && secStr !== '') {
+                // Si cargaste un número directo en la celda o texto separado por comas
+                let secArr = String(secStr).split(',').map(s => s.trim()).filter(s => s !== '');
+                secArr.forEach(item => {
+                    const match = identificarSectorMaximo(item);
+                    if (match) {
+                        conteoSectores[match.code] = (conteoSectores[match.code] || 0) + 1;
+                    }
+                });
+            }
         });
 
         if(cSectores) cSectores.destroy();
