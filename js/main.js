@@ -169,6 +169,35 @@ function setTexto(id, valor) {
     if (el) el.textContent = valor;
 }
 
+function normalizarTexto(str) {
+    return String(str || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+}
+
+function identificarSectorMaximo(texto) {
+    if (!texto) return null;
+    const norm = normalizarTexto(texto);
+
+    // 1. Buscar primero por código exacto (ej. 0100)
+    const porCodigo = [...SECTORES_MAXIMO].sort((a, b) => b.code.length - a.code.length);
+    for (const sec of porCodigo) {
+        const regex = new RegExp(`(^|[^0-9])${sec.code}([^0-9]|$)`);
+        if (regex.test(norm)) return sec;
+    }
+
+    // 2. Buscar por nombre (ej. Pretratamiento M1)
+    const porNombre = [...SECTORES_MAXIMO].sort((a, b) => b.name.length - a.name.length);
+    for (const sec of porNombre) {
+        const secNorm = normalizarTexto(sec.name);
+        if (norm.includes(secNorm)) return sec;
+    }
+
+    return null;
+}
+
 function getMonthYear(fechaRaw) {
     if (!fechaRaw) return 'General';
     const str = String(fechaRaw).trim();
@@ -508,14 +537,22 @@ function calcularYRenderizarResumen() {
         }
 
         // ==========================================
-        // LECTURA 100% INDEPENDIENTE DE MANTENIMIENTO
+        // LECTURA AUTOMÁTICA DE SECTORES POR TEXTO
         // ==========================================
-
-        // A. Lectura de Sectores (Solo desde las 24 columnas numéricas)
         const conteoSectores = {};
-        SECTORES_MAXIMO.forEach(s => { 
-            // Sumamos el valor numérico cargado en la columna sec_0100 (o 0100 si lo nombraste así)
-            conteoSectores[s.code] = getSum(rawData, `sec_${s.code}`) + getSum(rawData, s.code); 
+        SECTORES_MAXIMO.forEach(s => { conteoSectores[s.code] = 0; });
+
+        rawData.forEach(r => {
+            let secStr = getVal(r, 'sectores_intervenidos');
+            if (secStr && typeof secStr === 'string') {
+                let secArr = secStr.split(',').map(s => s.trim()).filter(s => s !== '');
+                secArr.forEach(item => {
+                    const match = identificarSectorMaximo(item);
+                    if (match) {
+                        conteoSectores[match.code] = (conteoSectores[match.code] || 0) + 1;
+                    }
+                });
+            }
         });
 
         if(cSectores) cSectores.destroy();
@@ -567,7 +604,7 @@ function calcularYRenderizarResumen() {
             });
         }
 
-        // B. Lectura Top 10 Equipos (Columna: equipos_intervenidos -> Formato "Equipo (Ubicación)")
+        // B. Lectura Top 10 Equipos
         let equiposMap = {};
         rawData.forEach(r => {
             let eqStr = getVal(r, 'equipos_intervenidos');
