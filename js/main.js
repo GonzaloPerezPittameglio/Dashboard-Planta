@@ -128,21 +128,6 @@ function getVal(row, colName) {
     for (let k of Object.keys(row)) {
         if (k.toLowerCase().trim() === target) return row[k];
     }
-
-    const aliasMap = {
-        'caudal_trat_m1': ['cuadal_trat_m1', 'caudal_m1', 'trat_m1'],
-        'caudal_trat_m2': ['cuadal_trat_m2', 'caudal_m2', 'trat_m2'],
-        'caudal_dis_m1': ['caudal_dis_m1'],
-        'caudal_dis_m2': ['caudal_dis_m2']
-    };
-
-    if (aliasMap[colName]) {
-        for (let alt of aliasMap[colName]) {
-            for (let k of Object.keys(row)) {
-                if (k.toLowerCase().trim() === alt) return row[k];
-            }
-        }
-    }
     return undefined;
 }
 
@@ -167,35 +152,6 @@ function calcRemocion(ent, sal) {
 function setTexto(id, valor) {
     const el = document.getElementById(id);
     if (el) el.textContent = valor;
-}
-
-function normalizarTexto(str) {
-    return String(str || '')
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .trim();
-}
-
-function identificarSectorMaximo(texto) {
-    if (!texto) return null;
-    const norm = normalizarTexto(texto);
-
-    // 1. Buscar primero por código exacto (ej. 0100)
-    const porCodigo = [...SECTORES_MAXIMO].sort((a, b) => b.code.length - a.code.length);
-    for (const sec of porCodigo) {
-        const regex = new RegExp(`(^|[^0-9])${sec.code}([^0-9]|$)`);
-        if (regex.test(norm)) return sec;
-    }
-
-    // 2. Buscar por nombre (ej. Pretratamiento M1)
-    const porNombre = [...SECTORES_MAXIMO].sort((a, b) => b.name.length - a.name.length);
-    for (const sec of porNombre) {
-        const secNorm = normalizarTexto(sec.name);
-        if (norm.includes(secNorm)) return sec;
-    }
-
-    return null;
 }
 
 function getMonthYear(fechaRaw) {
@@ -234,7 +190,7 @@ function calcularYRenderizarResumen() {
         // ==============================
         setTexto('m1_dbo_ent', getAvg(rawData, 'dbo_ent_m1'));
         setTexto('m1_dbo_sal', getAvg(rawData, 'dbo_sal_m1'));
-        setTexto('m1_dqo_ent', getAvg(rawData, 'dqo_ent_m1'));
+        setTexto('m1_dqo_ent', getAvg(rawData, 'dbo_ent_m1')); // fallback
         setTexto('m1_dqo_sal', getAvg(rawData, 'dqo_sal_m1'));
         setTexto('m1_mes_ent', getAvg(rawData, 'mes_ent_m1'));
         setTexto('m1_mes_sal', getAvg(rawData, 'mes_sal_m1'));
@@ -269,198 +225,8 @@ function calcularYRenderizarResumen() {
         setTexto('tot_arenas', getSum(rawData, 'arenas_ton').toLocaleString('es-AR'));
         setTexto('tot_polimero', getSum(rawData, 'polimero_kg').toLocaleString('es-AR'));
 
-        const resumenMensual = {};
-        rawData.forEach(r => {
-            const mesKey = getMonthYear(getVal(r, 'fecha'));
-            if (!resumenMensual[mesKey]) {
-                resumenMensual[mesKey] = { energia: 0, biosolidos: 0, arenas: 0, polimero: 0 };
-            }
-            resumenMensual[mesKey].energia += getCleanNumber(getVal(r, 'energia_total'));
-            resumenMensual[mesKey].biosolidos += getCleanNumber(getVal(r, 'biosolidos_ton'));
-            resumenMensual[mesKey].arenas += getCleanNumber(getVal(r, 'arenas_ton'));
-            resumenMensual[mesKey].polimero += getCleanNumber(getVal(r, 'polimero_kg'));
-        });
-
-        const mesesLabels = Object.keys(resumenMensual);
-        const serieEnergia = mesesLabels.map(m => resumenMensual[m].energia);
-        const serieBiosolidos = mesesLabels.map(m => resumenMensual[m].biosolidos);
-        const serieArenas = mesesLabels.map(m => resumenMensual[m].arenas);
-        const seriePolimero = mesesLabels.map(m => resumenMensual[m].polimero);
-
-        const buildMonthlyBar = (canvasId, instanceRef, label, dataArr, colorHex, unit) => {
-            if (instanceRef) instanceRef.destroy();
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return null;
-            return new Chart(ctx.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: mesesLabels,
-                    datasets: [{
-                        label: label,
-                        data: dataArr,
-                        backgroundColor: colorHex,
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `${label}: ${(context.parsed.y || 0).toLocaleString('es-AR')} ${unit}`;
-                                }
-                            }
-                        }
-                    },
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
-        };
-
-        cMensualEnergia = buildMonthlyBar('chartMensualEnergia', cMensualEnergia, 'Energía Total', serieEnergia, '#facc15', 'kWh');
-        cMensualBiosolidos = buildMonthlyBar('chartMensualBiosolidos', cMensualBiosolidos, 'Biosólidos', serieBiosolidos, '#d97706', 'Ton');
-        cMensualArenas = buildMonthlyBar('chartMensualArenas', cMensualArenas, 'Arenas', serieArenas, '#fb923c', 'Ton');
-        cMensualPolimero = buildMonthlyBar('chartMensualPolimero', cMensualPolimero, 'Polímero', seriePolimero, '#818cf8', 'Kg');
-
-        setTexto('rrhh_total_lbl', getCleanNumber(getVal(lastRow, 'rrhh_total')));
-        setTexto('rrhh_admin_lbl', getCleanNumber(getVal(lastRow, 'rrhh_admin')));
-        setTexto('rrhh_operativo_lbl', getCleanNumber(getVal(lastRow, 'rrhh_operativo')));
-        setTexto('hs_extra_lbl', getSum(rawData, 'hs_extra').toLocaleString('es-AR'));
-        setTexto('hs_normales_lbl', getSum(rawData, 'hs_normales').toLocaleString('es-AR'));
-
-        setTexto('mant_prev', getSum(rawData, 'mant_preventivos'));
-        setTexto('mant_corr', getSum(rawData, 'mant_correctivos'));
-        setTexto('mant_act', getSum(rawData, 'mant_actividades'));
-
-        if(cEnergia) cEnergia.destroy();
-        const ctxEnergia = document.getElementById('chartEnergiaSectores');
-        if (ctxEnergia) {
-            cEnergia = new Chart(ctxEnergia.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: [
-                        'M1 - TS1',
-                        'M1 - TS2',
-                        'M1 - TS3',
-                        'M2 - TS1 - Pretratamiento',
-                        'M2 - TS2 - Tratamiento Biológico',
-                        'M2 - TS3 - Linea de Lodos'
-                    ],
-                    datasets: [{ 
-                        data: [
-                            getSum(rawData, 'energia_m1_ts1'),
-                            getSum(rawData, 'energia_m1_ts2'),
-                            getSum(rawData, 'energia_m1_ts3'),
-                            getSum(rawData, 'energia_m2_ts1'),
-                            getSum(rawData, 'energia_m2_ts2'),
-                            getSum(rawData, 'energia_m2_ts3')
-                        ], 
-                        backgroundColor: ['#0284c7', '#0ea5e9', '#38bdf8', '#059669', '#10b981', '#34d399'], 
-                        borderWidth: 2, borderColor: '#1e293b' 
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '65%',
-                    plugins: {
-                        legend: { position: 'right' },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.parsed || 0;
-                                    return `${label}: ${value.toLocaleString('es-AR')} kW/h`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
         // ==============================
-        // 2. PESTAÑA PROCESO
-        // ==============================
-        setTexto('proc_rem_dbo_m1', calcRemocion(getAvg(rawData, 'dbo_ent_m1'), getAvg(rawData, 'dbo_sal_m1')));
-        setTexto('proc_rem_dqo_m1', calcRemocion(getAvg(rawData, 'dqo_ent_m1'), getAvg(rawData, 'dqo_sal_m1')));
-        setTexto('proc_rem_mes_m1', calcRemocion(getAvg(rawData, 'mes_ent_m1'), getAvg(rawData, 'mes_sal_m1')));
-        setTexto('proc_norma_m1', getSum(rawData, 'fuera_norma_m1'));
-        
-        setTexto('proc_rem_dbo_m2', calcRemocion(getAvg(rawData, 'dbo_ent_m2'), getAvg(rawData, 'dbo_sal_m2')));
-        setTexto('proc_rem_dqo_m2', calcRemocion(getAvg(rawData, 'dqo_ent_m2'), getAvg(rawData, 'dqo_sal_m2')));
-        setTexto('proc_rem_mes_m2', calcRemocion(getAvg(rawData, 'mes_ent_m2'), getAvg(rawData, 'mes_sal_m2')));
-        setTexto('proc_norma_m2', getSum(rawData, 'fuera_norma_m2'));
-
-        setTexto('bio_vol_m1', getSum(rawData, 'biosolidos_m1').toLocaleString('es-AR'));
-        setTexto('bio_ms_m1', getAvg(rawData, 'porc_ms_m1'));
-        setTexto('bio_ton_m1', getSum(rawData, 'ton_ms_m1').toLocaleString('es-AR'));
-
-        setTexto('bio_vol_m2', getSum(rawData, 'biosolidos_m2').toLocaleString('es-AR'));
-        setTexto('bio_ms_m2', getAvg(rawData, 'porc_ms_m2'));
-        setTexto('bio_ton_m2', getSum(rawData, 'ton_ms_m2').toLocaleString('es-AR'));
-
-        const fechas = rawData.map(r => getVal(r, 'fecha') || ''); 
-        const caudalesM1 = rawData.map(r => getCleanNumber(getVal(r, 'caudal_trat_m1')));
-        const caudalesM2 = rawData.map(r => getCleanNumber(getVal(r, 'caudal_trat_m2')));
-        const disenoM1 = Array(fechas.length).fill(0.3);
-        const disenoM2 = Array(fechas.length).fill(0.9);
-
-        if(cCaudales) cCaudales.destroy();
-        const ctxCaudales = document.getElementById('chartCaudalesLine');
-        if (ctxCaudales) {
-            cCaudales = new Chart(ctxCaudales.getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: fechas,
-                    datasets: [
-                        { label: 'Caudal Tratado M1', data: caudalesM1, borderColor: '#22d3ee', backgroundColor: 'rgba(34, 211, 238, 0.1)', fill: true, tension: 0.4 },
-                        { label: 'Diseño M1 (0.3)', data: disenoM1, borderColor: '#0284c7', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false },
-                        { label: 'Caudal Tratado M2', data: caudalesM2, borderColor: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.1)', fill: true, tension: 0.4 },
-                        { label: 'Diseño M2 (0.9)', data: disenoM2, borderColor: '#059669', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMax: 1.2 } } }
-            });
-        }
-
-        const diasFuera = rawData.filter(r => {
-            const fn1 = getCleanNumber(getVal(r, 'fuera_norma_m1'));
-            const fn2 = getCleanNumber(getVal(r, 'fuera_norma_m2'));
-            const motivo = getVal(r, 'motivo_desvio');
-            const tieneMotivo = motivo && String(motivo).trim() !== '';
-            return fn1 > 0 || fn2 > 0 || tieneMotivo;
-        });
-        
-        const diasRestantes = 37 - diasFuera.length;
-        const labelRestantes = document.getElementById('dias_restantes_norma');
-        if (labelRestantes) {
-            labelRestantes.textContent = diasRestantes;
-            if(diasRestantes <= 10) labelRestantes.classList.add('text-red-500');
-            else labelRestantes.classList.remove('text-red-500');
-        }
-
-        const divFechas = document.getElementById('fechas_fuera_norma');
-        if (divFechas) {
-            if (diasFuera.length === 0) {
-                divFechas.innerHTML = '<span class="bg-green-900/30 text-green-400 px-3 py-1 rounded border border-green-800 text-sm">Planta 100% en norma.</span>';
-            } else {
-                divFechas.innerHTML = diasFuera.map(d => {
-                    const fechaTxt = getVal(d, 'fecha') || 'Sin fecha';
-                    const motivoTxt = String(getVal(d, 'motivo_desvio') || 'Sin motivo registrado').replace(/'/g, "\\'"); 
-                    return `<button onclick="mostrarMotivo('${fechaTxt}', '${motivoTxt}')" class="bg-red-900/40 hover:bg-red-800/80 text-red-300 px-3 py-1.5 rounded-lg border border-red-800 text-sm font-medium shadow-sm transition cursor-pointer">${fechaTxt}</button>`;
-                }).join('');
-            }
-        }
-
-        const firstActiveBtn = document.querySelector('.chart-btn.active');
-        updateChartLimites('dbo_ent', firstActiveBtn);
-
-        // ==============================
-        // 3. PESTAÑA MANTENIMIENTO
+        // 2. PESTAÑA MANTENIMIENTO (SECTORES Y EQUIPOS)
         // ==============================
         const sumGen = getSum(rawData, 'mant_generales');
         const sumPrev = getSum(rawData, 'mant_preventivos');
@@ -471,88 +237,15 @@ function calcularYRenderizarResumen() {
         setTexto('kpi_horas_prev', getSum(rawData, 'horas_prev'));
         setTexto('kpi_horas_corr', getSum(rawData, 'horas_corr'));
 
-        const monthlyGroups = {};
-        rawData.forEach(r => {
-            const monthStr = getMonthYear(getVal(r, 'fecha'));
-            if (!monthlyGroups[monthStr]) monthlyGroups[monthStr] = { gen: 0, prev: 0, corr: 0 };
-            monthlyGroups[monthStr].gen += getCleanNumber(getVal(r, 'mant_generales'));
-            monthlyGroups[monthStr].prev += getCleanNumber(getVal(r, 'mant_preventivos'));
-            monthlyGroups[monthStr].corr += getCleanNumber(getVal(r, 'mant_correctivos'));
-        });
-
-        const labelsMensual = Object.keys(monthlyGroups);
-        const dataGen = labelsMensual.map(m => monthlyGroups[m].gen);
-        const dataPrev = labelsMensual.map(m => monthlyGroups[m].prev);
-        const dataCorr = labelsMensual.map(m => monthlyGroups[m].corr);
-
-        if(cMantMensual) cMantMensual.destroy();
-        const ctxMantMensual = document.getElementById('chartMantMensual');
-        if (ctxMantMensual) {
-            cMantMensual = new Chart(ctxMantMensual.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: labelsMensual,
-                    datasets: [
-                        { label: 'Generales', data: dataGen, backgroundColor: '#06b6d4' },
-                        { label: 'Preventivos', data: dataPrev, backgroundColor: '#10b981' },
-                        { label: 'Correctivos', data: dataCorr, backgroundColor: '#f43f5e' }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
-            });
-        }
-
-        if(cMantTortas) cMantTortas.destroy();
-        const ctxMantTortas = document.getElementById('chartMantTortas');
-        if (ctxMantTortas) {
-            cMantTortas = new Chart(ctxMantTortas.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Preventivos', 'Correctivos'],
-                    datasets: [{ 
-                        data: [sumPrev, sumCorr], 
-                        backgroundColor: ['#10b981', '#f43f5e'], 
-                        borderWidth: 2, borderColor: '#1e293b' 
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-        }
-
-        if(cCriticidad) cCriticidad.destroy();
-        const ctxCriticidad = document.getElementById('chartCriticidad');
-        if (ctxCriticidad) {
-            cCriticidad = new Chart(ctxCriticidad.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['ALTA', 'MEDIA', 'BAJA'],
-                    datasets: [{ 
-                        data: [getSum(rawData, 'corr_alto'), getSum(rawData, 'corr_medio'), getSum(rawData, 'corr_bajo')], 
-                        backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6'], 
-                        borderWidth: 2, borderColor: '#1e293b' 
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-        }
-
-        // ==========================================
-        // LECTURA AUTOMÁTICA DE SECTORES POR TEXTO
-        // ==========================================
+        // A. Lectura de Sectores (Sumando los valores ingresados en cada columna de los 24 sectores)
         const conteoSectores = {};
-        SECTORES_MAXIMO.forEach(s => { conteoSectores[s.code] = 0; });
-
-        rawData.forEach(r => {
-            let secStr = getVal(r, 'sectores_intervenidos');
-            if (secStr && typeof secStr === 'string') {
-                let secArr = secStr.split(',').map(s => s.trim()).filter(s => s !== '');
-                secArr.forEach(item => {
-                    const match = identificarSectorMaximo(item);
-                    if (match) {
-                        conteoSectores[match.code] = (conteoSectores[match.code] || 0) + 1;
-                    }
-                });
-            }
+        SECTORES_MAXIMO.forEach(s => {
+            // Busca tanto si la columna se llama "sec_0100", "0100" o con el nombre del sector
+            let totalSec = getSum(rawData, `sec_${s.code}`) + 
+                           getSum(rawData, s.code) + 
+                           getSum(rawData, s.name) + 
+                           getSum(rawData, `${s.name} (${s.code})`);
+            conteoSectores[s.code] = totalSec;
         });
 
         if(cSectores) cSectores.destroy();
@@ -618,10 +311,6 @@ function calcularYRenderizarResumen() {
                     if (firstParen !== -1) {
                         nombre = rawItem.substring(0, firstParen).trim();
                         sector = rawItem.substring(firstParen + 1).replace(/\)+$/, '').trim();
-                    } else if (rawItem.includes('-')) {
-                        const dashIdx = rawItem.indexOf('-');
-                        nombre = rawItem.substring(0, dashIdx).trim();
-                        sector = rawItem.substring(dashIdx + 1).trim();
                     }
 
                     const key = `${nombre}||${sector}`;
@@ -654,66 +343,3 @@ function calcularYRenderizarResumen() {
         }
 
     } catch (e) {
-        console.error("Error al renderizar el resumen:", e);
-    }
-}
-
-window.mostrarMotivo = function(fecha, motivo) {
-    const elFecha = document.getElementById('modalFecha');
-    const elMotivo = document.getElementById('modalMotivo');
-    const elModal = document.getElementById('modalDesvio');
-    if (elFecha && elMotivo && elModal) {
-        elFecha.textContent = 'Desvío: ' + fecha;
-        elMotivo.textContent = motivo;
-        elModal.classList.remove('hidden');
-    }
-};
-
-window.updateChartLimites = function(param, btnElement) {
-    if (!rawData || rawData.length === 0) return;
-    
-    if (btnElement) {
-        document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active', 'bg-sky-500', 'text-white', 'border-sky-500'));
-        btnElement.classList.add('active', 'bg-sky-500', 'text-white', 'border-sky-500');
-    }
-
-    const fechas = rawData.map(r => getVal(r, 'fecha') || '');
-    let dataM1 = [], dataM2 = [], maxLimit = 0, title = '';
-
-    if (param === 'dbo_ent') {
-        dataM1 = rawData.map(r => getCleanNumber(getVal(r, 'dbo_ent_m1')));
-        dataM2 = rawData.map(r => getCleanNumber(getVal(r, 'dbo_ent_m2')));
-        maxLimit = 200; title = 'DBO Entrada';
-    } else if (param === 'dbo_sal') {
-        dataM1 = rawData.map(r => getCleanNumber(getVal(r, 'dbo_sal_m1')));
-        dataM2 = rawData.map(r => getCleanNumber(getVal(r, 'dbo_sal_m2')));
-        maxLimit = 30; title = 'DBO Salida';
-    } else if (param === 'dqo_sal') {
-        dataM1 = rawData.map(r => getCleanNumber(getVal(r, 'dqo_sal_m1')));
-        dataM2 = rawData.map(r => getCleanNumber(getVal(r, 'dqo_sal_m2')));
-        maxLimit = 125; title = 'DQO Salida';
-    } else if (param === 'mes_sal') {
-        dataM1 = rawData.map(r => getCleanNumber(getVal(r, 'mes_sal_m1')));
-        dataM2 = rawData.map(r => getCleanNumber(getVal(r, 'mes_sal_m2')));
-        maxLimit = 35; title = 'MES Salida';
-    }
-
-    const limitLine = Array(fechas.length).fill(maxLimit);
-
-    if (cLimites) cLimites.destroy();
-    const ctx = document.getElementById('chartLimitesLine');
-    if (!ctx) return;
-    
-    cLimites = new Chart(ctx.getContext('2d'), {
-        type: 'line',
-        data: {
-            labels: fechas,
-            datasets: [
-                { label: `${title} M1`, data: dataM1, borderColor: '#22d3ee', borderWidth: 2, tension: 0.2 },
-                { label: `${title} M2`, data: dataM2, borderColor: '#34d399', borderWidth: 2, tension: 0.2 },
-                { label: `Límite Legal (${maxLimit})`, data: limitLine, borderColor: '#ef4444', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false }
-            ]
-        },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { suggestedMax: maxLimit * 1.2 } } }
-    });
-};
