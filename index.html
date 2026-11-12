@@ -353,4 +353,140 @@
                     </div>
                 </div>
                 <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
-                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4
+                    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-3">
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wider">Control Calidad vs Normativa</h3>
+                        <div class="flex gap-2 text-[10px] sm:text-xs">
+                            <button onclick="updateChartLimites('dbo_ent', this)" class="chart-btn active px-3 py-1.5 rounded-full border border-slate-600 text-slate-300 hover:bg-slate-700 transition">DBO Ent</button>
+                            <button onclick="updateChartLimites('dbo_sal', this)" class="chart-btn px-3 py-1.5 rounded-full border border-slate-600 text-slate-300 hover:bg-slate-700 transition">DBO Sal</button>
+                            <button onclick="updateChartLimites('dqo_sal', this)" class="chart-btn px-3 py-1.5 rounded-full border border-slate-600 text-slate-300 hover:bg-slate-700 transition">DQO Sal</button>
+                            <button onclick="updateChartLimites('mes_sal', this)" class="chart-btn px-3 py-1.5 rounded-full border border-slate-600 text-slate-300 hover:bg-slate-700 transition">MES Sal</button>
+                        </div>
+                    </div>
+                    <div class="h-60 relative">
+                        <canvas id="chartLimitesLine"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 p-4 opacity-10 pointer-events-none"><i data-lucide="alert-triangle" class="w-32 h-32 text-red-500"></i></div>
+                <div class="flex justify-between items-center mb-4 relative z-10">
+                    <h3 class="text-sm font-bold text-white uppercase tracking-wider">Semáforo: Control Normativo Anual</h3>
+                    <span class="bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-xs font-bold border border-red-500/50">Cupo Máximo: 37 Días</span>
+                </div>
+                <div class="flex flex-col sm:flex-row items-center gap-8 relative z-10">
+                    <div class="text-center bg-slate-900 border border-slate-700 rounded-2xl p-6 min-w-[150px]">
+                        <div class="text-5xl font-bold text-white" id="dias_restantes_norma">37</div>
+                        <div class="text-xs text-slate-400 mt-2 uppercase tracking-wide">Días Restantes</div>
+                    </div>
+                    <div class="flex-1 w-full">
+                        <div class="text-sm font-medium text-slate-300 mb-3">Fechas con desvíos registrados <span class="text-xs text-slate-500 italic">(Toque una fecha para ver el motivo)</span>:</div>
+                        <div id="fechas_fuera_norma" class="flex flex-wrap gap-2">
+                            <span class="text-slate-500 text-sm italic">Cargando fechas...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PESTAÑA: FUNCIONAMIENTO -->
+        <div id="tab-funcionamiento" class="tab-content hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-10 text-center">
+                <i data-lucide="settings" class="w-12 h-12 text-slate-600 mx-auto mb-3"></i>
+                <h2 class="text-xl font-bold text-slate-300">Sector: Funcionamiento</h2>
+                <p class="text-slate-500 mt-2">Planillas operativas y marchas de equipos.</p>
+            </div>
+        </div>
+
+        <!-- PESTAÑA: MANTENIMIENTO -->
+        <div id="tab-mantenimiento" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-slate-800 rounded-xl p-5 border border-slate-700 shadow-xl text-center">
+                    <div class="text-xs text-slate-400 uppercase tracking-wider mb-2">Tot. Mantenimientos</div>
+                    <div class="text-3xl font-bold text-white" id="kpi_mant_total">0</div>
+                </div>
+                <div class="bg-slate-800 rounded-xl p-5 border border-slate-700 shadow-xl text-center">
+                    <div class="text-xs text-slate-400 uppercase tracking-wider mb-2">Generales</div>
+                    <div class="text-3xl font-bold text-cyan-400" id="kpi_mant_gen">0</div>
+                </div>
+                <div class="bg-slate-800 rounded-xl p-5 border border-slate-700 shadow-xl text-center">
+                    <div class="text-xs text-slate-400 uppercase tracking-wider mb-2">Horas Preventivo</div>
+                    <div class="text-3xl font-bold text-green-400"><span id="kpi_horas_prev">0</span><span class="text-sm text-slate-500 ml-1">hs</span></div>
+                </div>
+                <div class="bg-slate-800 rounded-xl p-5 border border-red-900/30 shadow-xl text-center">
+                    <div class="text-xs text-slate-400 uppercase tracking-wider mb-2">Horas Correctivo</div>
+                    <div class="text-3xl font-bold text-red-400"><span id="kpi_horas_corr">0</span><span class="text-sm text-slate-500 ml-1">hs</span></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl lg:col-span-2">
+                    <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Evolución de Mantenimientos (Mensual)</h3>
+                    <div class="h-64 relative">
+                        <canvas id="chartMantMensual"></canvas>
+                    </div>
+                </div>
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                    <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Preventivos vs Correctivos</h3>
+                    <div class="h-64 relative">
+                        <canvas id="chartMantTortas"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                    <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Criticidad de Correctivos</h3>
+                    <div class="h-72 relative">
+                        <canvas id="chartCriticidad"></canvas>
+                    </div>
+                </div>
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl lg:col-span-2">
+                    <div class="flex items-center gap-2 mb-4 border-b border-slate-700 pb-3">
+                        <i data-lucide="award" class="w-5 h-5 text-amber-400"></i>
+                        <h3 class="text-lg font-bold text-white uppercase tracking-wider"> Equipos Más Intervenidos</h3>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-xs uppercase text-slate-500 border-b border-slate-700">
+                                    <th class="py-3 px-4 w-16">Nº</th>
+                                    <th class="py-3 px-4">Equipo</th>
+                                    <th class="py-3 px-4">Sector</th>
+                                    <th class="py-3 px-4 text-right">Intervenciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla_equipos_body">
+                                <tr><td colspan="4" class="text-center py-6 text-slate-500 italic">Cargando datos...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PESTAÑA: CONTROL Y GESTIÓN -->
+        <div id="tab-gestion" class="tab-content hidden">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-10 text-center">
+                <i data-lucide="bar-chart-3" class="w-12 h-12 text-slate-600 mx-auto mb-3"></i>
+                <h2 class="text-xl font-bold text-slate-300">Sector: Control y Gestión</h2>
+                <p class="text-slate-500 mt-2">Reportes gerenciales y presupuesto.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Emergente de Desvíos -->
+    <div id="modalDesvio" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div class="bg-slate-800 rounded-2xl p-6 border border-red-900/50 shadow-2xl max-w-sm w-full relative">
+            <div class="absolute top-0 right-0 p-3 opacity-20 pointer-events-none"><i data-lucide="alert-circle" class="w-16 h-16 text-red-500"></i></div>
+            <h3 class="text-xl font-bold text-white mb-2 relative z-10" id="modalFecha">Fecha</h3>
+            <p class="text-xs text-slate-400 mb-4 uppercase tracking-wider">Motivo Registrado:</p>
+            <p class="text-slate-200 text-base mb-8 relative z-10 font-medium" id="modalMotivo">Motivo</p>
+            <button onclick="document.getElementById('modalDesvio').classList.add('hidden')" class="w-full bg-slate-700 hover:bg-slate-600 border border-slate-600 text-white font-bold py-3 rounded-xl transition shadow-lg">Cerrar</button>
+        </div>
+    </div>
+
+    <!-- Script Principal -->
+    <script src="js/main.js"></script>
+</body>
+</html>
