@@ -1,19 +1,10 @@
 let rawData = [];
-let cEnergia = null;
 let cCaudales = null;
-let cLimites = null;
-
 let cMensualEnergia = null;
 let cMensualBiosolidos = null;
-let cMensualArenas = null;
-let cMensualPolimero = null;
-
-let cMantMensual = null;
-let cMantTortas = null;
-let cCriticidad = null;
 let cSectores = null;
 
-// Catálogo oficial de los 24 sectores de la planta
+// Catálogo oficial de los 24 sectores
 const SECTORES_MAXIMO = [
     { code: '0099', name: 'Báscula', label: 'Báscula (0099)' },
     { code: '0100', name: 'Pretratamiento M1', label: 'Pretratamiento M1 (0100)' },
@@ -71,20 +62,11 @@ function cargarDatosDesdeGoogle(urlTarget) {
             } else if (urlTarget !== urlBackup) {
                 cargarDatosDesdeGoogle(urlBackup);
             } else {
-                if (dsLabel) {
-                    dsLabel.textContent = "Planilla vacía o sin publicar";
-                    dsLabel.className = "text-xs font-medium px-3 py-1.5 bg-red-900/40 text-red-300 rounded-full border border-red-700";
-                }
+                if (dsLabel) dsLabel.textContent = "Error: Planilla vacía";
             }
         },
         error: function(err) {
-            console.error("Error al conectar:", err);
-            if (urlTarget !== urlBackup) {
-                cargarDatosDesdeGoogle(urlBackup);
-            } else if (dsLabel) {
-                dsLabel.textContent = "Error de conexión con Google Sheets";
-                dsLabel.className = "text-xs font-medium px-3 py-1.5 bg-red-900/40 text-red-300 rounded-full border border-red-700";
-            }
+            if (urlTarget !== urlBackup) cargarDatosDesdeGoogle(urlBackup);
         }
     });
 }
@@ -121,7 +103,6 @@ function getCleanNumber(val) {
 function getVal(row, colName) {
     if (!row) return undefined;
     if (row[colName] !== undefined) return row[colName];
-    
     const target = String(colName).toLowerCase().trim();
     for (let k of Object.keys(row)) {
         if (String(k).toLowerCase().trim() === target) return row[k];
@@ -140,69 +121,32 @@ function getAvg(arr, col) {
     return (sum / validRows.length).toFixed(1); 
 }
 
-function calcRemocion(ent, sal) {
-    let entrada = getCleanNumber(ent);
-    let salida = getCleanNumber(sal);
-    if (entrada > 0) return (((entrada - salida) / entrada) * 100).toFixed(1);
-    return 0;
-}
-
 function setTexto(id, valor) {
     const el = document.getElementById(id);
     if (el) el.textContent = valor;
 }
 
 function normalizarTexto(str) {
-    return String(str || '')
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .trim();
+    return String(str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 }
 
 function identificarSectorMaximo(texto) {
     if (!texto) return null;
     const norm = normalizarTexto(texto);
 
-    // 1. Buscar por código exacto (ej: 0100, 0208)
+    // 1. Buscar por código exacto (0100, 0208, etc.)
     const porCodigo = [...SECTORES_MAXIMO].sort((a, b) => b.code.length - a.code.length);
     for (const sec of porCodigo) {
         const regex = new RegExp(`(^|[^0-9])${sec.code}([^0-9]|$)`);
         if (regex.test(norm)) return sec;
     }
 
-    // 2. Buscar por nombre del sector
+    // 2. Buscar por nombre
     const porNombre = [...SECTORES_MAXIMO].sort((a, b) => b.name.length - a.name.length);
     for (const sec of porNombre) {
-        const secNorm = normalizarTexto(sec.name);
-        if (norm.includes(secNorm)) return sec;
+        if (norm.includes(normalizarTexto(sec.name))) return sec;
     }
-
     return null;
-}
-
-function getMonthYear(fechaRaw) {
-    if (!fechaRaw) return 'General';
-    const str = String(fechaRaw).trim();
-    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    if (str.includes('/')) {
-        const parts = str.split('/');
-        if (parts.length >= 2) {
-            const mIdx = parseInt(parts[1], 10) - 1;
-            const year = parts[2] ? parts[2].slice(-2) : '';
-            if (mIdx >= 0 && mIdx < 12) return `${meses[mIdx]} ${year}`.trim();
-            return `${parts[1]}/${parts[2] || ''}`;
-        }
-    } else if (str.includes('-')) {
-        const parts = str.split('-');
-        if (parts.length >= 2) {
-            const mIdx = parseInt(parts[1], 10) - 1;
-            const year = parts[0] ? parts[0].slice(-2) : '';
-            if (mIdx >= 0 && mIdx < 12) return `${meses[mIdx]} ${year}`.trim();
-            return `${parts[1]}/${parts[0]}`;
-        }
-    }
-    return str;
 }
 
 function calcularYRenderizarResumen() {
@@ -212,24 +156,15 @@ function calcularYRenderizarResumen() {
     Chart.defaults.font.family = 'Inter';
 
     try {
-        // ==============================
-        // 1. PESTAÑA RESUMEN GENERAL & PROCESO
-        // ==============================
+        // Generales
         setTexto('m1_dbo_ent', getAvg(rawData, 'dbo_ent_m1'));
         setTexto('m1_dbo_sal', getAvg(rawData, 'dbo_sal_m1'));
-        setTexto('m1_dqo_ent', getAvg(rawData, 'dqo_ent_m1') || getAvg(rawData, 'dbo_ent_m1'));
+        setTexto('m1_dqo_ent', getAvg(rawData, 'dqo_ent_m1'));
         setTexto('m1_dqo_sal', getAvg(rawData, 'dqo_sal_m1'));
         setTexto('m1_mes_ent', getAvg(rawData, 'mes_ent_m1'));
         setTexto('m1_mes_sal', getAvg(rawData, 'mes_sal_m1'));
         setTexto('m1_caudal_dis', getCleanNumber(getVal(lastRow, 'caudal_dis_m1')) || 0.3);
         setTexto('m1_caudal_trat', getCleanNumber(getVal(lastRow, 'caudal_trat_m1')) || 0);
-        
-        const energiaTotalM1 = getSum(rawData, 'energia_m1_ts1') + getSum(rawData, 'energia_m1_ts2') + getSum(rawData, 'energia_m1_ts3');
-        setTexto('m1_energia_val', energiaTotalM1.toLocaleString('es-AR'));
-
-        const volTotalM1 = rawData.reduce((acc, r) => acc + (getCleanNumber(getVal(r, 'caudal_trat_m1')) * 86400), 0);
-        const ratioM1 = volTotalM1 > 0 ? (energiaTotalM1 / volTotalM1).toFixed(3) : '0.000';
-        setTexto('m1_kw_m3', ratioM1);
 
         setTexto('m2_dbo_ent', getAvg(rawData, 'dbo_ent_m2'));
         setTexto('m2_dbo_sal', getAvg(rawData, 'dbo_sal_m2'));
@@ -239,93 +174,26 @@ function calcularYRenderizarResumen() {
         setTexto('m2_mes_sal', getAvg(rawData, 'mes_sal_m2'));
         setTexto('m2_caudal_dis', getCleanNumber(getVal(lastRow, 'caudal_dis_m2')) || 0.9);
         setTexto('m2_caudal_trat', getCleanNumber(getVal(lastRow, 'caudal_trat_m2')) || 0);
-        
-        const energiaTotalM2 = getSum(rawData, 'energia_m2_ts1') + getSum(rawData, 'energia_m2_ts2') + getSum(rawData, 'energia_m2_ts3');
-        setTexto('m2_energia_val', energiaTotalM2.toLocaleString('es-AR'));
-
-        const volTotalM2 = rawData.reduce((acc, r) => acc + (getCleanNumber(getVal(r, 'caudal_trat_m2')) * 86400), 0);
-        const ratioM2 = volTotalM2 > 0 ? (energiaTotalM2 / volTotalM2).toFixed(3) : '0.000';
-        setTexto('m2_kw_m3', ratioM2);
 
         setTexto('tot_energia', getSum(rawData, 'energia_total').toLocaleString('es-AR'));
         setTexto('tot_biosolidos', getSum(rawData, 'biosolidos_ton').toLocaleString('es-AR'));
-        setTexto('tot_arenas', getSum(rawData, 'arenas_ton').toLocaleString('es-AR'));
-        setTexto('tot_polimero', getSum(rawData, 'polimero_kg').toLocaleString('es-AR'));
 
-        // Gráficos Mensuales Generales
-        const resumenMensual = {};
-        rawData.forEach(r => {
-            const mesKey = getMonthYear(getVal(r, 'fecha'));
-            if (!resumenMensual[mesKey]) {
-                resumenMensual[mesKey] = { energia: 0, biosolidos: 0, arenas: 0, polimero: 0 };
-            }
-            resumenMensual[mesKey].energia += getCleanNumber(getVal(r, 'energia_total'));
-            resumenMensual[mesKey].biosolidos += getCleanNumber(getVal(r, 'biosolidos_ton'));
-            resumenMensual[mesKey].arenas += getCleanNumber(getVal(r, 'arenas_ton'));
-            resumenMensual[mesKey].polimero += getCleanNumber(getVal(r, 'polimero_kg'));
-        });
-
-        const mesesLabels = Object.keys(resumenMensual);
-        const serieEnergia = mesesLabels.map(m => resumenMensual[m].energia);
-        const serieBiosolidos = mesesLabels.map(m => resumenMensual[m].biosolidos);
-        const serieArenas = mesesLabels.map(m => resumenMensual[m].arenas);
-        const seriePolimero = mesesLabels.map(m => resumenMensual[m].polimero);
-
-        const buildMonthlyBar = (canvasId, instanceRef, label, dataArr, colorHex, unit) => {
-            if (instanceRef) instanceRef.destroy();
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return null;
-            return new Chart(ctx.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: mesesLabels,
-                    datasets: [{
-                        label: label,
-                        data: dataArr,
-                        backgroundColor: colorHex,
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `${label}: ${(context.parsed.y || 0).toLocaleString('es-AR')} ${unit}`;
-                                }
-                            }
-                        }
-                    },
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
-        };
-
-        cMensualEnergia = buildMonthlyBar('chartMensualEnergia', cMensualEnergia, 'Energía Total', serieEnergia, '#facc15', 'kWh');
-        cMensualBiosolidos = buildMonthlyBar('chartMensualBiosolidos', cMensualBiosolidos, 'Biosólidos', serieBiosolidos, '#d97706', 'Ton');
-        cMensualArenas = buildMonthlyBar('chartMensualArenas', cMensualArenas, 'Arenas', serieArenas, '#fb923c', 'Ton');
-        cMensualPolimero = buildMonthlyBar('chartMensualPolimero', cMensualPolimero, 'Polímero', seriePolimero, '#818cf8', 'Kg');
-
-        // ==============================
-        // 2. PESTAÑA MANTENIMIENTO
-        // ==============================
+        // Mantenimiento KPIs
         setTexto('kpi_mant_gen', getSum(rawData, 'mant_generales'));
         setTexto('kpi_mant_total', getSum(rawData, 'mant_generales') + getSum(rawData, 'mant_preventivos') + getSum(rawData, 'mant_correctivos'));
         setTexto('kpi_horas_prev', getSum(rawData, 'horas_prev'));
         setTexto('kpi_horas_corr', getSum(rawData, 'horas_corr'));
 
-        // Lectura de Sectores desde la columna 'sectores_intervenidos' (Leyendo texto y sumando ocurrencias o números)
+        // ==========================================
+        // LECTURA DE SECTORES (Columna: sectores_intervenidos)
+        // ==========================================
         const conteoSectores = {};
         SECTORES_MAXIMO.forEach(s => { conteoSectores[s.code] = 0; });
 
         rawData.forEach(r => {
             let secStr = getVal(r, 'sectores_intervenidos');
-            if (secStr !== undefined && secStr !== null && secStr !== '') {
-                // Si cargaste un número directo en la celda o texto separado por comas
-                let secArr = String(secStr).split(',').map(s => s.trim()).filter(s => s !== '');
+            if (secStr && typeof secStr === 'string') {
+                let secArr = secStr.split(',').map(s => s.trim()).filter(s => s !== '');
                 secArr.forEach(item => {
                     const match = identificarSectorMaximo(item);
                     if (match) {
@@ -338,18 +206,14 @@ function calcularYRenderizarResumen() {
         if(cSectores) cSectores.destroy();
         const ctxSectores = document.getElementById('chartSectores');
         if (ctxSectores) {
-            const sectoresLabels = SECTORES_MAXIMO.map(s => s.label);
-            const sectoresData = SECTORES_MAXIMO.map(s => conteoSectores[s.code] || 0);
-
             cSectores = new Chart(ctxSectores.getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: sectoresLabels,
+                    labels: SECTORES_MAXIMO.map(s => s.label),
                     datasets: [{
                         label: 'Intervenciones',
-                        data: sectoresData,
+                        data: SECTORES_MAXIMO.map(s => conteoSectores[s.code] || 0),
                         backgroundColor: '#06b6d4',
-                        hoverBackgroundColor: '#22d3ee',
                         borderRadius: 4,
                         barPercentage: 0.75
                     }]
@@ -358,32 +222,18 @@ function calcularYRenderizarResumen() {
                     indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return ` Intervenciones: ${context.parsed.x || 0}`;
-                                }
-                            }
-                        }
-                    },
+                    plugins: { legend: { display: false } },
                     scales: {
-                        x: {
-                            beginAtZero: true,
-                            ticks: { precision: 0 },
-                            grid: { color: 'rgba(148, 163, 184, 0.1)' }
-                        },
-                        y: {
-                            ticks: { color: '#cbd5e1', font: { size: 11 } },
-                            grid: { display: false }
-                        }
+                        x: { beginAtZero: true, ticks: { precision: 0 } },
+                        y: { ticks: { color: '#cbd5e1', font: { size: 11 } }, grid: { display: false } }
                     }
                 }
             });
         }
 
-        // Top 10 Equipos
+        // ==========================================
+        // TOP 10 EQUIPOS (Columna: equipos_intervenidos)
+        // ==========================================
         let equiposMap = {};
         rawData.forEach(r => {
             let eqStr = getVal(r, 'equipos_intervenidos');
@@ -400,35 +250,30 @@ function calcularYRenderizarResumen() {
                     }
 
                     const key = `${nombre}||${sector}`;
-                    if (!equiposMap[key]) {
-                        equiposMap[key] = { nombre, sector, count: 0 };
-                    }
+                    if (!equiposMap[key]) equiposMap[key] = { nombre, sector, count: 0 };
                     equiposMap[key].count += 1;
                 });
             }
         });
 
-        let topEquipos = Object.values(equiposMap)
-            .sort((a,b) => b.count - a.count)
-            .slice(0, 10);
-
+        let topEquipos = Object.values(equiposMap).sort((a,b) => b.count - a.count).slice(0, 10);
         let tbody = document.getElementById('tabla_equipos_body');
         if (tbody) {
             if (topEquipos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-500 italic">No hay registros de equipos intervenidos aún</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-500 italic">Sin registros</td></tr>';
             } else {
-                tbody.innerHTML = topEquipos.map((eq, index) => {
-                    return `<tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition">
-                                <td class="py-3 px-4 text-cyan-400 font-medium">#${index + 1}</td>
-                                <td class="py-3 px-4 text-white font-medium">${eq.nombre}</td>
-                                <td class="py-3 px-4 text-slate-400 text-sm">${eq.sector}</td>
-                                <td class="py-3 px-4 text-amber-400 font-bold text-right">${eq.count}</td>
-                            </tr>`;
-                }).join('');
+                tbody.innerHTML = topEquipos.map((eq, index) => `
+                    <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition">
+                        <td class="py-3 px-4 text-cyan-400 font-medium">#${index + 1}</td>
+                        <td class="py-3 px-4 text-white font-medium">${eq.nombre}</td>
+                        <td class="py-3 px-4 text-slate-400 text-sm">${eq.sector}</td>
+                        <td class="py-3 px-4 text-amber-400 font-bold text-right">${eq.count}</td>
+                    </tr>
+                `).join('');
             }
         }
 
     } catch (e) {
-        console.error("Error al renderizar el resumen:", e);
+        console.error("Error general:", e);
     }
 }
