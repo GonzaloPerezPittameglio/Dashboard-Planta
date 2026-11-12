@@ -99,7 +99,7 @@
                             <div class="text-base font-bold text-yellow-400"><span id="m1_energia_val">0</span> <span class="text-xs font-normal">kWh</span></div>
                         </div>
                         <div class="bg-slate-900 rounded-xl p-3 border border-slate-700 text-center">
-                            <div class="text-xs text-slate-400 mb-1">Energía kW/m³</div>
+                            <div class="text-xs text-slate-400 mb-1">Ratio Energético</div>
                             <div class="text-base font-bold text-amber-400"><span id="m1_kw_m3">0.000</span> <span class="text-xs font-normal">kW/m³</span></div>
                         </div>
                     </div>
@@ -142,7 +142,7 @@
                             <div class="text-base font-bold text-yellow-400"><span id="m2_energia_val">0</span> <span class="text-xs font-normal">kWh</span></div>
                         </div>
                         <div class="bg-slate-900 rounded-xl p-3 border border-slate-700 text-center">
-                            <div class="text-xs text-slate-400 mb-1">Energía kW/m³</div>
+                            <div class="text-xs text-slate-400 mb-1">Ratio Energético</div>
                             <div class="text-base font-bold text-amber-400"><span id="m2_kw_m3">0.000</span> <span class="text-xs font-normal">kW/m³</span></div>
                         </div>
                     </div>
@@ -445,20 +445,20 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
-                    <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Prioridad de Correctivos</h3>
-                    <div class="h-64 relative">
+                    <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Criticidad de Correctivos</h3>
+                    <div class="h-72 relative">
                         <canvas id="chartCriticidad"></canvas>
                     </div>
                 </div>
-                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
-                    <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Intervenciones por Sector</h3>
-                    <div class="h-64 relative flex items-center justify-center">
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl lg:col-span-2">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wider">Intervenciones por Sector (Ubicaciones Maximo)</h3>
+                        <span class="text-[11px] text-slate-400">24 Sectores Activos</span>
+                    </div>
+                    <div class="h-[640px] relative">
                         <canvas id="chartSectores"></canvas>
-                        <div id="chartSectoresOverlay" class="absolute inset-0 flex items-center justify-center bg-slate-900/80 rounded-lg hidden">
-                            <span class="text-slate-400 text-sm font-medium">Esperando listado de sectores...</span>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -466,20 +466,19 @@
             <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
                 <div class="flex items-center gap-2 mb-4 border-b border-slate-700 pb-3">
                     <i data-lucide="award" class="w-5 h-5 text-amber-400"></i>
-                    <h3 class="text-lg font-bold text-white uppercase tracking-wider">Equipos Más Intervenidos</h3>
+                    <h3 class="text-lg font-bold text-white uppercase tracking-wider">Ranking Top 10 Equipos Más Intervenidos</h3>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="text-xs uppercase text-slate-500 border-b border-slate-700">
-                                <th class="py-3 px-4 w-16">N°</th>
-                                <th class="py-3 px-4">Equipo</th>
-                                <th class="py-3 px-4">Sector (Ubicación)</th>
+                                <th class="py-3 px-4 w-16">Rank</th>
+                                <th class="py-3 px-4">Equipo / Componente</th>
                                 <th class="py-3 px-4 text-right">Intervenciones</th>
                             </tr>
                         </thead>
                         <tbody id="tabla_equipos_body">
-                            <tr><td colspan="4" class="text-center py-6 text-slate-500 italic">Cargando datos...</td></tr>
+                            <tr><td colspan="3" class="text-center py-6 text-slate-500 italic">Cargando datos...</td></tr>
                         </tbody>
                     </table>
                 </div>
