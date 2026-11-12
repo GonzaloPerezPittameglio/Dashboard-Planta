@@ -15,6 +15,34 @@ let cMantTortas = null;
 let cCriticidad = null;
 let cSectores = null;
 
+// Catálogo oficial de los 24 sectores con ubicaciones Maximo
+const SECTORES_MAXIMO = [
+    { code: '0099', name: 'Báscula', label: 'Báscula (0099)' },
+    { code: '0100', name: 'Pretratamiento M1', label: 'Pretratamiento M1 (0100)' },
+    { code: '0101', name: 'Tratamiento Biológico M1', label: 'Tratamiento Biológico M1 (0101)' },
+    { code: '0102', name: 'Sedimentación Secundaria M1', label: 'Sedimentación Secundaria M1 (0102)' },
+    { code: '0103', name: 'Salida de Liquido M1', label: 'Salida de Liquido M1 (0103)' },
+    { code: '0104', name: 'Deshidratación de Lodos M1', label: 'Deshidratación de Lodos M1 (0104)' },
+    { code: '0105', name: 'Sistema de Provisión de Agua M1', label: 'Sistema de Provisión de Agua M1 (0105)' },
+    { code: '0106', name: 'Sistema Eléctrico M1', label: 'Sistema Eléctrico M1 (0106)' },
+    { code: '0107', name: 'Depósito', label: 'Depósito (0107)' },
+    { code: '0108', name: 'Laboratorio', label: 'Laboratorio (0108)' },
+    { code: '0109', name: 'Administración', label: 'Administración (0109)' },
+    { code: '0110', name: 'Taller de Planta', label: 'Taller de Planta (0110)' },
+    { code: '0111', name: 'Pañol', label: 'Pañol (0111)' },
+    { code: '0200', name: 'Pretratamiento M2', label: 'Pretratamiento M2 (0200)' },
+    { code: '0201', name: 'Sedimentación Primaria', label: 'Sedimentación Primaria (0201)' },
+    { code: '020105', name: 'Agua de Servicio Pretratamiento', label: 'Agua de Servicio Pretratamiento (020105)' },
+    { code: '0202', name: 'Tratamiento Biológico', label: 'Tratamiento Biológico (0202)' },
+    { code: '0203', name: 'Sedimentación Secundaria', label: 'Sedimentación Secundaria (0203)' },
+    { code: '020305', name: 'Agua de Servicio', label: 'Agua de Servicio (020305)' },
+    { code: '0204', name: 'Espesamiento de Lodos', label: 'Espesamiento de Lodos (0204)' },
+    { code: '0205', name: 'Flotación de Lodos', label: 'Flotación de Lodos (0205)' },
+    { code: '0206', name: 'Digestión y Producción de Gas', label: 'Digestión y Producción de Gas (0206)' },
+    { code: '0207', name: 'Almacenamiento de Lodos', label: 'Almacenamiento de Lodos (0207)' },
+    { code: '0208', name: 'Deshidratación', label: 'Deshidratación (0208)' }
+];
+
 const urlPrimary = "https://docs.google.com/spreadsheets/d/17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA/gviz/tq?tqx=out:csv";
 const urlBackup = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=0&single=true&output=csv";
 
@@ -141,6 +169,35 @@ function setTexto(id, valor) {
     if (el) el.textContent = valor;
 }
 
+function normalizarTexto(str) {
+    return String(str || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+}
+
+function identificarSectorMaximo(texto) {
+    if (!texto) return null;
+    const norm = normalizarTexto(texto);
+
+    // 1. Buscar primero por código exacto (ordenado por longitud descendente)
+    const porCodigo = [...SECTORES_MAXIMO].sort((a, b) => b.code.length - a.code.length);
+    for (const sec of porCodigo) {
+        const regex = new RegExp(`(^|[^0-9])${sec.code}([^0-9]|$)`);
+        if (regex.test(norm)) return sec;
+    }
+
+    // 2. Buscar por nombre del sector
+    const porNombre = [...SECTORES_MAXIMO].sort((a, b) => b.name.length - a.name.length);
+    for (const sec of porNombre) {
+        const secNorm = normalizarTexto(sec.name);
+        if (norm.includes(secNorm)) return sec;
+    }
+
+    return null;
+}
+
 function getMonthYear(fechaRaw) {
     if (!fechaRaw) return 'General';
     const str = String(fechaRaw).trim();
@@ -187,7 +244,6 @@ function calcularYRenderizarResumen() {
         const energiaTotalM1 = getSum(rawData, 'energia_m1_ts1') + getSum(rawData, 'energia_m1_ts2') + getSum(rawData, 'energia_m1_ts3');
         setTexto('m1_energia_val', energiaTotalM1.toLocaleString('es-AR'));
 
-        // Ratio Energético M1 (kWh / m³ tratados totales)
         const volTotalM1 = rawData.reduce((acc, r) => acc + (getCleanNumber(getVal(r, 'caudal_trat_m1')) * 86400), 0);
         const ratioM1 = volTotalM1 > 0 ? (energiaTotalM1 / volTotalM1).toFixed(3) : '0.000';
         setTexto('m1_kw_m3', ratioM1);
@@ -204,18 +260,16 @@ function calcularYRenderizarResumen() {
         const energiaTotalM2 = getSum(rawData, 'energia_m2_ts1') + getSum(rawData, 'energia_m2_ts2') + getSum(rawData, 'energia_m2_ts3');
         setTexto('m2_energia_val', energiaTotalM2.toLocaleString('es-AR'));
 
-        // Ratio Energético M2 (kWh / m³ tratados totales)
         const volTotalM2 = rawData.reduce((acc, r) => acc + (getCleanNumber(getVal(r, 'caudal_trat_m2')) * 86400), 0);
         const ratioM2 = volTotalM2 > 0 ? (energiaTotalM2 / volTotalM2).toFixed(3) : '0.000';
         setTexto('m2_kw_m3', ratioM2);
 
-        // Tarjetas Acumuladas
         setTexto('tot_energia', getSum(rawData, 'energia_total').toLocaleString('es-AR'));
         setTexto('tot_biosolidos', getSum(rawData, 'biosolidos_ton').toLocaleString('es-AR'));
         setTexto('tot_arenas', getSum(rawData, 'arenas_ton').toLocaleString('es-AR'));
         setTexto('tot_polimero', getSum(rawData, 'polimero_kg').toLocaleString('es-AR'));
 
-        // Agrupación Mensual para los 4 gráficos (Energía, Biosólidos, Arenas, Polímero)
+        // Agrupación Mensual para los 4 gráficos
         const resumenMensual = {};
         rawData.forEach(r => {
             const mesKey = getMonthYear(getVal(r, 'fecha'));
@@ -262,9 +316,7 @@ function calcularYRenderizarResumen() {
                             }
                         }
                     },
-                    scales: {
-                        y: { beginAtZero: true }
-                    }
+                    scales: { y: { beginAtZero: true } }
                 }
             });
         };
@@ -274,7 +326,6 @@ function calcularYRenderizarResumen() {
         cMensualArenas = buildMonthlyBar('chartMensualArenas', cMensualArenas, 'Arenas', serieArenas, '#fb923c', 'Ton');
         cMensualPolimero = buildMonthlyBar('chartMensualPolimero', cMensualPolimero, 'Polímero', seriePolimero, '#818cf8', 'Kg');
 
-        // RRHH & Mantenimiento Resumen
         setTexto('rrhh_total_lbl', getCleanNumber(getVal(lastRow, 'rrhh_total')));
         setTexto('rrhh_admin_lbl', getCleanNumber(getVal(lastRow, 'rrhh_admin')));
         setTexto('rrhh_operativo_lbl', getCleanNumber(getVal(lastRow, 'rrhh_operativo')));
@@ -285,7 +336,6 @@ function calcularYRenderizarResumen() {
         setTexto('mant_corr', getSum(rawData, 'mant_correctivos'));
         setTexto('mant_act', getSum(rawData, 'mant_actividades'));
 
-        // Gráfico Doughnut ENERGÍA TOTAL con etiquetas personalizadas y tooltip en kW/h
         if(cEnergia) cEnergia.destroy();
         const ctxEnergia = document.getElementById('chartEnergiaSectores');
         if (ctxEnergia) {
@@ -487,62 +537,119 @@ function calcularYRenderizarResumen() {
             });
         }
 
-        if(cSectores) cSectores.destroy();
-        const ctxSectores = document.getElementById('chartSectores');
-        if (ctxSectores) {
-            cSectores = new Chart(ctxSectores.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: ['Pretratamiento', 'Primario', 'Biológico', 'Lodos', 'Servicios'],
-                    datasets: [{ 
-                        label: 'Intervenciones', 
-                        data: [5, 2, 8, 12, 4], 
-                        backgroundColor: '#3b82f6' 
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-            const overlay = document.getElementById('chartSectoresOverlay');
-            if(overlay) overlay.classList.remove('hidden');
-        }
+        // ==========================================
+        // LECTURA 100% INDEPENDIENTE DE MANTENIMIENTO
+        // ==========================================
 
-        let equiposCount = {};
+        // A. Lectura de Sectores (Nueva Columna: sectores_intervenidos)
+        const conteoSectores = {};
+        SECTORES_MAXIMO.forEach(s => { conteoSectores[s.code] = 0; });
+
+        // Sumar columnas directas (ej: sec_0100 o 0100) si existieran
+        SECTORES_MAXIMO.forEach(s => {
+            const valCol = getSum(rawData, `sec_${s.code}`) + getSum(rawData, s.code);
+            if (valCol > 0) conteoSectores[s.code] += valCol;
+        });
+
+        // Sumar desde la columna nueva de sectores separados por coma
         rawData.forEach(r => {
-            let eqStr = getVal(r, 'equipos_intervenidos');
-            if (eqStr && typeof eqStr === 'string') {
-                let eqArr = eqStr.split(',').map(s => s.trim()).filter(s => s !== '');
-                eqArr.forEach(eq => {
-                    equiposCount[eq] = (equiposCount[eq] || 0) + 1;
+            let secStr = getVal(r, 'sectores_intervenidos');
+            if (secStr && typeof secStr === 'string') {
+                let secArr = secStr.split(',').map(s => s.trim()).filter(s => s !== '');
+                secArr.forEach(item => {
+                    const match = identificarSectorMaximo(item);
+                    if (match) {
+                        conteoSectores[match.code] = (conteoSectores[match.code] || 0) + 1;
+                    }
                 });
             }
         });
 
-        let topEquipos = Object.keys(equiposCount)
-            .map(k => ({ nombreCompleto: k, count: equiposCount[k] }))
+        if(cSectores) cSectores.destroy();
+        const ctxSectores = document.getElementById('chartSectores');
+        if (ctxSectores) {
+            const sectoresLabels = SECTORES_MAXIMO.map(s => s.label);
+            const sectoresData = SECTORES_MAXIMO.map(s => conteoSectores[s.code] || 0);
+
+            cSectores = new Chart(ctxSectores.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: sectoresLabels,
+                    datasets: [{
+                        label: 'Intervenciones',
+                        data: sectoresData,
+                        backgroundColor: '#06b6d4',
+                        hoverBackgroundColor: '#22d3ee',
+                        borderRadius: 4,
+                        barPercentage: 0.75
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const v = context.parsed.x || 0;
+                                    return ` Intervenciones: ${v}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 },
+                            grid: { color: 'rgba(148, 163, 184, 0.1)' }
+                        },
+                        y: {
+                            ticks: { color: '#cbd5e1', font: { size: 11 } },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // B. Lectura Top 10 Equipos (Columna: equipos_intervenidos)
+        let equiposMap = {};
+        rawData.forEach(r => {
+            let eqStr = getVal(r, 'equipos_intervenidos');
+            if (eqStr && typeof eqStr === 'string') {
+                let eqArr = eqStr.split(',').map(s => s.trim()).filter(s => s !== '');
+                eqArr.forEach(rawItem => {
+                    // Si el usuario por costumbre pone (Sector), se lo limpiamos para agruparlo bien.
+                    let nombre = rawItem;
+                    const firstParen = rawItem.indexOf('(');
+                    if (firstParen !== -1) {
+                        nombre = rawItem.substring(0, firstParen).trim();
+                    }
+
+                    if (!equiposMap[nombre]) {
+                        equiposMap[nombre] = { count: 0 };
+                    }
+                    equiposMap[nombre].count += 1;
+                });
+            }
+        });
+
+        let topEquipos = Object.keys(equiposMap)
+            .map(k => ({ nombre: k, count: equiposMap[k].count }))
             .sort((a,b) => b.count - a.count)
             .slice(0, 10);
 
         let tbody = document.getElementById('tabla_equipos_body');
         if (tbody) {
             if (topEquipos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-500 italic">No hay registros de equipos intervenidos aún</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center py-6 text-slate-500 italic">No hay registros de equipos intervenidos aún</td></tr>';
             } else {
                 tbody.innerHTML = topEquipos.map((eq, index) => {
-                    let nombre = eq.nombreCompleto;
-                    let sector = 'No especificado';
-                    if (nombre.includes('(') && nombre.includes(')')) {
-                        let parts = nombre.split('(');
-                        nombre = parts[0].trim();
-                        sector = parts[1].replace(')', '').trim();
-                    } else if (nombre.includes('-')) {
-                        let parts = nombre.split('-');
-                        nombre = parts[0].trim();
-                        sector = parts[1].trim();
-                    }
                     return `<tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition">
                                 <td class="py-3 px-4 text-cyan-400 font-medium">#${index + 1}</td>
-                                <td class="py-3 px-4 text-white font-medium">${nombre}</td>
-                                <td class="py-3 px-4 text-slate-400 text-sm">${sector}</td>
+                                <td class="py-3 px-4 text-white font-medium">${eq.nombre}</td>
                                 <td class="py-3 px-4 text-amber-400 font-bold text-right">${eq.count}</td>
                             </tr>`;
                 }).join('');
