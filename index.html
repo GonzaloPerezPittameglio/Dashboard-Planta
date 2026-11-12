@@ -23,7 +23,7 @@
             <div class="flex justify-between h-16 items-center flex-wrap gap-4 py-2">
                 <div>
                     <h1 class="text-xl font-bold text-white tracking-tight">Planta Depuradora Hurlingham</h1>
-                    <p class="text-xs text-slate-400">Tablero de Control (AySA)</p>
+                    <p class="text-xs text-slate-400">Tablero Gerencial de Control (AySA)</p>
                 </div>
                 <div class="flex items-center gap-3 flex-wrap">
                     <span id="dataSourceLabel" class="text-xs font-medium px-3 py-1.5 bg-slate-800 text-slate-300 rounded-full border border-slate-700">
@@ -85,18 +85,22 @@
                             <div class="flex items-end justify-center gap-2"><span class="text-[10px] text-slate-500">Sal:</span> <span id="m1_mes_sal" class="font-bold text-green-400">0</span></div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-3 gap-3 mt-4">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
                         <div class="bg-slate-900 rounded-xl p-3 border border-slate-700 text-center">
                             <div class="text-xs text-slate-400 mb-1">Caudal de Diseño</div>
-                            <div class="text-lg font-bold text-white"><span id="m1_caudal_dis">0</span> <span class="text-xs font-normal">m³/s</span></div>
+                            <div class="text-base font-bold text-white"><span id="m1_caudal_dis">0</span> <span class="text-xs font-normal">m³/s</span></div>
                         </div>
                         <div class="bg-slate-900 rounded-xl p-3 border border-slate-700 text-center">
                             <div class="text-xs text-slate-400 mb-1">Caudal Tratado</div>
-                            <div class="text-lg font-bold text-cyan-400"><span id="m1_caudal_trat">0</span> <span class="text-xs font-normal">m³/s</span></div>
+                            <div class="text-base font-bold text-cyan-400"><span id="m1_caudal_trat">0</span> <span class="text-xs font-normal">m³/s</span></div>
                         </div>
                         <div class="bg-slate-900 rounded-xl p-3 border border-slate-700 text-center">
                             <div class="text-xs text-slate-400 mb-1">Consumo Energía</div>
-                            <div class="text-lg font-bold text-yellow-400"><span id="m1_energia_val">0</span> <span class="text-xs font-normal">kWh</span></div>
+                            <div class="text-base font-bold text-yellow-400"><span id="m1_energia_val">0</span> <span class="text-xs font-normal">kWh</span></div>
+                        </div>
+                        <div class="bg-slate-900 rounded-xl p-3 border border-slate-700 text-center">
+                            <div class="text-xs text-slate-400 mb-1">Ratio Energético</div>
+                            <div class="text-base font-bold text-amber-400"><span id="m1_kw_m3">0.000</span> <span class="text-xs font-normal">kW/m³</span></div>
                         </div>
                     </div>
                 </div>
@@ -124,18 +128,22 @@
                             <div class="flex items-end justify-center gap-2"><span class="text-[10px] text-slate-500">Sal:</span> <span id="m2_mes_sal" class="font-bold text-green-400">0</span></div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-3 gap-3 mt-4">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
                         <div class="bg-slate-900 rounded-xl p-3 border border-slate-700 text-center">
                             <div class="text-xs text-slate-400 mb-1">Caudal de Diseño</div>
-                            <div class="text-lg font-bold text-white"><span id="m2_caudal_dis">0</span> <span class="text-xs font-normal">m³/s</span></div>
+                            <div class="text-base font-bold text-white"><span id="m2_caudal_dis">0</span> <span class="text-xs font-normal">m³/s</span></div>
                         </div>
                         <div class="bg-slate-900 rounded-xl p-3 border border-slate-700 text-center">
                             <div class="text-xs text-slate-400 mb-1">Caudal Tratado</div>
-                            <div class="text-lg font-bold text-cyan-400"><span id="m2_caudal_trat">0</span> <span class="text-xs font-normal">m³/s</span></div>
+                            <div class="text-base font-bold text-cyan-400"><span id="m2_caudal_trat">0</span> <span class="text-xs font-normal">m³/s</span></div>
                         </div>
                         <div class="bg-slate-900 rounded-xl p-3 border border-slate-700 text-center">
                             <div class="text-xs text-slate-400 mb-1">Consumo Energía</div>
-                            <div class="text-lg font-bold text-yellow-400"><span id="m2_energia_val">0</span> <span class="text-xs font-normal">kWh</span></div>
+                            <div class="text-base font-bold text-yellow-400"><span id="m2_energia_val">0</span> <span class="text-xs font-normal">kWh</span></div>
+                        </div>
+                        <div class="bg-slate-900 rounded-xl p-3 border border-slate-700 text-center">
+                            <div class="text-xs text-slate-400 mb-1">Ratio Energético</div>
+                            <div class="text-base font-bold text-amber-400"><span id="m2_kw_m3">0.000</span> <span class="text-xs font-normal">kW/m³</span></div>
                         </div>
                     </div>
                 </div>
@@ -188,7 +196,7 @@
                 </div>
             </div>
 
-            <!-- Indicadores Generales -->
+            <!-- Indicadores Generales (Tarjetas Acumuladas) -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div class="bg-slate-800 rounded-xl p-5 border border-slate-700 flex flex-col items-center justify-center text-center shadow-xl">
                     <i data-lucide="zap" class="w-6 h-6 text-yellow-400 mb-2"></i>
@@ -212,7 +220,47 @@
                 </div>
             </div>
 
-            <!-- Gráfico de Energía -->
+            <!-- Gráficos Mensuales de los 4 Indicadores -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i data-lucide="zap" class="w-4 h-4 text-yellow-400"></i>
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wider">Energía Total Mensual (kWh)</h3>
+                    </div>
+                    <div class="h-52 relative">
+                        <canvas id="chartMensualEnergia"></canvas>
+                    </div>
+                </div>
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i data-lucide="mountain" class="w-4 h-4 text-amber-600"></i>
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wider">Biosólidos Mensual (Ton)</h3>
+                    </div>
+                    <div class="h-52 relative">
+                        <canvas id="chartMensualBiosolidos"></canvas>
+                    </div>
+                </div>
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i data-lucide="layers" class="w-4 h-4 text-orange-400"></i>
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wider">Arenas Mensual (Ton)</h3>
+                    </div>
+                    <div class="h-52 relative">
+                        <canvas id="chartMensualArenas"></canvas>
+                    </div>
+                </div>
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i data-lucide="beaker" class="w-4 h-4 text-indigo-400"></i>
+                        <h3 class="text-sm font-bold text-white uppercase tracking-wider">Polímero Mensual (Kg)</h3>
+                    </div>
+                    <div class="h-52 relative">
+                        <canvas id="chartMensualPolimero"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gráfico de Energía por Sectores -->
             <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
                 <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">ENERGÍA TOTAL</h3>
                 <div class="h-64 relative">
@@ -223,7 +271,6 @@
 
         <!-- PESTAÑA: PROCESO -->
         <div id="tab-proceso" class="tab-content hidden space-y-6">
-            
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
                     <div class="flex items-center gap-2 mb-4 border-b border-slate-700 pb-2">
@@ -276,7 +323,6 @@
                 </div>
             </div>
 
-            <!-- Biosólidos -->
             <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
                 <div class="flex items-center gap-2 mb-4 border-b border-slate-700 pb-2">
                     <i data-lucide="mountain" class="w-5 h-5 text-amber-500"></i>
@@ -310,7 +356,6 @@
                 </div>
             </div>
 
-            <!-- Gráficos -->
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
                     <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Evolución de Caudales M1 y M2 (m³/s)</h3>
@@ -334,7 +379,6 @@
                 </div>
             </div>
 
-            <!-- Semáforo Normativo -->
             <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl relative overflow-hidden">
                 <div class="absolute top-0 right-0 p-4 opacity-10 pointer-events-none"><i data-lucide="alert-triangle" class="w-32 h-32 text-red-500"></i></div>
                 <div class="flex justify-between items-center mb-4 relative z-10">
@@ -354,10 +398,9 @@
                     </div>
                 </div>
             </div>
-
         </div>
 
-        <!-- PESTAÑAS SECUNDARIAS -->
+        <!-- PESTAÑA: FUNCIONAMIENTO -->
         <div id="tab-funcionamiento" class="tab-content hidden">
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-10 text-center">
                 <i data-lucide="settings" class="w-12 h-12 text-slate-600 mx-auto mb-3"></i>
@@ -366,14 +409,84 @@
             </div>
         </div>
 
-        <div id="tab-mantenimiento" class="tab-content hidden">
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-10 text-center">
-                <i data-lucide="wrench" class="w-12 h-12 text-slate-600 mx-auto mb-3"></i>
-                <h2 class="text-xl font-bold text-slate-300">Sector: Mantenimiento</h2>
-                <p class="text-slate-500 mt-2">Listado de Órdenes de Trabajo (OT) y actividades.</p>
+        <!-- PESTAÑA: MANTENIMIENTO -->
+        <div id="tab-mantenimiento" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-slate-800 rounded-xl p-5 border border-slate-700 shadow-xl text-center">
+                    <div class="text-xs text-slate-400 uppercase tracking-wider mb-2">Tot. Mantenimientos</div>
+                    <div class="text-3xl font-bold text-white" id="kpi_mant_total">0</div>
+                </div>
+                <div class="bg-slate-800 rounded-xl p-5 border border-slate-700 shadow-xl text-center">
+                    <div class="text-xs text-slate-400 uppercase tracking-wider mb-2">Generales</div>
+                    <div class="text-3xl font-bold text-cyan-400" id="kpi_mant_gen">0</div>
+                </div>
+                <div class="bg-slate-800 rounded-xl p-5 border border-slate-700 shadow-xl text-center">
+                    <div class="text-xs text-slate-400 uppercase tracking-wider mb-2">Horas Preventivo</div>
+                    <div class="text-3xl font-bold text-green-400"><span id="kpi_horas_prev">0</span><span class="text-sm text-slate-500 ml-1">hs</span></div>
+                </div>
+                <div class="bg-slate-800 rounded-xl p-5 border border-red-900/30 shadow-xl text-center">
+                    <div class="text-xs text-slate-400 uppercase tracking-wider mb-2">Horas Correctivo</div>
+                    <div class="text-3xl font-bold text-red-400"><span id="kpi_horas_corr">0</span><span class="text-sm text-slate-500 ml-1">hs</span></div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl lg:col-span-2">
+                    <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Evolución de Mantenimientos (Mensual)</h3>
+                    <div class="h-64 relative">
+                        <canvas id="chartMantMensual"></canvas>
+                    </div>
+                </div>
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                    <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Preventivos vs Correctivos</h3>
+                    <div class="h-64 relative">
+                        <canvas id="chartMantTortas"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                    <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Criticidad de Correctivos</h3>
+                    <div class="h-64 relative">
+                        <canvas id="chartCriticidad"></canvas>
+                    </div>
+                </div>
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                    <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Intervenciones por Sector</h3>
+                    <div class="h-64 relative flex items-center justify-center">
+                        <canvas id="chartSectores"></canvas>
+                        <div id="chartSectoresOverlay" class="absolute inset-0 flex items-center justify-center bg-slate-900/80 rounded-lg hidden">
+                            <span class="text-slate-400 text-sm font-medium">Esperando listado de sectores...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                <div class="flex items-center gap-2 mb-4 border-b border-slate-700 pb-3">
+                    <i data-lucide="award" class="w-5 h-5 text-amber-400"></i>
+                    <h3 class="text-lg font-bold text-white uppercase tracking-wider">Ranking Top 10 Equipos Más Intervenidos</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-xs uppercase text-slate-500 border-b border-slate-700">
+                                <th class="py-3 px-4 w-16">Rank</th>
+                                <th class="py-3 px-4">Equipo / Componente</th>
+                                <th class="py-3 px-4">Sector (Ubicación)</th>
+                                <th class="py-3 px-4 text-right">Intervenciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla_equipos_body">
+                            <tr><td colspan="4" class="text-center py-6 text-slate-500 italic">Cargando datos...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
+        <!-- PESTAÑA: CONTROL Y GESTIÓN -->
         <div id="tab-gestion" class="tab-content hidden">
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-10 text-center">
                 <i data-lucide="bar-chart-3" class="w-12 h-12 text-slate-600 mx-auto mb-3"></i>
@@ -396,5 +509,5 @@
 
     <!-- Script Principal -->
     <script src="js/main.js"></script>
-</body> 
+</body>
 </html>
