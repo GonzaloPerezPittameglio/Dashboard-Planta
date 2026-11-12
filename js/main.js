@@ -3,44 +3,42 @@ let cEnergia = null;
 let cCaudales = null;
 let cLimites = null;
 
-// Gráficos Mensuales Resumen General
 let cMensualEnergia = null;
 let cMensualBiosolidos = null;
 let cMensualArenas = null;
 let cMensualPolimero = null;
 
-// Gráficos Mantenimiento
 let cMantMensual = null;
 let cMantTortas = null;
 let cCriticidad = null;
 let cSectores = null;
 
-// Catálogo oficial de los 24 sectores con sus nombres exactos para buscar en las columnas
+// Catálogo oficial con los nombres exactos que pusiste en tus columnas de Google Sheets
 const SECTORES_MAXIMO = [
-    { code: '0099', label: '0099 (Báscula)', colNames: ['0099 (Báscula)', '0099', 'sec_0099'] },
-    { code: '0100', label: 'Pretratamiento M1 (0100)', colNames: ['Pretratamiento M1 (0100)', '0100', 'sec_0100', 'Pretratamiento M1'] },
-    { code: '0101', label: 'Tratamiento Biológico M1 (0101)', colNames: ['Tratamiento Biológico M1 (0101)', '0101', 'sec_0101', 'Tratamiento Biológico M1'] },
-    { code: '0102', label: 'Sedimentación Secundaria M1 (0102)', colNames: ['Sedimentación Secundaria M1 (0102)', '0102', 'sec_0102', 'Sedimentación Secundaria M1'] },
-    { code: '0103', label: 'Salida de Liquido M1 (0103)', colNames: ['Salida de Liquido M1 (0103)', '0103', 'sec_0103', 'Salida de Liquido M1'] },
-    { code: '0104', label: 'Deshidratación de Lodos M1 (0104)', colNames: ['Deshidratación de Lodos M1 (0104)', '0104', 'sec_0104', 'Deshidratación de Lodos M1'] },
-    { code: '0105', label: 'Sistema de Provisión de Agua M1 (0105)', colNames: ['Sistema de Provisión de Agua M1 (0105)', '0105', 'sec_0105'] },
-    { code: '0106', label: 'Sistema Eléctrico M1 (0106)', colNames: ['Sistema Eléctrico M1 (0106)', '0106', 'sec_0106'] },
-    { code: '0107', label: 'Depósito (0107)', colNames: ['Depósito (0107)', '0107', 'sec_0107', 'Depósito'] },
-    { code: '0108', label: 'Laboratorio (0108)', colNames: ['Laboratorio (0108)', '0108', 'sec_0108', 'Laboratorio'] },
-    { code: '0109', label: 'Administración (0109)', colNames: ['Administración (0109)', '0109', 'sec_0109', 'Administración'] },
-    { code: '0110', label: 'Taller de Planta (0110)', colNames: ['Taller de Planta (0110)', '0110', 'sec_0110', 'Taller de Planta'] },
-    { code: '0111', label: 'Pañol (0111)', colNames: ['Pañol (0111)', '0111', 'sec_0111', 'Pañol'] },
-    { code: '0200', label: 'Pretratamiento M2 (0200)', colNames: ['Pretratamiento M2 (0200)', '0200', 'sec_0200', 'Pretratamiento M2'] },
-    { code: '0201', label: 'Sedimentación Primaria (0201)', colNames: ['Sedimentación Primaria (0201)', '0201', 'sec_0201', 'Sedimentación Primaria'] },
-    { code: '020105', label: 'Agua de Servicio Pretratamiento (020105)', colNames: ['Agua de Servicio Pretratamiento (020105)', '020105', 'sec_020105'] },
-    { code: '0202', label: 'Tratamiento Biológico (0202)', colNames: ['Tratamiento Biológico (0202)', '0202', 'sec_0202', 'Tratamiento Biológico'] },
-    { code: '0203', label: 'Sedimentación Secundaria (0203)', colNames: ['Sedimentación Secundaria (0203)', '0203', 'sec_0203', 'Sedimentación Secundaria'] },
-    { code: '020305', label: 'Agua de Servicio (020305)', colNames: ['Agua de Servicio (020305)', '020305', 'sec_020305'] },
-    { code: '0204', label: 'Espesamiento de Lodos (0204)', colNames: ['Espesamiento de Lodos (0204)', '0204', 'sec_0204', 'Espesamiento de Lodos'] },
-    { code: '0205', label: 'Flotación de Lodos (0205)', colNames: ['Flotación de Lodos (0205)', '0205', 'sec_0205', 'Flotación de Lodos'] },
-    { code: '0206', label: 'Digestión y Producción de Gas (0206)', colNames: ['Digestión y Producción de Gas (0206)', '0206', 'sec_0206'] },
-    { code: '0207', label: 'Almacenamiento de Lodos (0207)', colNames: ['Almacenamiento de Lodos (0207)', '0207', 'sec_0207', 'Almacenamiento de Lodos'] },
-    { code: '0208', label: 'Deshidratación (0208)', colNames: ['Deshidratación (0208)', '0208', 'sec_0208', 'Deshidratación'] }
+    { code: '0099', label: '0099 (Báscula)' },
+    { code: '0100', label: '0100 (Pretratamiento M1)' },
+    { code: '0101', label: '0101 (Tratamiento Biológico M1)' },
+    { code: '0102', label: '0102 (Sedimentación Secundaria M1)' },
+    { code: '0103', label: '0103 (Salida de Liquido M1)' },
+    { code: '0104', label: '0104 (Deshidratación de Lodos M1)' },
+    { code: '0105', label: '0105 (Sistema de Provisión de Agua M1)' },
+    { code: '0106', label: '0106 (Sistema Eléctrico M1)' },
+    { code: '0107', label: '0107 (Depósito)' },
+    { code: '0108', label: '0108 (Laboratorio)' },
+    { code: '0109', label: '0109 (Administración)' },
+    { code: '0110', label: '0110 (Taller de Planta)' },
+    { code: '0111', label: '0111 (Pañol)' },
+    { code: '0200', label: '0200 (Pretratamiento M2)' },
+    { code: '0201', label: '0201 (Sedimentación Primaria)' },
+    { code: '020105', label: '020105 (Agua de Servicio Pretratamiento)' },
+    { code: '0202', label: '0202 (Tratamiento Biológico)' },
+    { code: '0203', label: '0203 (Sedimentación Secundaria)' },
+    { code: '020305', label: '020305 (Agua de Servicio)' },
+    { code: '0204', label: '0204 (Espesamiento de Lodos)' },
+    { code: '0205', label: '0205 (Flotación de Lodos)' },
+    { code: '0206', label: '0206 (Digestión y Producción de Gas)' },
+    { code: '0207', label: '0207 (Almacenamiento de Lodos)' },
+    { code: '0208', label: '0208 (Deshidratación)' }
 ];
 
 const urlPrimary = "https://docs.google.com/spreadsheets/d/17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA/gviz/tq?tqx=out:csv";
@@ -190,7 +188,7 @@ function calcularYRenderizarResumen() {
         // ==============================
         setTexto('m1_dbo_ent', getAvg(rawData, 'dbo_ent_m1'));
         setTexto('m1_dbo_sal', getAvg(rawData, 'dbo_sal_m1'));
-        setTexto('m1_dqo_ent', getAvg(rawData, 'dbo_ent_m1'));
+        setTexto('m1_dqo_ent', getAvg(rawData, 'dqo_ent_m1') || getAvg(rawData, 'dbo_ent_m1'));
         setTexto('m1_dqo_sal', getAvg(rawData, 'dqo_sal_m1'));
         setTexto('m1_mes_ent', getAvg(rawData, 'mes_ent_m1'));
         setTexto('m1_mes_sal', getAvg(rawData, 'mes_sal_m1'));
@@ -225,30 +223,75 @@ function calcularYRenderizarResumen() {
         setTexto('tot_arenas', getSum(rawData, 'arenas_ton').toLocaleString('es-AR'));
         setTexto('tot_polimero', getSum(rawData, 'polimero_kg').toLocaleString('es-AR'));
 
+        // Gráficos Mensuales Generales
+        const resumenMensual = {};
+        rawData.forEach(r => {
+            const mesKey = getMonthYear(getVal(r, 'fecha'));
+            if (!resumenMensual[mesKey]) {
+                resumenMensual[mesKey] = { energia: 0, biosolidos: 0, arenas: 0, polimero: 0 };
+            }
+            resumenMensual[mesKey].energia += getCleanNumber(getVal(r, 'energia_total'));
+            resumenMensual[mesKey].biosolidos += getCleanNumber(getVal(r, 'biosolidos_ton'));
+            resumenMensual[mesKey].arenas += getCleanNumber(getVal(r, 'arenas_ton'));
+            resumenMensual[mesKey].polimero += getCleanNumber(getVal(r, 'polimero_kg'));
+        });
+
+        const mesesLabels = Object.keys(resumenMensual);
+        const serieEnergia = mesesLabels.map(m => resumenMensual[m].energia);
+        const serieBiosolidos = mesesLabels.map(m => resumenMensual[m].biosolidos);
+        const serieArenas = mesesLabels.map(m => resumenMensual[m].arenas);
+        const seriePolimero = mesesLabels.map(m => resumenMensual[m].polimero);
+
+        const buildMonthlyBar = (canvasId, instanceRef, label, dataArr, colorHex, unit) => {
+            if (instanceRef) instanceRef.destroy();
+            const ctx = document.getElementById(canvasId);
+            if (!ctx) return null;
+            return new Chart(ctx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: mesesLabels,
+                    datasets: [{
+                        label: label,
+                        data: dataArr,
+                        backgroundColor: colorHex,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${label}: ${(context.parsed.y || 0).toLocaleString('es-AR')} ${unit}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        };
+
+        cMensualEnergia = buildMonthlyBar('chartMensualEnergia', cMensualEnergia, 'Energía Total', serieEnergia, '#facc15', 'kWh');
+        cMensualBiosolidos = buildMonthlyBar('chartMensualBiosolidos', cMensualBiosolidos, 'Biosólidos', serieBiosolidos, '#d97706', 'Ton');
+        cMensualArenas = buildMonthlyBar('chartMensualArenas', cMensualArenas, 'Arenas', serieArenas, '#fb923c', 'Ton');
+        cMensualPolimero = buildMonthlyBar('chartMensualPolimero', cMensualPolimero, 'Polímero', seriePolimero, '#818cf8', 'Kg');
+
         // ==============================
-        // 2. PESTAÑA MANTENIMIENTO (SECTORES Y EQUIPOS)
+        // 2. PESTAÑA MANTENIMIENTO
         // ==============================
-        const sumGen = getSum(rawData, 'mant_generales');
-        const sumPrev = getSum(rawData, 'mant_preventivos');
-        const sumCorr = getSum(rawData, 'mant_correctivos');
-        
-        setTexto('kpi_mant_gen', sumGen);
-        setTexto('kpi_mant_total', sumGen + sumPrev + sumCorr);
+        setTexto('kpi_mant_gen', getSum(rawData, 'mant_generales'));
+        setTexto('kpi_mant_total', getSum(rawData, 'mant_generales') + getSum(rawData, 'mant_preventivos') + getSum(rawData, 'mant_correctivos'));
         setTexto('kpi_horas_prev', getSum(rawData, 'horas_prev'));
         setTexto('kpi_horas_corr', getSum(rawData, 'horas_corr'));
 
-        // A. Lectura inteligente de columnas para los 24 sectores
+        // Gráfico de Sectores (Leyendo directamente los números de cada una de las 24 columnas)
         const conteoSectores = {};
-        SECTORES_MAXIMO.forEach(secObj => {
-            let totalSec = 0;
-            // Busca probando cualquiera de las variantes de nombre de columna posibles
-            for (let colAlias of secObj.colNames) {
-                let val = getSum(rawData, colAlias);
-                if (val > 0) {
-                    totalSec += val;
-                }
-            }
-            conteoSectores[secObj.code] = totalSec;
+        SECTORES_MAXIMO.forEach(s => {
+            conteoSectores[s.code] = getSum(rawData, s.label);
         });
 
         if(cSectores) cSectores.destroy();
@@ -279,8 +322,7 @@ function calcularYRenderizarResumen() {
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    const v = context.parsed.x || 0;
-                                    return ` Intervenciones: ${v}`;
+                                    return ` Intervenciones: ${context.parsed.x || 0}`;
                                 }
                             }
                         }
@@ -300,7 +342,7 @@ function calcularYRenderizarResumen() {
             });
         }
 
-        // B. Lectura Top 10 Equipos
+        // Top 10 Equipos
         let equiposMap = {};
         rawData.forEach(r => {
             let eqStr = getVal(r, 'equipos_intervenidos');
@@ -348,8 +390,4 @@ function calcularYRenderizarResumen() {
     } catch (e) {
         console.error("Error al renderizar el resumen:", e);
     }
-};
-
-window.updateChartLimites = function(param, btnElement) {
-    // Función de control de límites normativos
 };
