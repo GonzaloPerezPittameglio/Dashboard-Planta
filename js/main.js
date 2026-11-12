@@ -169,35 +169,6 @@ function setTexto(id, valor) {
     if (el) el.textContent = valor;
 }
 
-function normalizarTexto(str) {
-    return String(str || '')
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .trim();
-}
-
-function identificarSectorMaximo(texto) {
-    if (!texto) return null;
-    const norm = normalizarTexto(texto);
-
-    // 1. Buscar primero por código exacto (ordenado por longitud descendente)
-    const porCodigo = [...SECTORES_MAXIMO].sort((a, b) => b.code.length - a.code.length);
-    for (const sec of porCodigo) {
-        const regex = new RegExp(`(^|[^0-9])${sec.code}([^0-9]|$)`);
-        if (regex.test(norm)) return sec;
-    }
-
-    // 2. Buscar por nombre del sector
-    const porNombre = [...SECTORES_MAXIMO].sort((a, b) => b.name.length - a.name.length);
-    for (const sec of porNombre) {
-        const secNorm = normalizarTexto(sec.name);
-        if (norm.includes(secNorm)) return sec;
-    }
-
-    return null;
-}
-
 function getMonthYear(fechaRaw) {
     if (!fechaRaw) return 'General';
     const str = String(fechaRaw).trim();
@@ -269,7 +240,6 @@ function calcularYRenderizarResumen() {
         setTexto('tot_arenas', getSum(rawData, 'arenas_ton').toLocaleString('es-AR'));
         setTexto('tot_polimero', getSum(rawData, 'polimero_kg').toLocaleString('es-AR'));
 
-        // Agrupación Mensual para los 4 gráficos
         const resumenMensual = {};
         rawData.forEach(r => {
             const mesKey = getMonthYear(getVal(r, 'fecha'));
@@ -541,28 +511,11 @@ function calcularYRenderizarResumen() {
         // LECTURA 100% INDEPENDIENTE DE MANTENIMIENTO
         // ==========================================
 
-        // A. Lectura de Sectores (Nueva Columna: sectores_intervenidos)
+        // A. Lectura de Sectores (Solo desde las 24 columnas numéricas)
         const conteoSectores = {};
-        SECTORES_MAXIMO.forEach(s => { conteoSectores[s.code] = 0; });
-
-        // Sumar columnas directas (ej: sec_0100 o 0100) si existieran
-        SECTORES_MAXIMO.forEach(s => {
-            const valCol = getSum(rawData, `sec_${s.code}`) + getSum(rawData, s.code);
-            if (valCol > 0) conteoSectores[s.code] += valCol;
-        });
-
-        // Sumar desde la columna nueva de sectores separados por coma
-        rawData.forEach(r => {
-            let secStr = getVal(r, 'sectores_intervenidos');
-            if (secStr && typeof secStr === 'string') {
-                let secArr = secStr.split(',').map(s => s.trim()).filter(s => s !== '');
-                secArr.forEach(item => {
-                    const match = identificarSectorMaximo(item);
-                    if (match) {
-                        conteoSectores[match.code] = (conteoSectores[match.code] || 0) + 1;
-                    }
-                });
-            }
+        SECTORES_MAXIMO.forEach(s => { 
+            // Sumamos el valor numérico cargado en la columna sec_0100 (o 0100 si lo nombraste así)
+            conteoSectores[s.code] = getSum(rawData, `sec_${s.code}`) + getSum(rawData, s.code); 
         });
 
         if(cSectores) cSectores.destroy();
@@ -614,42 +567,49 @@ function calcularYRenderizarResumen() {
             });
         }
 
-        // B. Lectura Top 10 Equipos (Columna: equipos_intervenidos)
+        // B. Lectura Top 10 Equipos (Columna: equipos_intervenidos -> Formato "Equipo (Ubicación)")
         let equiposMap = {};
         rawData.forEach(r => {
             let eqStr = getVal(r, 'equipos_intervenidos');
             if (eqStr && typeof eqStr === 'string') {
                 let eqArr = eqStr.split(',').map(s => s.trim()).filter(s => s !== '');
                 eqArr.forEach(rawItem => {
-                    // Si el usuario por costumbre pone (Sector), se lo limpiamos para agruparlo bien.
                     let nombre = rawItem;
+                    let sector = 'No especificado';
+
                     const firstParen = rawItem.indexOf('(');
                     if (firstParen !== -1) {
                         nombre = rawItem.substring(0, firstParen).trim();
+                        sector = rawItem.substring(firstParen + 1).replace(/\)+$/, '').trim();
+                    } else if (rawItem.includes('-')) {
+                        const dashIdx = rawItem.indexOf('-');
+                        nombre = rawItem.substring(0, dashIdx).trim();
+                        sector = rawItem.substring(dashIdx + 1).trim();
                     }
 
-                    if (!equiposMap[nombre]) {
-                        equiposMap[nombre] = { count: 0 };
+                    const key = `${nombre}||${sector}`;
+                    if (!equiposMap[key]) {
+                        equiposMap[key] = { nombre, sector, count: 0 };
                     }
-                    equiposMap[nombre].count += 1;
+                    equiposMap[key].count += 1;
                 });
             }
         });
 
-        let topEquipos = Object.keys(equiposMap)
-            .map(k => ({ nombre: k, count: equiposMap[k].count }))
+        let topEquipos = Object.values(equiposMap)
             .sort((a,b) => b.count - a.count)
             .slice(0, 10);
 
         let tbody = document.getElementById('tabla_equipos_body');
         if (tbody) {
             if (topEquipos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="text-center py-6 text-slate-500 italic">No hay registros de equipos intervenidos aún</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-500 italic">No hay registros de equipos intervenidos aún</td></tr>';
             } else {
                 tbody.innerHTML = topEquipos.map((eq, index) => {
                     return `<tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition">
                                 <td class="py-3 px-4 text-cyan-400 font-medium">#${index + 1}</td>
                                 <td class="py-3 px-4 text-white font-medium">${eq.nombre}</td>
+                                <td class="py-3 px-4 text-slate-400 text-sm">${eq.sector}</td>
                                 <td class="py-3 px-4 text-amber-400 font-bold text-right">${eq.count}</td>
                             </tr>`;
                 }).join('');
