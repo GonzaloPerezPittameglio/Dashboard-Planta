@@ -176,7 +176,6 @@
                     </div>
                 </div>
 
-                <!-- Tarjeta de Resumen Mantenimiento Mensual Actualizada -->
                 <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl flex flex-col justify-center">
                     <h3 class="text-sm font-bold text-white mb-5 uppercase tracking-wider">Resumen Mantenimiento Mensual</h3>
                     
@@ -423,22 +422,24 @@
 
         <!-- PESTAÑA: MANTENIMIENTO -->
         <div id="tab-mantenimiento" class="tab-content hidden space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div class="bg-slate-800 rounded-xl p-5 border border-slate-700 shadow-xl text-center">
-                    <div class="text-xs text-slate-400 uppercase tracking-wider mb-2">Tot. Mantenimientos</div>
-                    <div class="text-3xl font-bold text-white" id="kpi_mant_total">0</div>
+            
+            <!-- NUEVA CUADRÍCULA DE CONTADORES -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-slate-800 rounded-xl p-5 border border-cyan-900/50 shadow-xl text-center">
+                    <div class="text-xs text-slate-400 uppercase tracking-wider mb-2">Tot. Intervenciones</div>
+                    <div class="text-3xl font-bold text-cyan-400" id="kpi_mant_total">0</div>
                 </div>
                 <div class="bg-slate-800 rounded-xl p-5 border border-slate-700 shadow-xl text-center">
-                    <div class="text-xs text-slate-400 uppercase tracking-wider mb-2">Generales</div>
-                    <div class="text-3xl font-bold text-cyan-400" id="kpi_mant_gen">0</div>
+                    <div class="text-xs text-slate-400 uppercase tracking-wider mb-2">Preventivos</div>
+                    <div class="text-3xl font-bold text-green-400" id="kpi_mant_prev">0</div>
                 </div>
                 <div class="bg-slate-800 rounded-xl p-5 border border-slate-700 shadow-xl text-center">
-                    <div class="text-xs text-slate-400 uppercase tracking-wider mb-2">Horas Preventivo</div>
-                    <div class="text-3xl font-bold text-green-400"><span id="kpi_horas_prev">0</span><span class="text-sm text-slate-500 ml-1">hs</span></div>
+                    <div class="text-xs text-slate-400 uppercase tracking-wider mb-2">Correctivos</div>
+                    <div class="text-3xl font-bold text-red-400" id="kpi_mant_corr">0</div>
                 </div>
-                <div class="bg-slate-800 rounded-xl p-5 border border-red-900/30 shadow-xl text-center">
-                    <div class="text-xs text-slate-400 uppercase tracking-wider mb-2">Horas Correctivo</div>
-                    <div class="text-3xl font-bold text-red-400"><span id="kpi_horas_corr">0</span><span class="text-sm text-slate-500 ml-1">hs</span></div>
+                <div class="bg-slate-800 rounded-xl p-5 border border-slate-700 shadow-xl text-center">
+                    <div class="text-xs text-slate-400 uppercase tracking-wider mb-2">Actividades</div>
+                    <div class="text-3xl font-bold text-white" id="kpi_mant_act">0</div>
                 </div>
             </div>
 
@@ -450,7 +451,7 @@
                     </div>
                 </div>
                 <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
-                    <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Preventivos vs Correctivos</h3>
+                    <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Preventivos vs Correctivos vs Actividades</h3>
                     <div class="h-64 relative">
                         <canvas id="chartMantTortas"></canvas>
                     </div>
@@ -489,14 +490,14 @@
                 <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl lg:col-span-2">
                     <div class="flex items-center gap-2 mb-4 border-b border-slate-700 pb-3">
                         <i data-lucide="award" class="w-5 h-5 text-amber-400"></i>
-                        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Ranking Top 10 Equipos Más Intervenidos</h3>
+                        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Equipos Más Intervenidos</h3>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="text-xs uppercase text-slate-500 border-b border-slate-700">
-                                    <th class="py-3 px-4 w-16">Rank</th>
-                                    <th class="py-3 px-4">Equipo / Componente</th>
+                                    <th class="py-3 px-4 w-16">N°</th>
+                                    <th class="py-3 px-4">Equipo</th>
                                     <th class="py-3 px-4">Sector (Ubicación)</th>
                                     <th class="py-3 px-4 text-right">Intervenciones</th>
                                 </tr>
