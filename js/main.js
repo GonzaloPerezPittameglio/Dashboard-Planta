@@ -170,7 +170,6 @@ function calcularYRenderizarResumen() {
         
         const energiaTotalM1 = getSum(rawData, 'energia_m1_ts1') + getSum(rawData, 'energia_m1_ts2') + getSum(rawData, 'energia_m1_ts3');
         setTexto('m1_energia_val', energiaTotalM1.toLocaleString('es-AR'));
-
         const volTotalM1 = rawData.reduce((acc, r) => acc + (getCleanNumber(getVal(r, 'caudal_trat_m1')) * 86400), 0);
         const ratioM1 = volTotalM1 > 0 ? (energiaTotalM1 / volTotalM1).toFixed(3) : '0.000';
         setTexto('m1_kw_m3', ratioM1);
@@ -186,7 +185,6 @@ function calcularYRenderizarResumen() {
         
         const energiaTotalM2 = getSum(rawData, 'energia_m2_ts1') + getSum(rawData, 'energia_m2_ts2') + getSum(rawData, 'energia_m2_ts3');
         setTexto('m2_energia_val', energiaTotalM2.toLocaleString('es-AR'));
-
         const volTotalM2 = rawData.reduce((acc, r) => acc + (getCleanNumber(getVal(r, 'caudal_trat_m2')) * 86400), 0);
         const ratioM2 = volTotalM2 > 0 ? (energiaTotalM2 / volTotalM2).toFixed(3) : '0.000';
         setTexto('m2_kw_m3', ratioM2);
@@ -202,9 +200,24 @@ function calcularYRenderizarResumen() {
         setTexto('hs_extra_lbl', getSum(rawData, 'hs_extra').toLocaleString('es-AR'));
         setTexto('hs_normales_lbl', getSum(rawData, 'hs_normales').toLocaleString('es-AR'));
 
-        setTexto('mant_prev', getSum(rawData, 'mant_preventivos'));
-        setTexto('mant_corr', getSum(rawData, 'mant_correctivos'));
-        setTexto('mant_act', getSum(rawData, 'mant_actividades'));
+        // --- SECCIÓN NUEVA: CANTIDADES Y HORAS DE MANTENIMIENTO ---
+        // Cantidades (Counts)
+        const countPrev = getSum(rawData, 'mant_preventivos');
+        const countCorr = getSum(rawData, 'mant_correctivos');
+        const countAct = getSum(rawData, 'mant_actividades');
+        setTexto('mant_prev', countPrev);
+        setTexto('mant_corr', countCorr);
+        setTexto('mant_act', countAct);
+        setTexto('mant_total_int', countPrev + countCorr + countAct);
+
+        // Horas (Hours)
+        const hsPrev = getSum(rawData, 'horas_prev');
+        const hsCorr = getSum(rawData, 'horas_corr');
+        const hsTareas = getSum(rawData, 'horas_tareas'); // Lee de la nueva columna que tenés que crear en Sheets
+        setTexto('res_hs_prev', hsPrev);
+        setTexto('res_hs_corr', hsCorr);
+        setTexto('res_hs_tareas', hsTareas);
+        setTexto('res_hs_total', hsPrev + hsCorr + hsTareas);
 
         // Gráficos Mensuales
         const resumenMensual = {};
@@ -246,11 +259,7 @@ function calcularYRenderizarResumen() {
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `${label}: ${(context.parsed.y || 0).toLocaleString('es-AR')} ${unit}`;
-                                }
-                            }
+                            callbacks: { label: function(context) { return `${label}: ${(context.parsed.y || 0).toLocaleString('es-AR')} ${unit}`; } }
                         }
                     },
                     scales: { y: { beginAtZero: true } }
@@ -280,10 +289,7 @@ function calcularYRenderizarResumen() {
                         borderWidth: 2, borderColor: '#1e293b' 
                     }]
                 },
-                options: {
-                    responsive: true, maintainAspectRatio: false, cutout: '65%',
-                    plugins: { legend: { position: 'right' } }
-                }
+                options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'right' } } }
             });
         }
 
@@ -366,16 +372,13 @@ function calcularYRenderizarResumen() {
         updateChartLimites('dbo_ent', firstActiveBtn);
 
         // ==============================
-        // 3. MANTENIMIENTO
+        // 3. PESTAÑA MANTENIMIENTO (General Tab)
         // ==============================
         const sumGen = getSum(rawData, 'mant_generales');
-        const sumPrev = getSum(rawData, 'mant_preventivos');
-        const sumCorr = getSum(rawData, 'mant_correctivos');
-        
         setTexto('kpi_mant_gen', sumGen);
-        setTexto('kpi_mant_total', sumGen + sumPrev + sumCorr);
-        setTexto('kpi_horas_prev', getSum(rawData, 'horas_prev'));
-        setTexto('kpi_horas_corr', getSum(rawData, 'horas_corr'));
+        setTexto('kpi_mant_total', sumGen + countPrev + countCorr);
+        setTexto('kpi_horas_prev', hsPrev);
+        setTexto('kpi_horas_corr', hsCorr);
 
         // Gráficos Mantenimiento
         const monthlyGroups = {};
@@ -413,7 +416,7 @@ function calcularYRenderizarResumen() {
                 data: {
                     labels: ['Preventivos', 'Correctivos'],
                     datasets: [{ 
-                        data: [sumPrev, sumCorr], backgroundColor: ['#10b981', '#f43f5e'], borderWidth: 2, borderColor: '#1e293b' 
+                        data: [countPrev, countCorr], backgroundColor: ['#10b981', '#f43f5e'], borderWidth: 2, borderColor: '#1e293b' 
                     }]
                 },
                 options: { responsive: true, maintainAspectRatio: false }
@@ -436,7 +439,7 @@ function calcularYRenderizarResumen() {
             });
         }
 
-        // Top 10 Equipos y conteo de Ubicaciones M1 / M2
+        // Top 10 Equipos y conteo de Ubicaciones M1 / M2 con Sectores Generales incluidos en M1
         let equiposMap = {};
         let ubicacionesM1Map = {};
         let ubicacionesM2Map = {};
@@ -454,26 +457,25 @@ function calcularYRenderizarResumen() {
                         sector = rawItem.substring(firstParen + 1).replace(/\)+$/, '').trim();
                     }
                     
-                    // Sumar para Top 10 Equipos
                     const key = `${nombre}||${sector}`;
                     if (!equiposMap[key]) equiposMap[key] = { nombre, sector, count: 0 };
                     equiposMap[key].count += 1;
 
-                    // Clasificar ubicación en M1 o M2
                     if (sector !== 'No especificado' && sector !== '') {
                         const secUpper = sector.toUpperCase();
                         const nombreLimpio = sector.replace(/\s*\(?\s*M[12]\s*\)?\s*/gi, '').trim() || sector;
-                        if (secUpper.includes('M1') || secUpper.includes('MÓDULO 1') || secUpper.includes('MODULO 1')) {
-                            ubicacionesM1Map[nombreLimpio] = (ubicacionesM1Map[nombreLimpio] || 0) + 1;
-                        } else if (secUpper.includes('M2') || secUpper.includes('MÓDULO 2') || secUpper.includes('MODULO 2')) {
+                        
+                        if (secUpper.includes('M2') || secUpper.includes('MÓDULO 2') || secUpper.includes('MODULO 2')) {
                             ubicacionesM2Map[nombreLimpio] = (ubicacionesM2Map[nombreLimpio] || 0) + 1;
+                        } else {
+                            ubicacionesM1Map[nombreLimpio] = (ubicacionesM1Map[nombreLimpio] || 0) + 1;
                         }
                     }
                 });
             }
         });
 
-        // Renderizar Gráfico Ubicaciones M1
+        // Gráfico Ubicaciones M1
         if (cUbicacionesM1) cUbicacionesM1.destroy();
         const ctxUbiM1 = document.getElementById('chartUbicacionesM1');
         if (ctxUbiM1) {
@@ -482,7 +484,7 @@ function calcularYRenderizarResumen() {
             cUbicacionesM1 = new Chart(ctxUbiM1.getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: labelsM1.length ? labelsM1 : ['Sin registros M1'],
+                    labels: labelsM1.length ? labelsM1 : ['Sin registros'],
                     datasets: [{
                         label: 'Intervenciones M1',
                         data: dataM1.length ? dataM1 : [0],
@@ -490,17 +492,11 @@ function calcularYRenderizarResumen() {
                         borderRadius: 6
                     }]
                 },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
-                }
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
             });
         }
 
-        // Renderizar Gráfico Ubicaciones M2
+        // Gráfico Ubicaciones M2
         if (cUbicacionesM2) cUbicacionesM2.destroy();
         const ctxUbiM2 = document.getElementById('chartUbicacionesM2');
         if (ctxUbiM2) {
@@ -509,7 +505,7 @@ function calcularYRenderizarResumen() {
             cUbicacionesM2 = new Chart(ctxUbiM2.getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: labelsM2.length ? labelsM2 : ['Sin registros M2'],
+                    labels: labelsM2.length ? labelsM2 : ['Sin registros'],
                     datasets: [{
                         label: 'Intervenciones M2',
                         data: dataM2.length ? dataM2 : [0],
@@ -517,13 +513,7 @@ function calcularYRenderizarResumen() {
                         borderRadius: 6
                     }]
                 },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
-                }
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
             });
         }
 
