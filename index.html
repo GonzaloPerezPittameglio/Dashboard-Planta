@@ -176,51 +176,42 @@
                     </div>
                 </div>
 
-                <!-- NUEVO: Tarjeta de Resumen Mantenimiento Mensual Actualizada -->
+                <!-- Tarjeta de Resumen Mantenimiento Mensual Actualizada -->
                 <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl flex flex-col justify-center">
                     <h3 class="text-sm font-bold text-white mb-5 uppercase tracking-wider">Resumen Mantenimiento Mensual</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <!-- Columna de Cantidades -->
-                        <div class="space-y-3">
-                            <h4 class="text-[11px] text-slate-400 uppercase tracking-wide mb-2 border-b border-slate-700 pb-1">Cantidad</h4>
-                            <div class="flex justify-between items-center bg-slate-900 rounded-xl p-3 border border-slate-700">
-                                <span class="text-slate-400 text-xs">Preventivos</span>
-                                <span class="text-lg font-bold text-green-400" id="mant_prev">0</span>
-                            </div>
-                            <div class="flex justify-between items-center bg-slate-900 rounded-xl p-3 border border-red-900/30">
-                                <span class="text-slate-400 text-xs">Correctivos</span>
-                                <span class="text-lg font-bold text-red-400" id="mant_corr">0</span>
-                            </div>
-                            <div class="flex justify-between items-center bg-slate-900 rounded-xl p-3 border border-slate-700">
-                                <span class="text-slate-400 text-xs">Tareas</span>
-                                <span class="text-lg font-bold text-white" id="mant_act">0</span>
-                            </div>
+                    
+                    <h4 class="text-xs text-slate-500 uppercase tracking-wide mb-3">Cantidad de Intervenciones</h4>
+                    <div class="space-y-3 mb-6">
+                        <div class="flex justify-between items-center bg-slate-900 rounded-xl p-3 border border-slate-700">
+                            <span class="text-slate-400 text-sm">Mant. Preventivos</span>
+                            <span class="text-xl font-bold text-green-400" id="mant_prev">0</span>
                         </div>
-                        <!-- Columna de Horas -->
-                        <div class="space-y-3">
-                            <h4 class="text-[11px] text-slate-400 uppercase tracking-wide mb-2 border-b border-slate-700 pb-1">Horas Invertidas</h4>
-                            <div class="flex justify-between items-center bg-slate-900 rounded-xl p-3 border border-slate-700">
-                                <span class="text-slate-400 text-xs">Hs Prev.</span>
-                                <span class="text-lg font-bold text-green-400" id="res_hs_prev">0</span>
-                            </div>
-                            <div class="flex justify-between items-center bg-slate-900 rounded-xl p-3 border border-red-900/30">
-                                <span class="text-slate-400 text-xs">Hs Corr.</span>
-                                <span class="text-lg font-bold text-red-400" id="res_hs_corr">0</span>
-                            </div>
-                            <div class="flex justify-between items-center bg-slate-900 rounded-xl p-3 border border-slate-700">
-                                <span class="text-slate-400 text-xs">Hs Tareas</span>
-                                <span class="text-lg font-bold text-white" id="res_hs_tareas">0</span>
-                            </div>
+                        <div class="flex justify-between items-center bg-slate-900 rounded-xl p-3 border border-red-900/30">
+                            <span class="text-slate-400 text-sm">Mant. Correctivos</span>
+                            <span class="text-xl font-bold text-red-400" id="mant_corr">0</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-900 rounded-xl p-3 border border-slate-700">
+                            <span class="text-slate-400 text-sm">Tareas Realizadas</span>
+                            <span class="text-xl font-bold text-white" id="mant_act">0</span>
                         </div>
                     </div>
-                    <!-- Totales -->
-                    <div class="mt-4 grid grid-cols-2 gap-4">
-                        <div class="flex justify-between items-center bg-slate-900 rounded-xl p-3 border border-cyan-900/50">
-                            <span class="text-cyan-400 text-xs font-bold uppercase">Total Int.</span>
-                            <span class="text-xl font-bold text-cyan-400" id="mant_total_int">0</span>
+                    
+                    <h4 class="text-xs text-slate-500 uppercase tracking-wide mb-3">Resumen de Horas</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="flex flex-col items-center justify-center bg-slate-900 rounded-xl p-3 border border-slate-700">
+                            <span class="text-slate-400 text-xs text-center mb-1">Hs de Mantenimientos Preventivos</span>
+                            <span class="text-xl font-bold text-green-400" id="res_hs_prev">0</span>
                         </div>
-                        <div class="flex justify-between items-center bg-slate-900 rounded-xl p-3 border border-amber-900/50">
-                            <span class="text-amber-400 text-xs font-bold uppercase">Total Hs</span>
+                        <div class="flex flex-col items-center justify-center bg-slate-900 rounded-xl p-3 border border-red-900/30">
+                            <span class="text-slate-400 text-xs text-center mb-1">Hs de Mantenimientos Correctivos</span>
+                            <span class="text-xl font-bold text-red-400" id="res_hs_corr">0</span>
+                        </div>
+                        <div class="flex flex-col items-center justify-center bg-slate-900 rounded-xl p-3 border border-slate-700">
+                            <span class="text-slate-400 text-xs text-center mb-1">Hs de Tareas Realizadas</span>
+                            <span class="text-xl font-bold text-white" id="res_hs_tareas">0</span>
+                        </div>
+                        <div class="flex flex-col items-center justify-center bg-slate-900 rounded-xl p-3 border border-amber-900/50">
+                            <span class="text-amber-400 font-bold text-xs uppercase tracking-wide text-center mb-1">Total de Horas</span>
                             <span class="text-xl font-bold text-amber-400" id="res_hs_total">0</span>
                         </div>
                     </div>
@@ -498,14 +489,14 @@
                 <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl lg:col-span-2">
                     <div class="flex items-center gap-2 mb-4 border-b border-slate-700 pb-3">
                         <i data-lucide="award" class="w-5 h-5 text-amber-400"></i>
-                        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Equipos Más Intervenidos</h3>
+                        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Ranking Top 10 Equipos Más Intervenidos</h3>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="text-xs uppercase text-slate-500 border-b border-slate-700">
-                                    <th class="py-3 px-4 w-16">N°</th>
-                                    <th class="py-3 px-4">Equipo</th>
+                                    <th class="py-3 px-4 w-16">Rank</th>
+                                    <th class="py-3 px-4">Equipo / Componente</th>
                                     <th class="py-3 px-4">Sector (Ubicación)</th>
                                     <th class="py-3 px-4 text-right">Intervenciones</th>
                                 </tr>
