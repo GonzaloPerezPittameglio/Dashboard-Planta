@@ -200,8 +200,6 @@ function calcularYRenderizarResumen() {
         setTexto('hs_extra_lbl', getSum(rawData, 'hs_extra').toLocaleString('es-AR'));
         setTexto('hs_normales_lbl', getSum(rawData, 'hs_normales').toLocaleString('es-AR'));
 
-        // --- SECCIÓN NUEVA: CANTIDADES Y HORAS DE MANTENIMIENTO ---
-        
         // Cantidades de intervenciones
         const countPrev = getSum(rawData, 'mant_preventivos');
         const countCorr = getSum(rawData, 'mant_correctivos');
@@ -376,23 +374,26 @@ function calcularYRenderizarResumen() {
         // ==============================
         // 3. PESTAÑA MANTENIMIENTO
         // ==============================
-        const sumGen = getSum(rawData, 'mant_generales');
-        setTexto('kpi_mant_gen', sumGen);
-        setTexto('kpi_mant_total', sumGen + countPrev + countCorr);
-        setTexto('kpi_horas_prev', hsPrev);
-        setTexto('kpi_horas_corr', hsCorr);
+        
+        // Contadores superiores
+        setTexto('kpi_mant_total', countPrev + countCorr + countAct);
+        setTexto('kpi_mant_prev', countPrev);
+        setTexto('kpi_mant_corr', countCorr);
+        setTexto('kpi_mant_act', countAct);
 
-        // Gráficos Mantenimiento
+        // Agrupación para gráficos mensuales de Mantenimiento
         const monthlyGroups = {};
         rawData.forEach(r => {
             const monthStr = getMonthYear(getVal(r, 'fecha'));
-            if (!monthlyGroups[monthStr]) monthlyGroups[monthStr] = { gen: 0, prev: 0, corr: 0 };
-            monthlyGroups[monthStr].gen += getCleanNumber(getVal(r, 'mant_generales'));
+            if (!monthlyGroups[monthStr]) monthlyGroups[monthStr] = { prev: 0, corr: 0, act: 0 };
             monthlyGroups[monthStr].prev += getCleanNumber(getVal(r, 'mant_preventivos'));
             monthlyGroups[monthStr].corr += getCleanNumber(getVal(r, 'mant_correctivos'));
+            monthlyGroups[monthStr].act += getCleanNumber(getVal(r, 'mant_actividades'));
         });
 
         const labelsMensual = Object.keys(monthlyGroups);
+        
+        // Gráfico de Barras (ahora con Actividades en lugar de Generales)
         if(cMantMensual) cMantMensual.destroy();
         const ctxMantMensual = document.getElementById('chartMantMensual');
         if (ctxMantMensual) {
@@ -401,24 +402,28 @@ function calcularYRenderizarResumen() {
                 data: {
                     labels: labelsMensual,
                     datasets: [
-                        { label: 'Generales', data: labelsMensual.map(m => monthlyGroups[m].gen), backgroundColor: '#06b6d4' },
                         { label: 'Preventivos', data: labelsMensual.map(m => monthlyGroups[m].prev), backgroundColor: '#10b981' },
-                        { label: 'Correctivos', data: labelsMensual.map(m => monthlyGroups[m].corr), backgroundColor: '#f43f5e' }
+                        { label: 'Correctivos', data: labelsMensual.map(m => monthlyGroups[m].corr), backgroundColor: '#f43f5e' },
+                        { label: 'Actividades', data: labelsMensual.map(m => monthlyGroups[m].act), backgroundColor: '#38bdf8' }
                     ]
                 },
                 options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
             });
         }
 
+        // Gráfico de Torta (Preventivos vs Correctivos vs Actividades)
         if(cMantTortas) cMantTortas.destroy();
         const ctxMantTortas = document.getElementById('chartMantTortas');
         if (ctxMantTortas) {
             cMantTortas = new Chart(ctxMantTortas.getContext('2d'), {
                 type: 'doughnut',
                 data: {
-                    labels: ['Preventivos', 'Correctivos'],
+                    labels: ['Preventivos', 'Correctivos', 'Actividades'],
                     datasets: [{ 
-                        data: [countPrev, countCorr], backgroundColor: ['#10b981', '#f43f5e'], borderWidth: 2, borderColor: '#1e293b' 
+                        data: [countPrev, countCorr, countAct], 
+                        backgroundColor: ['#10b981', '#f43f5e', '#38bdf8'], 
+                        borderWidth: 2, 
+                        borderColor: '#1e293b' 
                     }]
                 },
                 options: { responsive: true, maintainAspectRatio: false }
@@ -441,7 +446,7 @@ function calcularYRenderizarResumen() {
             });
         }
 
-        // Top 10 Equipos y conteo de Ubicaciones M1 / M2 con Sectores Generales incluidos en M1
+        // Top 10 Equipos y conteo de Ubicaciones M1 / M2
         let equiposMap = {};
         let ubicacionesM1Map = {};
         let ubicacionesM2Map = {};
