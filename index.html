@@ -434,6 +434,29 @@
                 </div>
             </div>
 
+            <!-- NUEVO: Ubicaciones Intervenidas divididas en M1 y M2 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                    <div class="flex items-center gap-2 mb-4 border-b border-slate-700 pb-3">
+                        <i data-lucide="map-pin" class="w-5 h-5 text-cyan-400"></i>
+                        <h3 class="text-sm font-bold text-cyan-400 uppercase tracking-wider">Ubicaciones Intervenidas - Módulo 1 (M1)</h3>
+                    </div>
+                    <div class="h-72 relative">
+                        <canvas id="chartUbicacionesM1"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                    <div class="flex items-center gap-2 mb-4 border-b border-slate-700 pb-3">
+                        <i data-lucide="map-pin" class="w-5 h-5 text-emerald-400"></i>
+                        <h3 class="text-sm font-bold text-emerald-400 uppercase tracking-wider">Ubicaciones Intervenidas - Módulo 2 (M2)</h3>
+                    </div>
+                    <div class="h-72 relative">
+                        <canvas id="chartUbicacionesM2"></canvas>
+                    </div>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
                     <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Criticidad de Correctivos</h3>
@@ -444,15 +467,15 @@
                 <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl lg:col-span-2">
                     <div class="flex items-center gap-2 mb-4 border-b border-slate-700 pb-3">
                         <i data-lucide="award" class="w-5 h-5 text-amber-400"></i>
-                        <h3 class="text-lg font-bold text-white uppercase tracking-wider"> Equipos Más Intervenidos</h3>
+                        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Ranking Top 10 Equipos Más Intervenidos</h3>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="text-xs uppercase text-slate-500 border-b border-slate-700">
-                                    <th class="py-3 px-4 w-16">Nº</th>
-                                    <th class="py-3 px-4">Equipo</th>
-                                    <th class="py-3 px-4">Sector</th>
+                                    <th class="py-3 px-4 w-16">Rank</th>
+                                    <th class="py-3 px-4">Equipo / Componente</th>
+                                    <th class="py-3 px-4">Sector (Ubicación)</th>
                                     <th class="py-3 px-4 text-right">Intervenciones</th>
                                 </tr>
                             </thead>
