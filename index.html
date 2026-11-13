@@ -198,15 +198,15 @@
                     <h4 class="text-xs text-slate-500 uppercase tracking-wide mb-3">Resumen de Horas</h4>
                     <div class="grid grid-cols-2 gap-3">
                         <div class="flex flex-col items-center justify-center bg-slate-900 rounded-xl p-3 border border-slate-700">
-                            <span class="text-slate-400 text-xs text-center mb-1">Hs de Mantenimientos Preventivos</span>
+                            <span class="text-slate-400 text-xs text-center mb-1">Hs Preventivo</span>
                             <span class="text-xl font-bold text-green-400" id="res_hs_prev">0</span>
                         </div>
                         <div class="flex flex-col items-center justify-center bg-slate-900 rounded-xl p-3 border border-red-900/30">
-                            <span class="text-slate-400 text-xs text-center mb-1">Hs de Mantenimientos Correctivos</span>
+                            <span class="text-slate-400 text-xs text-center mb-1">Hs Correctivo</span>
                             <span class="text-xl font-bold text-red-400" id="res_hs_corr">0</span>
                         </div>
                         <div class="flex flex-col items-center justify-center bg-slate-900 rounded-xl p-3 border border-slate-700">
-                            <span class="text-slate-400 text-xs text-center mb-1">Hs de Tareas Realizadas</span>
+                            <span class="text-slate-400 text-xs text-center mb-1">Hs Tareas</span>
                             <span class="text-xl font-bold text-white" id="res_hs_tareas">0</span>
                         </div>
                         <div class="flex flex-col items-center justify-center bg-slate-900 rounded-xl p-3 border border-amber-900/50">
@@ -423,23 +423,62 @@
         <!-- PESTAÑA: MANTENIMIENTO -->
         <div id="tab-mantenimiento" class="tab-content hidden space-y-6">
             
-            <!-- NUEVA CUADRÍCULA DE CONTADORES -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="bg-slate-800 rounded-xl p-5 border border-cyan-900/50 shadow-xl text-center">
-                    <div class="text-xs text-slate-400 uppercase tracking-wider mb-2">Tot. Intervenciones</div>
-                    <div class="text-3xl font-bold text-cyan-400" id="kpi_mant_total">0</div>
+            <!-- NUEVA CUADRÍCULA DE CANTIDADES -->
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Cantidad de Intervenciones</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-2">
+                <div class="bg-slate-800 rounded-xl p-4 border border-cyan-900/50 shadow-xl text-center">
+                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Totales</div>
+                    <div class="text-2xl font-bold text-cyan-400" id="kpi_mant_total">0</div>
                 </div>
-                <div class="bg-slate-800 rounded-xl p-5 border border-slate-700 shadow-xl text-center">
-                    <div class="text-xs text-slate-400 uppercase tracking-wider mb-2">Preventivos</div>
-                    <div class="text-3xl font-bold text-green-400" id="kpi_mant_prev">0</div>
+                <div class="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-xl text-center">
+                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Preventivos</div>
+                    <div class="text-2xl font-bold text-green-400" id="kpi_mant_prev">0</div>
                 </div>
-                <div class="bg-slate-800 rounded-xl p-5 border border-slate-700 shadow-xl text-center">
-                    <div class="text-xs text-slate-400 uppercase tracking-wider mb-2">Correctivos</div>
-                    <div class="text-3xl font-bold text-red-400" id="kpi_mant_corr">0</div>
+                <div class="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-xl text-center">
+                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Correctivos</div>
+                    <div class="text-2xl font-bold text-red-400" id="kpi_mant_corr">0</div>
                 </div>
-                <div class="bg-slate-800 rounded-xl p-5 border border-slate-700 shadow-xl text-center">
-                    <div class="text-xs text-slate-400 uppercase tracking-wider mb-2">Actividades</div>
-                    <div class="text-3xl font-bold text-white" id="kpi_mant_act">0</div>
+                <div class="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-xl text-center">
+                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Actividades</div>
+                    <div class="text-2xl font-bold text-white" id="kpi_mant_act">0</div>
+                </div>
+            </div>
+
+            <!-- NUEVA CUADRÍCULA DE HORAS -->
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Horas Invertidas</h3>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-2">
+                <div class="bg-slate-800 rounded-xl p-4 border border-amber-900/50 shadow-xl text-center">
+                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Total Horas</div>
+                    <div class="text-2xl font-bold text-amber-400" id="kpi_horas_total">0</div>
+                </div>
+                <div class="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-xl text-center">
+                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Hs Preventivo</div>
+                    <div class="text-2xl font-bold text-green-400" id="kpi_horas_prev">0</div>
+                </div>
+                <div class="bg-slate-800 rounded-xl p-4 border border-red-900/30 shadow-xl text-center">
+                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Hs Correctivo</div>
+                    <div class="text-2xl font-bold text-red-400" id="kpi_horas_corr">0</div>
+                </div>
+                <div class="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-xl text-center">
+                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Hs Actividades</div>
+                    <div class="text-2xl font-bold text-white" id="kpi_horas_act">0</div>
+                </div>
+            </div>
+
+            <!-- NUEVA CUADRÍCULA DE PROMEDIOS -->
+            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Promedio de Horas por Intervención</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div class="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-xl text-center">
+                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Promedio Preventivo</div>
+                    <div class="text-2xl font-bold text-green-400"><span id="kpi_prom_prev">0</span> <span class="text-sm text-slate-500 font-normal">hs/int</span></div>
+                </div>
+                <div class="bg-slate-800 rounded-xl p-4 border border-red-900/30 shadow-xl text-center">
+                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Promedio Correctivo</div>
+                    <div class="text-2xl font-bold text-red-400"><span id="kpi_prom_corr">0</span> <span class="text-sm text-slate-500 font-normal">hs/int</span></div>
+                </div>
+                <div class="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-xl text-center">
+                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Promedio Actividades</div>
+                    <div class="text-2xl font-bold text-white"><span id="kpi_prom_act">0</span> <span class="text-sm text-slate-500 font-normal">hs/int</span></div>
                 </div>
             </div>
 
@@ -490,14 +529,14 @@
                 <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl lg:col-span-2">
                     <div class="flex items-center gap-2 mb-4 border-b border-slate-700 pb-3">
                         <i data-lucide="award" class="w-5 h-5 text-amber-400"></i>
-                        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Equipos Más Intervenidos</h3>
+                        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Ranking Top 10 Equipos Más Intervenidos</h3>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="text-xs uppercase text-slate-500 border-b border-slate-700">
-                                    <th class="py-3 px-4 w-16">N°</th>
-                                    <th class="py-3 px-4">Equipo</th>
+                                    <th class="py-3 px-4 w-16">Rank</th>
+                                    <th class="py-3 px-4">Equipo / Componente</th>
                                     <th class="py-3 px-4">Sector (Ubicación)</th>
                                     <th class="py-3 px-4 text-right">Intervenciones</th>
                                 </tr>
