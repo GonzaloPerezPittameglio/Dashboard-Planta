@@ -11,6 +11,8 @@ let cMensualPolimero = null;
 let cMantMensual = null;
 let cMantTortas = null;
 let cCriticidad = null;
+let cUbicacionesM1 = null;
+let cUbicacionesM2 = null;
 
 const urlPrimary = "https://docs.google.com/spreadsheets/d/17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA/gviz/tq?tqx=out:csv";
 const urlBackup = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=0&single=true&output=csv";
@@ -204,7 +206,7 @@ function calcularYRenderizarResumen() {
         setTexto('mant_corr', getSum(rawData, 'mant_correctivos'));
         setTexto('mant_act', getSum(rawData, 'mant_actividades'));
 
-        // Gráficos Mensuales (Bar charts)
+        // Gráficos Mensuales
         const resumenMensual = {};
         rawData.forEach(r => {
             const mesKey = getMonthYear(getVal(r, 'fecha'));
@@ -360,12 +362,11 @@ function calcularYRenderizarResumen() {
             }
         }
 
-        // Gráfico Límites (Inicia DBO Ent por defecto)
         const firstActiveBtn = document.querySelector('.chart-btn.active');
         updateChartLimites('dbo_ent', firstActiveBtn);
 
         // ==============================
-        // 3. MANTENIMIENTO (Sectores eliminados)
+        // 3. MANTENIMIENTO
         // ==============================
         const sumGen = getSum(rawData, 'mant_generales');
         const sumPrev = getSum(rawData, 'mant_preventivos');
@@ -435,8 +436,11 @@ function calcularYRenderizarResumen() {
             });
         }
 
-        // Top 10 Equipos
+        // Top 10 Equipos y conteo de Ubicaciones M1 / M2
         let equiposMap = {};
+        let ubicacionesM1Map = {};
+        let ubicacionesM2Map = {};
+
         rawData.forEach(r => {
             let eqStr = getVal(r, 'equipos_intervenidos');
             if (eqStr && typeof eqStr === 'string') {
@@ -449,12 +453,79 @@ function calcularYRenderizarResumen() {
                         nombre = rawItem.substring(0, firstParen).trim();
                         sector = rawItem.substring(firstParen + 1).replace(/\)+$/, '').trim();
                     }
+                    
+                    // Sumar para Top 10 Equipos
                     const key = `${nombre}||${sector}`;
                     if (!equiposMap[key]) equiposMap[key] = { nombre, sector, count: 0 };
                     equiposMap[key].count += 1;
+
+                    // Clasificar ubicación en M1 o M2
+                    if (sector !== 'No especificado' && sector !== '') {
+                        const secUpper = sector.toUpperCase();
+                        const nombreLimpio = sector.replace(/\s*\(?\s*M[12]\s*\)?\s*/gi, '').trim() || sector;
+                        if (secUpper.includes('M1') || secUpper.includes('MÓDULO 1') || secUpper.includes('MODULO 1')) {
+                            ubicacionesM1Map[nombreLimpio] = (ubicacionesM1Map[nombreLimpio] || 0) + 1;
+                        } else if (secUpper.includes('M2') || secUpper.includes('MÓDULO 2') || secUpper.includes('MODULO 2')) {
+                            ubicacionesM2Map[nombreLimpio] = (ubicacionesM2Map[nombreLimpio] || 0) + 1;
+                        }
+                    }
                 });
             }
         });
+
+        // Renderizar Gráfico Ubicaciones M1
+        if (cUbicacionesM1) cUbicacionesM1.destroy();
+        const ctxUbiM1 = document.getElementById('chartUbicacionesM1');
+        if (ctxUbiM1) {
+            const labelsM1 = Object.keys(ubicacionesM1Map);
+            const dataM1 = Object.values(ubicacionesM1Map);
+            cUbicacionesM1 = new Chart(ctxUbiM1.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: labelsM1.length ? labelsM1 : ['Sin registros M1'],
+                    datasets: [{
+                        label: 'Intervenciones M1',
+                        data: dataM1.length ? dataM1 : [0],
+                        backgroundColor: '#22d3ee',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
+
+        // Renderizar Gráfico Ubicaciones M2
+        if (cUbicacionesM2) cUbicacionesM2.destroy();
+        const ctxUbiM2 = document.getElementById('chartUbicacionesM2');
+        if (ctxUbiM2) {
+            const labelsM2 = Object.keys(ubicacionesM2Map);
+            const dataM2 = Object.values(ubicacionesM2Map);
+            cUbicacionesM2 = new Chart(ctxUbiM2.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: labelsM2.length ? labelsM2 : ['Sin registros M2'],
+                    datasets: [{
+                        label: 'Intervenciones M2',
+                        data: dataM2.length ? dataM2 : [0],
+                        backgroundColor: '#34d399',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                }
+            });
+        }
 
         let topEquipos = Object.values(equiposMap).sort((a,b) => b.count - a.count).slice(0, 10);
         let tbody = document.getElementById('tabla_equipos_body');
