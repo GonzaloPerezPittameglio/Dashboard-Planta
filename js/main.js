@@ -201,23 +201,25 @@ function calcularYRenderizarResumen() {
         setTexto('hs_normales_lbl', getSum(rawData, 'hs_normales').toLocaleString('es-AR'));
 
         // --- SECCIÓN NUEVA: CANTIDADES Y HORAS DE MANTENIMIENTO ---
-        // Cantidades (Counts)
+        
+        // Cantidades de intervenciones
         const countPrev = getSum(rawData, 'mant_preventivos');
         const countCorr = getSum(rawData, 'mant_correctivos');
         const countAct = getSum(rawData, 'mant_actividades');
         setTexto('mant_prev', countPrev);
         setTexto('mant_corr', countCorr);
         setTexto('mant_act', countAct);
-        setTexto('mant_total_int', countPrev + countCorr + countAct);
 
-        // Horas (Hours)
+        // Horas invertidas y cálculos
         const hsPrev = getSum(rawData, 'horas_prev');
         const hsCorr = getSum(rawData, 'horas_corr');
-        const hsTareas = getSum(rawData, 'horas_tareas'); // Lee de la nueva columna que tenés que crear en Sheets
+        const hsTareas = getSum(rawData, 'horas_tareas');
+        const hsTotal = hsPrev + hsCorr + hsTareas;
+
         setTexto('res_hs_prev', hsPrev);
         setTexto('res_hs_corr', hsCorr);
         setTexto('res_hs_tareas', hsTareas);
-        setTexto('res_hs_total', hsPrev + hsCorr + hsTareas);
+        setTexto('res_hs_total', hsTotal);
 
         // Gráficos Mensuales
         const resumenMensual = {};
@@ -372,7 +374,7 @@ function calcularYRenderizarResumen() {
         updateChartLimites('dbo_ent', firstActiveBtn);
 
         // ==============================
-        // 3. PESTAÑA MANTENIMIENTO (General Tab)
+        // 3. PESTAÑA MANTENIMIENTO
         // ==============================
         const sumGen = getSum(rawData, 'mant_generales');
         setTexto('kpi_mant_gen', sumGen);
