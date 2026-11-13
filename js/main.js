@@ -200,20 +200,20 @@ function calcularYRenderizarResumen() {
         setTexto('hs_extra_lbl', getSum(rawData, 'hs_extra').toLocaleString('es-AR'));
         setTexto('hs_normales_lbl', getSum(rawData, 'hs_normales').toLocaleString('es-AR'));
 
-        // Cantidades de intervenciones
+        // Cantidades y Horas generales para cálculos en ambas pestañas
         const countPrev = getSum(rawData, 'mant_preventivos');
         const countCorr = getSum(rawData, 'mant_correctivos');
         const countAct = getSum(rawData, 'mant_actividades');
-        setTexto('mant_prev', countPrev);
-        setTexto('mant_corr', countCorr);
-        setTexto('mant_act', countAct);
 
-        // Horas invertidas y cálculos
         const hsPrev = getSum(rawData, 'horas_prev');
         const hsCorr = getSum(rawData, 'horas_corr');
         const hsTareas = getSum(rawData, 'horas_tareas');
         const hsTotal = hsPrev + hsCorr + hsTareas;
 
+        // Pestaña: Resumen General (Tarjeta de mantenimiento mensual)
+        setTexto('mant_prev', countPrev);
+        setTexto('mant_corr', countCorr);
+        setTexto('mant_act', countAct);
         setTexto('res_hs_prev', hsPrev);
         setTexto('res_hs_corr', hsCorr);
         setTexto('res_hs_tareas', hsTareas);
@@ -375,11 +375,26 @@ function calcularYRenderizarResumen() {
         // 3. PESTAÑA MANTENIMIENTO
         // ==============================
         
-        // Contadores superiores
+        // --- Cantidades ---
         setTexto('kpi_mant_total', countPrev + countCorr + countAct);
         setTexto('kpi_mant_prev', countPrev);
         setTexto('kpi_mant_corr', countCorr);
         setTexto('kpi_mant_act', countAct);
+
+        // --- Horas ---
+        setTexto('kpi_horas_total', hsTotal);
+        setTexto('kpi_horas_prev', hsPrev);
+        setTexto('kpi_horas_corr', hsCorr);
+        setTexto('kpi_horas_act', hsTareas);
+
+        // --- Promedios ---
+        const promPrev = countPrev > 0 ? (hsPrev / countPrev).toFixed(1) : 0;
+        const promCorr = countCorr > 0 ? (hsCorr / countCorr).toFixed(1) : 0;
+        const promAct = countAct > 0 ? (hsTareas / countAct).toFixed(1) : 0;
+
+        setTexto('kpi_prom_prev', promPrev);
+        setTexto('kpi_prom_corr', promCorr);
+        setTexto('kpi_prom_act', promAct);
 
         // Agrupación para gráficos mensuales de Mantenimiento
         const monthlyGroups = {};
@@ -393,7 +408,7 @@ function calcularYRenderizarResumen() {
 
         const labelsMensual = Object.keys(monthlyGroups);
         
-        // Gráfico de Barras (ahora con Actividades en lugar de Generales)
+        // Gráfico de Barras
         if(cMantMensual) cMantMensual.destroy();
         const ctxMantMensual = document.getElementById('chartMantMensual');
         if (ctxMantMensual) {
@@ -411,7 +426,7 @@ function calcularYRenderizarResumen() {
             });
         }
 
-        // Gráfico de Torta (Preventivos vs Correctivos vs Actividades)
+        // Gráfico de Torta
         if(cMantTortas) cMantTortas.destroy();
         const ctxMantTortas = document.getElementById('chartMantTortas');
         if (ctxMantTortas) {
