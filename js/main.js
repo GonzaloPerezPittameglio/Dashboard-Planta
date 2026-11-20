@@ -206,23 +206,17 @@ function getMonthYear(fechaRaw) {
     return str;
 }
 
-function renderizarFuncionamientoEquipos() {
-    // 1. Dibujar los puntos y recuadros fijos sobre el mapa aéreo
-    const capaMapa = document.getElementById('capa_marcadores_planta');
-    if (capaMapa) {
-        capaMapa.innerHTML = UBICACIONES_PLANTA.map(u => `
-            <div style="top: ${u.top}%; left: ${u.left}%;" 
-                 class="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10">
-                <span class="w-3 h-3 rounded-full bg-cyan-400 border-2 border-slate-950 shadow-[0_0_8px_#22d3ee] mb-1"></span>
-                <span class="bg-slate-950/90 border border-slate-500/80 text-white text-[10px] font-semibold px-2 py-0.5 rounded shadow-lg whitespace-nowrap">
-                    ${u.nombre}
-                </span>
-            </div>
-        `).join('');
-    }
+function normalizarTexto(str) {
+    return String(str || '').toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, '');
+}
 
-    // 2. Procesar y renderizar el Listado General de Equipos Críticos
+function renderizarFuncionamientoEquipos() {
     const equiposCriticos = [];
+    const estadoPorSector = {}; // 1=Verde (Operativo), 2=Amarillo (En Reparación), 3=Rojo (Fuera de Servicio)
+
+    // 1. Procesar equipos de Google Sheets y calcular el color de cada sector
     equiposCriticosData.forEach(r => {
         const nombreEq = getVal(r, 'equipo');
         if (nombreEq && String(nombreEq).trim() !== '') {
@@ -231,7 +225,7 @@ function renderizarFuncionamientoEquipos() {
             const detalleRaw = String(getVal(r, 'detalle') || '').trim();
 
             const estLower = estadoRaw.toLowerCase();
-            let nivel = 1; // Verde
+            let nivel = 1; // Verde (Operativo)
             if (estLower.includes('reparacion') || estLower.includes('reparación')) nivel = 2; // Amarillo
             if (estLower.includes('fuera')) nivel = 3; // Rojo
 
@@ -242,9 +236,64 @@ function renderizarFuncionamientoEquipos() {
                 detalle: detalleRaw,
                 nivel: nivel
             });
+
+            // Vincular con el punto del mapa según el nombre del sector
+            const secNorm = normalizarTexto(sectorRaw);
+            if (secNorm !== '') {
+                const ubicacionMatch = UBICACIONES_PLANTA.find(u => {
+                    const uNorm = normalizarTexto(u.nombre);
+                    return uNorm.includes(secNorm) || secNorm.includes(uNorm);
+                });
+
+                if (ubicacionMatch) {
+                    const currentMax = estadoPorSector[ubicacionMatch.nombre] || 0;
+                    if (nivel > currentMax) {
+                        estadoPorSector[ubicacionMatch.nombre] = nivel;
+                    }
+                }
+            }
         }
     });
 
+    // 2. DIBUJAR LOS PUNTOS Y RECUADROS FIJOS EN EL MAPA 
+    const capaMapa = document.getElementById('capa_marcadores_planta');
+    if (capaMapa) {
+        capaMapa.innerHTML = UBICACIONES_PLANTA.map(u => {
+            const nivel = estadoPorSector[u.nombre] || 0;
+
+            let dotClass = 'bg-slate-400 border-slate-950';
+            let badgeBorder = 'border-slate-500/80';
+            let pingHTML = '';
+
+            if (nivel === 1) { // OPERATIVO (VERDE)
+                dotClass = 'bg-emerald-400 border-slate-950 shadow-[0_0_10px_#10b981]';
+                badgeBorder = 'border-emerald-500/90';
+            } else if (nivel === 2) { // EN REPARACIÓN (AMARILLO)
+                dotClass = 'bg-amber-400 border-slate-950 shadow-[0_0_12px_#fbbf24]';
+                badgeBorder = 'border-amber-400';
+                pingHTML = `<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>`;
+            } else if (nivel === 3) { // FUERA DE SERVICIO (ROJO)
+                dotClass = 'bg-red-500 border-slate-950 shadow-[0_0_12px_#ef4444]';
+                badgeBorder = 'border-red-500';
+                pingHTML = `<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>`;
+            }
+
+            return `
+                <div style="top: ${u.top}%; left: ${u.left}%;" 
+                     class="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10">
+                    <span class="relative flex h-3.5 w-3.5 mb-1">
+                        ${pingHTML}
+                        <span class="relative inline-flex rounded-full h-3.5 w-3.5 border-2 ${dotClass}"></span>
+                    </span>
+                    <span class="bg-slate-950/90 border ${badgeBorder} text-white text-[10px] font-semibold px-2 py-0.5 rounded shadow-lg whitespace-nowrap">
+                        ${u.nombre}
+                    </span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // 3. RENDERIZAR EL LISTADO DE EQUIPOS CRITICOS 
     setTexto('total_eq_criticos', `${equiposCriticos.length} equipos`);
     const contEquipos = document.getElementById('lista_equipos_criticos');
     if (contEquipos) {
@@ -344,7 +393,7 @@ function calcularYRenderizarResumen() {
         setTexto('hs_extra_lbl', getSum(rawData, 'hs_extra').toLocaleString('es-AR'));
         setTexto('hs_normales_lbl', getSum(rawData, 'hs_normales').toLocaleString('es-AR'));
 
-        // Cantidades y Horas generales
+        // CANTIDADES Y HORAS GENERALES
         const countPrev = getSum(rawData, 'mant_preventivos');
         const countCorr = getSum(rawData, 'mant_correctivos');
         const countAct = getSum(rawData, 'mant_actividades');
@@ -362,7 +411,7 @@ function calcularYRenderizarResumen() {
         setTexto('res_hs_tareas', hsTareas);
         setTexto('res_hs_total', hsTotal);
 
-        // Gráficos Mensuales
+        // GRAFICOS MENSUALES
         const resumenMensual = {};
         rawData.forEach(r => {
             const mesKey = getMonthYear(getVal(r, 'fecha'));
@@ -690,7 +739,7 @@ function calcularYRenderizarResumen() {
         }
 
         // ==============================
-        // 4. PESTAÑA FUNCIONAMIENTO (KPIs Hoja 1)
+        // 4. PESTAÑA FUNCIONAMIENTO 
         // ==============================
         setTexto('func_cant_rsu', getSum(rawData, 'cant_rsu').toLocaleString('es-AR'));
         setTexto('func_cant_ot', getSum(rawData, 'cant_ot').toLocaleString('es-AR'));
