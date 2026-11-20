@@ -1,4 +1,6 @@
 let rawData = [];
+let equiposCriticosData = [];
+
 let cEnergia = null;
 let cCaudales = null;
 let cLimites = null;
@@ -16,10 +18,12 @@ let cUbicacionesM2 = null;
 
 const urlPrimary = "https://docs.google.com/spreadsheets/d/17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA/gviz/tq?tqx=out:csv";
 const urlBackup = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=0&single=true&output=csv";
+const urlEquiposCriticos = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=316369111&single=true&output=csv";
 
 window.onload = () => {
     lucide.createIcons();
     cargarDatosDesdeGoogle(urlPrimary);
+    cargarEquiposCriticos();
 };
 
 function cargarDatosDesdeGoogle(urlTarget) {
@@ -58,6 +62,25 @@ function cargarDatosDesdeGoogle(urlTarget) {
                 dsLabel.textContent = "Error de conexión";
                 dsLabel.className = "text-xs font-medium px-3 py-1.5 bg-red-900/40 text-red-300 rounded-full border border-red-700";
             }
+        }
+    });
+}
+
+function cargarEquiposCriticos() {
+    const conCache = urlEquiposCriticos + '&_t=' + Date.now();
+    Papa.parse(conCache, {
+        download: true,
+        header: true,
+        dynamicTyping: false,
+        skipEmptyLines: true,
+        complete: function(results) {
+            if (results.data) {
+                equiposCriticosData = results.data;
+                renderizarFuncionamientoEquipos();
+            }
+        },
+        error: function(err) {
+            console.error("Error cargando Equipos Críticos:", err);
         }
     });
 }
@@ -149,6 +172,119 @@ function getMonthYear(fechaRaw) {
     return str;
 }
 
+function renderizarFuncionamientoEquipos() {
+    const equiposCriticos = [];
+    const estadoZonas = {}; // 1=Operativo, 2=En Reparacion, 3=Fuera de Servicio
+
+    equiposCriticosData.forEach(r => {
+        const nombreEq = getVal(r, 'equipo');
+        if (nombreEq && String(nombreEq).trim() !== '') {
+            const sectorRaw = String(getVal(r, 'sector_mapa') || '').trim();
+            const estadoRaw = String(getVal(r, 'estado') || 'Operativo').trim();
+            const detalleRaw = String(getVal(r, 'detalle') || '').trim();
+
+            equiposCriticos.push({
+                nombre: String(nombreEq).trim(),
+                sector: sectorRaw,
+                estado: estadoRaw,
+                detalle: detalleRaw
+            });
+
+            // Normalizar nombre del sector para vincularlo con el pin del mapa
+            const sectorKey = sectorRaw.toLowerCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/\s+/g, '_');
+
+            const estLower = estadoRaw.toLowerCase();
+            let nivel = 1; // Verde (Operativo)
+            if (estLower.includes('reparacion') || estLower.includes('reparación')) nivel = 2; // Amarillo
+            if (estLower.includes('fuera')) nivel = 3; // Rojo
+
+            if (!estadoZonas[sectorKey] || nivel > estadoZonas[sectorKey]) {
+                estadoZonas[sectorKey] = nivel;
+            }
+        }
+    });
+
+    // Actualizar contador y lista de tarjetas
+    setTexto('total_eq_criticos', `${equiposCriticos.length} equipos`);
+    const contEquipos = document.getElementById('lista_equipos_criticos');
+    if (contEquipos) {
+        if (equiposCriticos.length === 0) {
+            contEquipos.innerHTML = '<div class="text-center py-8 text-slate-500 text-sm italic">Aún no hay equipos cargados en la hoja Equipos_Criticos.</div>';
+        } else {
+            contEquipos.innerHTML = equiposCriticos.map(eq => {
+                const estLower = eq.estado.toLowerCase();
+                let badgeClass = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+                let dotClass = 'bg-emerald-400';
+
+                if (estLower.includes('reparacion') || estLower.includes('reparación')) {
+                    badgeClass = 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+                    dotClass = 'bg-amber-400 animate-pulse';
+                } else if (estLower.includes('fuera')) {
+                    badgeClass = 'bg-red-500/15 text-red-400 border-red-500/30';
+                    dotClass = 'bg-red-500';
+                }
+
+                const detalleHTML = eq.detalle !== '' 
+                    ? `<div class="mt-2 text-xs bg-slate-950/70 text-amber-200/90 px-2.5 py-1.5 rounded-lg border border-amber-500/20 flex items-center gap-1.5">
+                         <i data-lucide="map-pin" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
+                         <span>${eq.detalle}</span>
+                       </div>` 
+                    : '';
+
+                return `
+                    <div class="bg-slate-900 rounded-xl p-3.5 border border-slate-700/80 hover:border-slate-600 transition">
+                        <div class="flex justify-between items-start gap-2">
+                            <div>
+                                <div class="font-bold text-white text-sm">${eq.nombre}</div>
+                                <div class="text-[11px] text-slate-400 mt-0.5">${eq.sector || 'Sector general'}</div>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold border flex items-center gap-1.5 shrink-0 ${badgeClass}">
+                                <span class="w-2 h-2 rounded-full ${dotClass}"></span>
+                                ${eq.estado}
+                            </span>
+                        </div>
+                        ${detalleHTML}
+                    </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+    }
+
+    // Colorear Pines sobre la Foto Aérea
+    const zonasMapa = [
+        'pretratamiento_m1', 'biologico_m1', 'deshidratacion_m1',
+        'pretratamiento_m2', 'biologico_m2', 'deshidratacion_m2'
+    ];
+
+    zonasMapa.forEach(zona => {
+        const pin = document.getElementById(`pin_${zona}`);
+        if (!pin) return;
+        const dot = pin.querySelector('.pin-dot');
+        const nivel = estadoZonas[zona] || 0;
+
+        // Limpiar clases previas
+        pin.classList.remove('border-slate-500', 'border-emerald-500', 'border-amber-400', 'border-red-500', 'bg-slate-900/90', 'bg-emerald-950/90', 'bg-amber-950/90', 'bg-red-950/90');
+        dot.classList.remove('bg-slate-400', 'bg-emerald-400', 'bg-amber-400', 'bg-red-500', 'animate-pulse');
+
+        if (nivel === 1) { // Operativo -> Verde
+            pin.classList.add('border-emerald-500', 'bg-emerald-950/90');
+            dot.classList.add('bg-emerald-400');
+        } else if (nivel === 2) { // En Reparación -> Amarillo
+            pin.classList.add('border-amber-400', 'bg-amber-950/90');
+            dot.classList.add('bg-amber-400', 'animate-pulse');
+        } else if (nivel === 3) { // Fuera de Servicio -> Rojo
+            pin.classList.add('border-red-500', 'bg-red-950/90');
+            dot.classList.add('bg-red-500', 'animate-pulse');
+        } else { // Sin equipos asignados aún
+            pin.classList.add('border-slate-500', 'bg-slate-900/90');
+            dot.classList.add('bg-slate-400');
+        }
+    });
+}
+
 function calcularYRenderizarResumen() {
     if (!rawData.length) return;
     const lastRow = rawData[rawData.length - 1]; 
@@ -200,7 +336,7 @@ function calcularYRenderizarResumen() {
         setTexto('hs_extra_lbl', getSum(rawData, 'hs_extra').toLocaleString('es-AR'));
         setTexto('hs_normales_lbl', getSum(rawData, 'hs_normales').toLocaleString('es-AR'));
 
-        // Cantidades y Horas generales para cálculos en ambas pestañas
+        // Cantidades y Horas generales
         const countPrev = getSum(rawData, 'mant_preventivos');
         const countCorr = getSum(rawData, 'mant_correctivos');
         const countAct = getSum(rawData, 'mant_actividades');
@@ -210,7 +346,6 @@ function calcularYRenderizarResumen() {
         const hsTareas = getSum(rawData, 'horas_tareas');
         const hsTotal = hsPrev + hsCorr + hsTareas;
 
-        // Pestaña: Resumen General (Tarjeta de mantenimiento mensual)
         setTexto('mant_prev', countPrev);
         setTexto('mant_corr', countCorr);
         setTexto('mant_act', countAct);
@@ -313,7 +448,6 @@ function calcularYRenderizarResumen() {
         setTexto('bio_ms_m2', getAvg(rawData, 'porc_ms_m2'));
         setTexto('bio_ton_m2', getSum(rawData, 'ton_ms_m2').toLocaleString('es-AR'));
 
-        // Gráfico de Caudales
         const fechas = rawData.map(r => getVal(r, 'fecha') || ''); 
         const caudalesM1 = rawData.map(r => getCleanNumber(getVal(r, 'caudal_trat_m1')));
         const caudalesM2 = rawData.map(r => getCleanNumber(getVal(r, 'caudal_trat_m2')));
@@ -338,7 +472,6 @@ function calcularYRenderizarResumen() {
             });
         }
 
-        // Semáforo Norma
         const diasFuera = rawData.filter(r => {
             const fn1 = getCleanNumber(getVal(r, 'fuera_norma_m1'));
             const fn2 = getCleanNumber(getVal(r, 'fuera_norma_m2'));
@@ -374,20 +507,16 @@ function calcularYRenderizarResumen() {
         // ==============================
         // 3. PESTAÑA MANTENIMIENTO
         // ==============================
-        
-        // --- Cantidades ---
         setTexto('kpi_mant_total', countPrev + countCorr + countAct);
         setTexto('kpi_mant_prev', countPrev);
         setTexto('kpi_mant_corr', countCorr);
         setTexto('kpi_mant_act', countAct);
 
-        // --- HORAS ---
         setTexto('kpi_horas_total', hsTotal);
         setTexto('kpi_horas_prev', hsPrev);
         setTexto('kpi_horas_corr', hsCorr);
         setTexto('kpi_horas_act', hsTareas);
 
-        // --- PROMEDIOS ---
         const countTotal = countPrev + countCorr + countAct;
         const promTotal = countTotal > 0 ? (hsTotal / countTotal).toFixed(1) : 0;
         const promPrev = countPrev > 0 ? (hsPrev / countPrev).toFixed(1) : 0;
@@ -399,7 +528,6 @@ function calcularYRenderizarResumen() {
         setTexto('kpi_prom_corr', promCorr);
         setTexto('kpi_prom_act', promAct);
 
-        // AGRUPACION PARA GRAFICOS MENSUALES 
         const monthlyGroups = {};
         rawData.forEach(r => {
             const monthStr = getMonthYear(getVal(r, 'fecha'));
@@ -410,8 +538,6 @@ function calcularYRenderizarResumen() {
         });
 
         const labelsMensual = Object.keys(monthlyGroups);
-        
-        // GRAFICO DE BARRAS 
         if(cMantMensual) cMantMensual.destroy();
         const ctxMantMensual = document.getElementById('chartMantMensual');
         if (ctxMantMensual) {
@@ -429,7 +555,6 @@ function calcularYRenderizarResumen() {
             });
         }
 
-        // GRAFICO DE TORTA 
         if(cMantTortas) cMantTortas.destroy();
         const ctxMantTortas = document.getElementById('chartMantTortas');
         if (ctxMantTortas) {
@@ -464,7 +589,6 @@ function calcularYRenderizarResumen() {
             });
         }
 
-        // 10 EQUIPOS MAS INTERVENIDOS Y CONTEO
         let equiposMap = {};
         let ubicacionesM1Map = {};
         let ubicacionesM2Map = {};
@@ -500,7 +624,6 @@ function calcularYRenderizarResumen() {
             }
         });
 
-        // GRAFICO UBICACIONES M1 
         if (cUbicacionesM1) cUbicacionesM1.destroy();
         const ctxUbiM1 = document.getElementById('chartUbicacionesM1');
         if (ctxUbiM1) {
@@ -521,7 +644,6 @@ function calcularYRenderizarResumen() {
             });
         }
 
-        // GRAFICO UBICACIONES M2 
         if (cUbicacionesM2) cUbicacionesM2.destroy();
         const ctxUbiM2 = document.getElementById('chartUbicacionesM2');
         if (ctxUbiM2) {
@@ -558,6 +680,13 @@ function calcularYRenderizarResumen() {
                 `).join('');
             }
         }
+
+        // ==============================
+        // 4. PESTAÑA FUNCIONAMIENTO (KPIs Hoja 1)
+        // ==============================
+        setTexto('func_cant_rsu', getSum(rawData, 'cant_rsu').toLocaleString('es-AR'));
+        setTexto('func_cant_ot', getSum(rawData, 'cant_ot').toLocaleString('es-AR'));
+
     } catch (e) {
         console.error("Error al renderizar el resumen:", e);
     }
