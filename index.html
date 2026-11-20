@@ -439,83 +439,38 @@
                 </div>
             </div>
 
-            <!-- Mapa de Planta Aéreo + Listado de Equipos Críticos -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                
-                <!-- Mapa de Planta sobre Foto Aérea (7 columnas) -->
-                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl lg:col-span-7 flex flex-col">
-                    <div class="flex flex-wrap justify-between items-center gap-2 mb-4 border-b border-slate-700 pb-3">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="map" class="w-5 h-5 text-cyan-400"></i>
-                            <h3 class="text-base font-bold text-white uppercase tracking-wider">Mapa de Estado de Planta</h3>
-                        </div>
-                        <!-- Leyenda Semáforo -->
-                        <div class="flex items-center gap-3 text-xs">
-                            <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Operativo</span>
-                            <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span> En Reparación</span>
-                            <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> Fuera de Serv.</span>
-                        </div>
-                    </div>
-
-                    <!-- Contenedor de la Foto Aérea con Marcadores Superpuestos -->
-                    <div class="relative w-full rounded-xl overflow-hidden border border-slate-700 bg-slate-900 shadow-inner">
-                        <img src="mapa-planta.jpg" alt="Vista Aérea Planta Hurlingham" class="w-full h-auto block object-cover opacity-90" />
-
-                        <!-- Marcador: Pretratamiento M1 -->
-                        <div id="pin_pretratamiento_m1" style="top: 68%; left: 15%;" class="transform -translate-x-1/2 -translate-y-1/2 absolute px-2.5 py-1 rounded-lg border border-slate-500 bg-slate-900/90 backdrop-blur-sm shadow-lg transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap">
-                            <span class="pin-dot w-2.5 h-2.5 rounded-full bg-slate-400"></span>
-                            <span class="text-[11px] font-bold text-white">Pretratamiento M1</span>
-                        </div>
-
-                        <!-- Marcador: Biológico M1 -->
-                        <div id="pin_biologico_m1" style="top: 62%; left: 26%;" class="transform -translate-x-1/2 -translate-y-1/2 absolute px-2.5 py-1 rounded-lg border border-slate-500 bg-slate-900/90 backdrop-blur-sm shadow-lg transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap">
-                            <span class="pin-dot w-2.5 h-2.5 rounded-full bg-slate-400"></span>
-                            <span class="text-[11px] font-bold text-white">Biológico M1</span>
-                        </div>
-
-                        <!-- Marcador: Deshidratación M1 -->
-                        <div id="pin_deshidratacion_m1" style="top: 22%; left: 16%;" class="transform -translate-x-1/2 -translate-y-1/2 absolute px-2.5 py-1 rounded-lg border border-slate-500 bg-slate-900/90 backdrop-blur-sm shadow-lg transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap">
-                            <span class="pin-dot w-2.5 h-2.5 rounded-full bg-slate-400"></span>
-                            <span class="text-[11px] font-bold text-white">Deshidratación M1</span>
-                        </div>
-
-                        <!-- Marcador: Pretratamiento M2 -->
-                        <div id="pin_pretratamiento_m2" style="top: 72%; left: 92%;" class="transform -translate-x-1/2 -translate-y-1/2 absolute px-2.5 py-1 rounded-lg border border-slate-500 bg-slate-900/90 backdrop-blur-sm shadow-lg transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap">
-                            <span class="pin-dot w-2.5 h-2.5 rounded-full bg-slate-400"></span>
-                            <span class="text-[11px] font-bold text-white">Pretratamiento M2</span>
-                        </div>
-
-                        <!-- Marcador: Biológico M2 -->
-                        <div id="pin_biologico_m2" style="top: 66%; left: 52%;" class="transform -translate-x-1/2 -translate-y-1/2 absolute px-2.5 py-1 rounded-lg border border-slate-500 bg-slate-900/90 backdrop-blur-sm shadow-lg transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap">
-                            <span class="pin-dot w-2.5 h-2.5 rounded-full bg-slate-400"></span>
-                            <span class="text-[11px] font-bold text-white">Biológico M2</span>
-                        </div>
-
-                        <!-- Marcador: Deshidratación M2 -->
-                        <div id="pin_deshidratacion_m2" style="top: 48%; left: 48%;" class="transform -translate-x-1/2 -translate-y-1/2 absolute px-2.5 py-1 rounded-lg border border-slate-500 bg-slate-900/90 backdrop-blur-sm shadow-lg transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap">
-                            <span class="pin-dot w-2.5 h-2.5 rounded-full bg-slate-400"></span>
-                            <span class="text-[11px] font-bold text-white">Deshidratación M2</span>
-                        </div>
-                    </div>
-                    <p class="text-[11px] text-slate-400 mt-3 italic">* Los indicadores se colorean automáticamente según el estado más crítico registrado en cada sector.</p>
+            <!-- MAPA DE PLANTA A ANCHO COMPLETO (ETIQUETAS FIJAS) -->
+            <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                <div class="flex items-center gap-2 mb-4 border-b border-slate-700 pb-3">
+                    <i data-lucide="map" class="w-5 h-5 text-cyan-400"></i>
+                    <h3 class="text-base font-bold text-white uppercase tracking-wider">Plano General de Planta</h3>
                 </div>
 
-                <!-- Listado de Equipos Críticos (5 columnas) -->
-                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl lg:col-span-5 flex flex-col">
-                    <div class="flex items-center justify-between mb-4 border-b border-slate-700 pb-3">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="cpu" class="w-5 h-5 text-amber-400"></i>
-                            <h3 class="text-base font-bold text-white uppercase tracking-wider">Equipos Críticos</h3>
-                        </div>
-                        <span class="text-xs bg-slate-900 text-slate-400 px-2.5 py-1 rounded-full border border-slate-700" id="total_eq_criticos">0 equipos</span>
-                    </div>
-
-                    <div id="lista_equipos_criticos" class="space-y-3 overflow-y-auto max-h-[380px] pr-1">
-                        <div class="text-center py-8 text-slate-500 text-sm italic">Cargando equipos críticos...</div>
+                <div class="overflow-x-auto pb-2">
+                    <div class="relative min-w-[1050px] w-full rounded-xl overflow-hidden border border-slate-700 bg-slate-950 shadow-2xl">
+                        <img src="mapa-planta.jpg" alt="Mapa Aéreo Planta Hurlingham" class="w-full h-auto block select-none" />
+                        
+                        <!-- Capa donde JS coloca los puntos y nombres fijos -->
+                        <div id="capa_marcadores_planta" class="absolute inset-0 pointer-events-none"></div>
                     </div>
                 </div>
-
             </div>
+
+            <!-- LISTADO GENERAL DE EQUIPOS CRÍTICOS -->
+            <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-4 border-b border-slate-700 pb-3">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="cpu" class="w-5 h-5 text-amber-400"></i>
+                        <h3 class="text-base font-bold text-white uppercase tracking-wider">Listado General de Equipos Críticos</h3>
+                    </div>
+                    <span class="text-xs bg-slate-900 text-cyan-400 font-semibold px-3 py-1 rounded-full border border-slate-700" id="total_eq_criticos">0 equipos</span>
+                </div>
+
+                <div id="lista_equipos_criticos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="text-center py-8 text-slate-500 text-sm italic col-span-full">Cargando equipos críticos...</div>
+                </div>
+            </div>
+
         </div>
 
         <!-- PESTAÑA: MANTENIMIENTO -->
@@ -631,14 +586,14 @@
                 <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl lg:col-span-2">
                     <div class="flex items-center gap-2 mb-4 border-b border-slate-700 pb-3">
                         <i data-lucide="award" class="w-5 h-5 text-amber-400"></i>
-                        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Equipos Más Intervenidos</h3>
+                        <h3 class="text-lg font-bold text-white uppercase tracking-wider">Ranking Top 10 Equipos Más Intervenidos</h3>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="text-xs uppercase text-slate-500 border-b border-slate-700">
-                                    <th class="py-3 px-4 w-16">N°</th>
-                                    <th class="py-3 px-4">Equipo </th>
+                                    <th class="py-3 px-4 w-16">Rank</th>
+                                    <th class="py-3 px-4">Equipo / Componente</th>
                                     <th class="py-3 px-4">Sector (Ubicación)</th>
                                     <th class="py-3 px-4 text-right">Intervenciones</th>
                                 </tr>
