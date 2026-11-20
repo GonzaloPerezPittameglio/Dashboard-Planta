@@ -381,22 +381,25 @@ function calcularYRenderizarResumen() {
         setTexto('kpi_mant_corr', countCorr);
         setTexto('kpi_mant_act', countAct);
 
-        // --- Horas ---
+        // --- HORAS ---
         setTexto('kpi_horas_total', hsTotal);
         setTexto('kpi_horas_prev', hsPrev);
         setTexto('kpi_horas_corr', hsCorr);
         setTexto('kpi_horas_act', hsTareas);
 
-        // --- Promedios ---
+        // --- PROMEDIOS ---
+        const countTotal = countPrev + countCorr + countAct;
+        const promTotal = countTotal > 0 ? (hsTotal / countTotal).toFixed(1) : 0;
         const promPrev = countPrev > 0 ? (hsPrev / countPrev).toFixed(1) : 0;
         const promCorr = countCorr > 0 ? (hsCorr / countCorr).toFixed(1) : 0;
         const promAct = countAct > 0 ? (hsTareas / countAct).toFixed(1) : 0;
 
+        setTexto('kpi_prom_total', promTotal);
         setTexto('kpi_prom_prev', promPrev);
         setTexto('kpi_prom_corr', promCorr);
         setTexto('kpi_prom_act', promAct);
 
-        // Agrupación para gráficos mensuales de Mantenimiento
+        // AGRUPACION PARA GRAFICOS MENSUALES 
         const monthlyGroups = {};
         rawData.forEach(r => {
             const monthStr = getMonthYear(getVal(r, 'fecha'));
@@ -408,7 +411,7 @@ function calcularYRenderizarResumen() {
 
         const labelsMensual = Object.keys(monthlyGroups);
         
-        // Gráfico de Barras
+        // GRAFICO DE BARRAS 
         if(cMantMensual) cMantMensual.destroy();
         const ctxMantMensual = document.getElementById('chartMantMensual');
         if (ctxMantMensual) {
@@ -426,7 +429,7 @@ function calcularYRenderizarResumen() {
             });
         }
 
-        // Gráfico de Torta
+        // GRAFICO DE TORTA 
         if(cMantTortas) cMantTortas.destroy();
         const ctxMantTortas = document.getElementById('chartMantTortas');
         if (ctxMantTortas) {
@@ -461,7 +464,7 @@ function calcularYRenderizarResumen() {
             });
         }
 
-        // Top 10 Equipos y conteo de Ubicaciones M1 / M2
+        // 10 EQUIPOS MAS INTERVENIDOS Y CONTEO
         let equiposMap = {};
         let ubicacionesM1Map = {};
         let ubicacionesM2Map = {};
@@ -497,7 +500,7 @@ function calcularYRenderizarResumen() {
             }
         });
 
-        // Gráfico Ubicaciones M1
+        // GRAFICO UBICACIONES M1 
         if (cUbicacionesM1) cUbicacionesM1.destroy();
         const ctxUbiM1 = document.getElementById('chartUbicacionesM1');
         if (ctxUbiM1) {
@@ -518,7 +521,7 @@ function calcularYRenderizarResumen() {
             });
         }
 
-        // Gráfico Ubicaciones M2
+        // GRAFICO UBICACIONES M2 
         if (cUbicacionesM2) cUbicacionesM2.destroy();
         const ctxUbiM2 = document.getElementById('chartUbicacionesM2');
         if (ctxUbiM2) {
