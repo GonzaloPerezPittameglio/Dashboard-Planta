@@ -20,8 +20,42 @@ const urlPrimary = "https://docs.google.com/spreadsheets/d/17QH5BKXgwZJexRd34iD4
 const urlBackup = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=0&single=true&output=csv";
 const urlEquiposCriticos = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=316369111&single=true&output=csv";
 
+const UBICACIONES_PLANTA = [
+    // Zona Izquierda (M2 y Digestión)
+    { nombre: 'Silo de Lodos', top: 10, left: 4.5 },
+    { nombre: 'Deshidratación M2', top: 23, left: 4.5 },
+    { nombre: 'Sub Estación Transformadora 3', top: 30, left: 4.2 },
+    { nombre: 'Caldera y Digestor', top: 22, left: 13.5 },
+    { nombre: 'Gasómetro', top: 9, left: 15.8 },
+    { nombre: 'Flotador', top: 18, left: 18.8 },
+    { nombre: 'Espesador', top: 23, left: 22.8 },
+    { nombre: 'Depósito de Hidrocarburo', top: 16, left: 26.5 },
+    { nombre: 'Sala de Soplantes M2', top: 71, left: 10.2 },
+    { nombre: 'Reactores Biológicos M2', top: 63, left: 15.5 },
+    { nombre: 'Camara de Distribución y Clarificadores 1, 2, 3, 4', top: 60, left: 26.5 },
+
+    // Zona Central (M1)
+    { nombre: 'Taller de Mantenimiento', top: 48, left: 34.8 },
+    { nombre: 'Deshidratación M1 y Taller de Soldadura', top: 53, left: 39.8 },
+    { nombre: 'Administración', top: 68, left: 35.5 },
+    { nombre: 'Grupo Electrogeno', top: 68, left: 39.5 },
+    { nombre: 'Sala Soplantes M1', top: 68, left: 41.8 },
+    { nombre: 'Clarificadores A,B,C', top: 51, left: 51.2 },
+    { nombre: 'Reactores M1', top: 74, left: 50.5 },
+    { nombre: 'Laboratorio, Pañol Funcionamiento y Coordinación', top: 63, left: 60.5 },
+    { nombre: 'Pretratamiento M1', top: 82, left: 61.5 },
+
+    // Zona Derecha (Pretratamiento General)
+    { nombre: 'Sedimentador 1 y 2', top: 77, left: 88.0 },
+    { nombre: 'Tratamiento de Grasas', top: 68, left: 96.5 },
+    { nombre: 'Desarenador', top: 77, left: 96.5 },
+    { nombre: 'Tratamiento de Arenas', top: 84, left: 96.2 },
+    { nombre: 'Sub Estación Transformadora 1', top: 88, left: 93.2 }
+];
+
 window.onload = () => {
     lucide.createIcons();
+    renderizarFuncionamientoEquipos();
     cargarDatosDesdeGoogle(urlPrimary);
     cargarEquiposCriticos();
 };
@@ -173,9 +207,22 @@ function getMonthYear(fechaRaw) {
 }
 
 function renderizarFuncionamientoEquipos() {
-    const equiposCriticos = [];
-    const estadoZonas = {}; // 1=Operativo, 2=En Reparacion, 3=Fuera de Servicio
+    // 1. Dibujar los puntos y recuadros fijos sobre el mapa aéreo
+    const capaMapa = document.getElementById('capa_marcadores_planta');
+    if (capaMapa) {
+        capaMapa.innerHTML = UBICACIONES_PLANTA.map(u => `
+            <div style="top: ${u.top}%; left: ${u.left}%;" 
+                 class="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10">
+                <span class="w-3 h-3 rounded-full bg-cyan-400 border-2 border-slate-950 shadow-[0_0_8px_#22d3ee] mb-1"></span>
+                <span class="bg-slate-950/90 border border-slate-500/80 text-white text-[10px] font-semibold px-2 py-0.5 rounded shadow-lg whitespace-nowrap">
+                    ${u.nombre}
+                </span>
+            </div>
+        `).join('');
+    }
 
+    // 2. Procesar y renderizar el Listado General de Equipos Críticos
+    const equiposCriticos = [];
     equiposCriticosData.forEach(r => {
         const nombreEq = getVal(r, 'equipo');
         if (nombreEq && String(nombreEq).trim() !== '') {
@@ -183,106 +230,67 @@ function renderizarFuncionamientoEquipos() {
             const estadoRaw = String(getVal(r, 'estado') || 'Operativo').trim();
             const detalleRaw = String(getVal(r, 'detalle') || '').trim();
 
+            const estLower = estadoRaw.toLowerCase();
+            let nivel = 1; // Verde
+            if (estLower.includes('reparacion') || estLower.includes('reparación')) nivel = 2; // Amarillo
+            if (estLower.includes('fuera')) nivel = 3; // Rojo
+
             equiposCriticos.push({
                 nombre: String(nombreEq).trim(),
                 sector: sectorRaw,
                 estado: estadoRaw,
-                detalle: detalleRaw
+                detalle: detalleRaw,
+                nivel: nivel
             });
-
-            // Normalizar nombre del sector para vincularlo con el pin del mapa
-            const sectorKey = sectorRaw.toLowerCase()
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                .replace(/\s+/g, '_');
-
-            const estLower = estadoRaw.toLowerCase();
-            let nivel = 1; // Verde (Operativo)
-            if (estLower.includes('reparacion') || estLower.includes('reparación')) nivel = 2; // Amarillo
-            if (estLower.includes('fuera')) nivel = 3; // Rojo
-
-            if (!estadoZonas[sectorKey] || nivel > estadoZonas[sectorKey]) {
-                estadoZonas[sectorKey] = nivel;
-            }
         }
     });
 
-    // Actualizar contador y lista de tarjetas
     setTexto('total_eq_criticos', `${equiposCriticos.length} equipos`);
     const contEquipos = document.getElementById('lista_equipos_criticos');
     if (contEquipos) {
         if (equiposCriticos.length === 0) {
-            contEquipos.innerHTML = '<div class="text-center py-8 text-slate-500 text-sm italic">Aún no hay equipos cargados en la hoja Equipos_Criticos.</div>';
+            contEquipos.innerHTML = '<div class="text-center py-8 text-slate-500 text-sm italic col-span-full">Aún no hay equipos cargados en la hoja Equipos_Criticos.</div>';
         } else {
-            contEquipos.innerHTML = equiposCriticos.map(eq => {
-                const estLower = eq.estado.toLowerCase();
-                let badgeClass = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
-                let dotClass = 'bg-emerald-400';
-
-                if (estLower.includes('reparacion') || estLower.includes('reparación')) {
-                    badgeClass = 'bg-amber-500/15 text-amber-300 border-amber-500/30';
-                    dotClass = 'bg-amber-400 animate-pulse';
-                } else if (estLower.includes('fuera')) {
-                    badgeClass = 'bg-red-500/15 text-red-400 border-red-500/30';
-                    dotClass = 'bg-red-500';
-                }
-
-                const detalleHTML = eq.detalle !== '' 
-                    ? `<div class="mt-2 text-xs bg-slate-950/70 text-amber-200/90 px-2.5 py-1.5 rounded-lg border border-amber-500/20 flex items-center gap-1.5">
-                         <i data-lucide="map-pin" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
-                         <span>${eq.detalle}</span>
-                       </div>` 
-                    : '';
-
-                return `
-                    <div class="bg-slate-900 rounded-xl p-3.5 border border-slate-700/80 hover:border-slate-600 transition">
-                        <div class="flex justify-between items-start gap-2">
-                            <div>
-                                <div class="font-bold text-white text-sm">${eq.nombre}</div>
-                                <div class="text-[11px] text-slate-400 mt-0.5">${eq.sector || 'Sector general'}</div>
-                            </div>
-                            <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold border flex items-center gap-1.5 shrink-0 ${badgeClass}">
-                                <span class="w-2 h-2 rounded-full ${dotClass}"></span>
-                                ${eq.estado}
-                            </span>
-                        </div>
-                        ${detalleHTML}
-                    </div>
-                `;
-            }).join('');
+            contEquipos.innerHTML = equiposCriticos.map(eq => generarTarjetaEquipoHTML(eq)).join('');
             lucide.createIcons();
         }
     }
+}
 
-    // Colorear Pines sobre la Foto Aérea
-    const zonasMapa = [
-        'pretratamiento_m1', 'biologico_m1', 'deshidratacion_m1',
-        'pretratamiento_m2', 'biologico_m2', 'deshidratacion_m2'
-    ];
+function generarTarjetaEquipoHTML(eq) {
+    let badgeClass = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
+    let dotClass = 'bg-emerald-400';
 
-    zonasMapa.forEach(zona => {
-        const pin = document.getElementById(`pin_${zona}`);
-        if (!pin) return;
-        const dot = pin.querySelector('.pin-dot');
-        const nivel = estadoZonas[zona] || 0;
+    if (eq.nivel === 2) {
+        badgeClass = 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+        dotClass = 'bg-amber-400 animate-pulse';
+    } else if (eq.nivel === 3) {
+        badgeClass = 'bg-red-500/15 text-red-400 border-red-500/30';
+        dotClass = 'bg-red-500';
+    }
 
-        // Limpiar clases previas
-        pin.classList.remove('border-slate-500', 'border-emerald-500', 'border-amber-400', 'border-red-500', 'bg-slate-900/90', 'bg-emerald-950/90', 'bg-amber-950/90', 'bg-red-950/90');
-        dot.classList.remove('bg-slate-400', 'bg-emerald-400', 'bg-amber-400', 'bg-red-500', 'animate-pulse');
+    const detalleHTML = eq.detalle !== '' 
+        ? `<div class="mt-2.5 text-xs bg-slate-950/70 text-amber-200/90 px-2.5 py-1.5 rounded-lg border border-amber-500/20 flex items-center gap-1.5">
+             <i data-lucide="wrench" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
+             <span>${eq.detalle}</span>
+           </div>` 
+        : '';
 
-        if (nivel === 1) { // Operativo -> Verde
-            pin.classList.add('border-emerald-500', 'bg-emerald-950/90');
-            dot.classList.add('bg-emerald-400');
-        } else if (nivel === 2) { // En Reparación -> Amarillo
-            pin.classList.add('border-amber-400', 'bg-amber-950/90');
-            dot.classList.add('bg-amber-400', 'animate-pulse');
-        } else if (nivel === 3) { // Fuera de Servicio -> Rojo
-            pin.classList.add('border-red-500', 'bg-red-950/90');
-            dot.classList.add('bg-red-500', 'animate-pulse');
-        } else { // Sin equipos asignados aún
-            pin.classList.add('border-slate-500', 'bg-slate-900/90');
-            dot.classList.add('bg-slate-400');
-        }
-    });
+    return `
+        <div class="bg-slate-900 rounded-xl p-4 border border-slate-700/80 hover:border-slate-600 transition flex flex-col justify-between">
+            <div class="flex justify-between items-start gap-2">
+                <div>
+                    <div class="font-bold text-white text-sm">${eq.nombre}</div>
+                    <div class="text-[11px] text-slate-400 mt-0.5">${eq.sector || 'Sector general'}</div>
+                </div>
+                <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold border flex items-center gap-1.5 shrink-0 ${badgeClass}">
+                    <span class="w-2 h-2 rounded-full ${dotClass}"></span>
+                    ${eq.estado}
+                </span>
+            </div>
+            ${detalleHTML}
+        </div>
+    `;
 }
 
 function calcularYRenderizarResumen() {
