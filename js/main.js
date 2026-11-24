@@ -21,7 +21,9 @@ const urlBackup = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJ
 const urlEquiposCriticos = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=316369111&single=true&output=csv";
 
 const UBICACIONES_PLANTA = [
-    // Zona Izquierda (M2 y Digestión)
+    // ==========================================
+    // ZONA IZQUIERDA (M2 y Digestión)
+    // ==========================================
     { nombre: 'Silo de Lodos', top: 10, left: 4.5 },
     { nombre: 'Deshidratación M2', top: 23, left: 4.5 },
     { nombre: 'Sub Estación Transformadora 3', top: 30, left: 4.2 },
@@ -31,22 +33,51 @@ const UBICACIONES_PLANTA = [
     { nombre: 'Espesador', top: 23, left: 22.8 },
     { nombre: 'Depósito de Hidrocarburo', top: 16, left: 26.5 },
     { nombre: 'Sala de Soplantes M2', top: 71, left: 10.2 },
-    { nombre: 'Reactores Biológicos M2', top: 63, left: 15.5 },
-    { nombre: 'Camara de Distribución y Clarificadores 1, 2, 3, 4', top: 60, left: 26.5 },
 
-    // Zona Central (M1)
+    // Reactores Biológicos M2 (4 celdas de arriba hacia abajo)
+    { nombre: 'Reactor 1', top: 53.5, left: 15.5 },
+    { nombre: 'Reactor 2', top: 59.5, left: 15.5 },
+    { nombre: 'Reactor 3', top: 65.5, left: 15.5 },
+    { nombre: 'Reactor 4', top: 71.5, left: 15.5 },
+
+    // Clarificadores M2 y Cámara de Distribución (5 puntos separados)
+    { nombre: 'Clarificador 1', top: 51, left: 23.2 },
+    { nombre: 'Clarificador 2', top: 53, left: 29.8 },
+    { nombre: 'Cámara de Distribución de Clarificadores', top: 61, left: 26.5 },
+    { nombre: 'Clarificador 3', top: 69, left: 23.2 },
+    { nombre: 'Clarificador 4', top: 70, left: 29.8 },
+
+    // ==========================================
+    // ZONA CENTRAL (M1)
+    // ==========================================
     { nombre: 'Taller de Mantenimiento', top: 48, left: 34.8 },
-    { nombre: 'Deshidratación M1 y Taller de Soldadura', top: 53, left: 39.8 },
+    { nombre: 'Taller de Soldadura', top: 49, left: 39.8 },
+    { nombre: 'Deshidratación M1', top: 56, left: 39.8 },
     { nombre: 'Administración', top: 68, left: 35.5 },
     { nombre: 'Grupo Electrogeno', top: 68, left: 39.5 },
     { nombre: 'Sala Soplantes M1', top: 68, left: 41.8 },
-    { nombre: 'Clarificadores A,B,C', top: 51, left: 51.2 },
-    { nombre: 'Reactores M1', top: 74, left: 50.5 },
-    { nombre: 'Laboratorio, Pañol Funcionamiento y Coordinación', top: 63, left: 60.5 },
+
+    // Clarificadores M1 (C a la izquierda, B al centro, A a la derecha)
+    { nombre: 'Clarificador C', top: 52, left: 45.8 },
+    { nombre: 'Clarificador B', top: 49, left: 50.8 },
+    { nombre: 'Clarificador A', top: 53, left: 55.8 },
+
+    // Reactores M1 (C a la izquierda, B al centro, A a la derecha)
+    { nombre: 'Reactor C', top: 73, left: 45.2 },
+    { nombre: 'Reactor B', top: 73, left: 50.2 },
+    { nombre: 'Reactor A', top: 73, left: 55.2 },
+
+    // Laboratorio, Pañol y Funcionamiento (en ese orden de izquierda a derecha)
+    { nombre: 'Laboratorio', top: 63, left: 59.2 },
+    { nombre: 'Pañol', top: 63, left: 61.2 },
+    { nombre: 'Funcionamiento', top: 63, left: 63.3 },
     { nombre: 'Pretratamiento M1', top: 82, left: 61.5 },
 
-    // Zona Derecha (Pretratamiento General)
-    { nombre: 'Sedimentador 1 y 2', top: 77, left: 88.0 },
+    // ==========================================
+    // ZONA DERECHA (Pretratamiento General)
+    // ==========================================
+    { nombre: 'Sedimentador 1', top: 77, left: 85.2 },
+    { nombre: 'Sedimentador 2', top: 77, left: 91.2 },
     { nombre: 'Tratamiento de Grasas', top: 68, left: 96.5 },
     { nombre: 'Desarenador', top: 77, left: 96.5 },
     { nombre: 'Tratamiento de Arenas', top: 84, left: 96.2 },
@@ -237,13 +268,17 @@ function renderizarFuncionamientoEquipos() {
                 nivel: nivel
             });
 
-            // Vincular con el punto del mapa según el nombre del sector
+            // Vincular con el punto del mapa según el nombre exacto o coincidencia del sector
             const secNorm = normalizarTexto(sectorRaw);
             if (secNorm !== '') {
-                const ubicacionMatch = UBICACIONES_PLANTA.find(u => {
-                    const uNorm = normalizarTexto(u.nombre);
-                    return uNorm.includes(secNorm) || secNorm.includes(uNorm);
-                });
+                // Primero busca coincidencia exacta para evitar confusiones entre Reactor 1 y Reactor 10 o similares
+                let ubicacionMatch = UBICACIONES_PLANTA.find(u => normalizarTexto(u.nombre) === secNorm);
+                if (!ubicacionMatch) {
+                    ubicacionMatch = UBICACIONES_PLANTA.find(u => {
+                        const uNorm = normalizarTexto(u.nombre);
+                        return uNorm.includes(secNorm) || secNorm.includes(uNorm);
+                    });
+                }
 
                 if (ubicacionMatch) {
                     const currentMax = estadoPorSector[ubicacionMatch.nombre] || 0;
@@ -255,7 +290,7 @@ function renderizarFuncionamientoEquipos() {
         }
     });
 
-    // 2. DIBUJAR LOS PUNTOS Y RECUADROS FIJOS EN EL MAPA 
+    // 2. Dibujar los puntos y recuadros fijos coloreados según el estado
     const capaMapa = document.getElementById('capa_marcadores_planta');
     if (capaMapa) {
         capaMapa.innerHTML = UBICACIONES_PLANTA.map(u => {
@@ -265,14 +300,14 @@ function renderizarFuncionamientoEquipos() {
             let badgeBorder = 'border-slate-500/80';
             let pingHTML = '';
 
-            if (nivel === 1) { // OPERATIVO (VERDE)
+            if (nivel === 1) { // Operativo -> Verde
                 dotClass = 'bg-emerald-400 border-slate-950 shadow-[0_0_10px_#10b981]';
                 badgeBorder = 'border-emerald-500/90';
-            } else if (nivel === 2) { // EN REPARACIÓN (AMARILLO)
+            } else if (nivel === 2) { // En Reparación -> Amarillo
                 dotClass = 'bg-amber-400 border-slate-950 shadow-[0_0_12px_#fbbf24]';
                 badgeBorder = 'border-amber-400';
                 pingHTML = `<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>`;
-            } else if (nivel === 3) { // FUERA DE SERVICIO (ROJO)
+            } else if (nivel === 3) { // Fuera de Servicio -> Rojo
                 dotClass = 'bg-red-500 border-slate-950 shadow-[0_0_12px_#ef4444]';
                 badgeBorder = 'border-red-500';
                 pingHTML = `<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>`;
@@ -281,11 +316,11 @@ function renderizarFuncionamientoEquipos() {
             return `
                 <div style="top: ${u.top}%; left: ${u.left}%;" 
                      class="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10">
-                    <span class="relative flex h-3.5 w-3.5 mb-1">
+                    <span class="relative flex h-3 w-3 mb-0.5">
                         ${pingHTML}
-                        <span class="relative inline-flex rounded-full h-3.5 w-3.5 border-2 ${dotClass}"></span>
+                        <span class="relative inline-flex rounded-full h-3 w-3 border-2 ${dotClass}"></span>
                     </span>
-                    <span class="bg-slate-950/90 border ${badgeBorder} text-white text-[10px] font-semibold px-2 py-0.5 rounded shadow-lg whitespace-nowrap">
+                    <span class="bg-slate-950/90 border ${badgeBorder} text-white text-[9.5px] font-semibold px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap leading-tight">
                         ${u.nombre}
                     </span>
                 </div>
@@ -293,7 +328,7 @@ function renderizarFuncionamientoEquipos() {
         }).join('');
     }
 
-    // 3. RENDERIZAR EL LISTADO DE EQUIPOS CRITICOS 
+    // 3. Renderizar el Listado General de Equipos Críticos debajo del mapa
     setTexto('total_eq_criticos', `${equiposCriticos.length} equipos`);
     const contEquipos = document.getElementById('lista_equipos_criticos');
     if (contEquipos) {
@@ -393,7 +428,7 @@ function calcularYRenderizarResumen() {
         setTexto('hs_extra_lbl', getSum(rawData, 'hs_extra').toLocaleString('es-AR'));
         setTexto('hs_normales_lbl', getSum(rawData, 'hs_normales').toLocaleString('es-AR'));
 
-        // CANTIDADES Y HORAS GENERALES
+        // Cantidades y Horas generales
         const countPrev = getSum(rawData, 'mant_preventivos');
         const countCorr = getSum(rawData, 'mant_correctivos');
         const countAct = getSum(rawData, 'mant_actividades');
@@ -411,7 +446,7 @@ function calcularYRenderizarResumen() {
         setTexto('res_hs_tareas', hsTareas);
         setTexto('res_hs_total', hsTotal);
 
-        // GRAFICOS MENSUALES
+        // Gráficos Mensuales
         const resumenMensual = {};
         rawData.forEach(r => {
             const mesKey = getMonthYear(getVal(r, 'fecha'));
@@ -739,7 +774,7 @@ function calcularYRenderizarResumen() {
         }
 
         // ==============================
-        // 4. PESTAÑA FUNCIONAMIENTO 
+        // 4. PESTAÑA FUNCIONAMIENTO (KPIs Hoja 1)
         // ==============================
         setTexto('func_cant_rsu', getSum(rawData, 'cant_rsu').toLocaleString('es-AR'));
         setTexto('func_cant_ot', getSum(rawData, 'cant_ot').toLocaleString('es-AR'));
