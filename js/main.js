@@ -22,66 +22,63 @@ const urlEquiposCriticos = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJb
 
 const UBICACIONES_PLANTA = [
     // ==========================================
-    // ZONA IZQUIERDA (M2 y Digestión)
+    // M2 
     // ==========================================
-    { nombre: 'Silo de Lodos', top: 10, left: 4.5 },
-    { nombre: 'Deshidratación M2', top: 23, left: 4.5 },
-    { nombre: 'Sub Estación Transformadora 3', top: 30, left: 4.2 },
-    { nombre: 'Caldera y Digestor', top: 22, left: 13.5 },
-    { nombre: 'Gasómetro', top: 9, left: 15.8 },
-    { nombre: 'Flotador', top: 18, left: 18.8 },
-    { nombre: 'Espesador', top: 23, left: 22.8 },
-    { nombre: 'Depósito de Hidrocarburo', top: 16, left: 26.5 },
-    { nombre: 'Sala de Soplantes M2', top: 71, left: 10.2 },
+    { nombre: 'Silo de Lodos', top: 10.5, left: 4.5 },
+    { nombre: 'Deshidratación M2', top: 22.0, left: 4.3 },
+    { nombre: 'Sub Estación Transformadora 3', top: 30.5, left: 4.3 },
 
-    // Reactores Biológicos M2 (4 celdas de arriba hacia abajo)
-    { nombre: 'Reactor 1', top: 53.5, left: 15.5 },
+    // CALDERA, DIGESTOR, GASOMETRO, FLOTADOR, ESPESADOR, HIDRO Y SOPLANTES M2
+    { nombre: 'Caldera', top: 17.5, left: 11.8 },
+    { nombre: 'Digestor', top: 23.5, left: 13.8 },
+
+    { nombre: 'Gasómetro', top: 8.5, left: 16.0 },
+    { nombre: 'Flotador', top: 17.5, left: 19.0 },
+    { nombre: 'Espesador', top: 23.5, left: 22.8 },
+    { nombre: 'Depósito de Hidrocarburo', top: 15.5, left: 26.8 },
+    { nombre: 'Sala de Soplantes M2', top: 71.0, left: 9.8 },
+
+    // REACTORES BIOLOGICOS M2
+    { nombre: 'Reactor 1', top: 53.0, left: 15.5 },
     { nombre: 'Reactor 2', top: 59.5, left: 15.5 },
-    { nombre: 'Reactor 3', top: 65.5, left: 15.5 },
-    { nombre: 'Reactor 4', top: 71.5, left: 15.5 },
+    { nombre: 'Reactor 3', top: 66.0, left: 15.5 },
+    { nombre: 'Reactor 4', top: 72.5, left: 15.5 },
 
-    // Clarificadores M2 y Cámara de Distribución (5 puntos separados)
-    { nombre: 'Clarificador 1', top: 51, left: 23.2 },
-    { nombre: 'Clarificador 2', top: 53, left: 29.8 },
-    { nombre: 'Cámara de Distribución de Clarificadores', top: 61, left: 26.5 },
-    { nombre: 'Clarificador 3', top: 69, left: 23.2 },
-    { nombre: 'Clarificador 4', top: 70, left: 29.8 },
+    // CLARIFICADORES M2 Y CAMARA DE DISTRIBUCIÓN 
+    { nombre: 'Clarificador 1', top: 49.5, left: 23.2 },
+    { nombre: 'Clarificador 2', top: 51.5, left: 29.8 },
+    { nombre: 'Cámara de Distribución de Clarificadores', top: 60.5, left: 26.5 },
+    { nombre: 'Clarificador 3', top: 69.5, left: 23.2 },
+    { nombre: 'Clarificador 4', top: 71.0, left: 29.8 },
 
     // ==========================================
     // ZONA CENTRAL (M1)
     // ==========================================
-    { nombre: 'Taller de Mantenimiento', top: 48, left: 34.8 },
-    { nombre: 'Taller de Soldadura', top: 49, left: 39.8 },
-    { nombre: 'Deshidratación M1', top: 56, left: 39.8 },
-    { nombre: 'Administración', top: 68, left: 35.5 },
-    { nombre: 'Grupo Electrogeno', top: 68, left: 39.5 },
-    { nombre: 'Sala Soplantes M1', top: 68, left: 41.8 },
+    { nombre: 'Deshidratación M1', top: 56.5, left: 39.8 },
+    { nombre: 'Grupo Electrogeno', top: 66.5, left: 38.8 },
+    { nombre: 'Sala Soplantes M1', top: 73.5, left: 41.2 },
 
-    // Clarificadores M1 (C a la izquierda, B al centro, A a la derecha)
-    { nombre: 'Clarificador C', top: 52, left: 45.8 },
-    { nombre: 'Clarificador B', top: 49, left: 50.8 },
-    { nombre: 'Clarificador A', top: 53, left: 55.8 },
+    // CLARIFICADORES M1 
+    { nombre: 'Clarificador C', top: 51.5, left: 45.8 },
+    { nombre: 'Clarificador B', top: 48.0, left: 50.8 },
+    { nombre: 'Clarificador A', top: 52.5, left: 55.8 },
 
-    // Reactores M1 (C a la izquierda, B al centro, A a la derecha)
-    { nombre: 'Reactor C', top: 73, left: 45.2 },
-    { nombre: 'Reactor B', top: 73, left: 50.2 },
-    { nombre: 'Reactor A', top: 73, left: 55.2 },
+    // REACTORES M1
+    { nombre: 'Reactor C', top: 73.5, left: 45.2 },
+    { nombre: 'Reactor B', top: 73.5, left: 50.2 },
+    { nombre: 'Reactor A', top: 73.5, left: 55.2 },
 
-    // Laboratorio, Pañol y Funcionamiento (en ese orden de izquierda a derecha)
-    { nombre: 'Laboratorio', top: 63, left: 59.2 },
-    { nombre: 'Pañol', top: 63, left: 61.2 },
-    { nombre: 'Funcionamiento', top: 63, left: 63.3 },
-    { nombre: 'Pretratamiento M1', top: 82, left: 61.5 },
+    { nombre: 'Pretratamiento M1', top: 82.0, left: 61.5 },
 
     // ==========================================
-    // ZONA DERECHA (Pretratamiento General)
+    // ZONA DERECHA (PRETRATAMIENTO)
     // ==========================================
-    { nombre: 'Sedimentador 1', top: 77, left: 85.2 },
-    { nombre: 'Sedimentador 2', top: 77, left: 91.2 },
-    { nombre: 'Tratamiento de Grasas', top: 68, left: 96.5 },
-    { nombre: 'Desarenador', top: 77, left: 96.5 },
-    { nombre: 'Tratamiento de Arenas', top: 84, left: 96.2 },
-    { nombre: 'Sub Estación Transformadora 1', top: 88, left: 93.2 }
+    { nombre: 'Sedimentador 1', top: 76.5, left: 85.0 },
+    { nombre: 'Sedimentador 2', top: 76.5, left: 91.2 },
+    { nombre: 'Tratamiento de Grasas', top: 67.0, left: 96.2 },
+    { nombre: 'Desarenador', top: 76.0, left: 96.5 },
+    { nombre: 'Tratamiento de Arenas', top: 84.5, left: 96.2 },
+    { nombre: 'Sub Estación Transformadora 1', top: 91.5, left: 92.5 }
 ];
 
 window.onload = () => {
@@ -245,9 +242,9 @@ function normalizarTexto(str) {
 
 function renderizarFuncionamientoEquipos() {
     const equiposCriticos = [];
-    const estadoPorSector = {}; // 1=Verde (Operativo), 2=Amarillo (En Reparación), 3=Rojo (Fuera de Servicio)
+    const estadoPorSector = {}; // 1 = VERDE (OPERATIVO), 2 = AMARILLO (EN REPARACIÓN), 3 = ROJO (FUERA DE SERVICIO)
 
-    // 1. Procesar equipos de Google Sheets y calcular el color de cada sector
+    // 1. PROCESAR LOS EQUIPOS DE GOOGLE SHEETS Y CALCULAR EL COLOR 
     equiposCriticosData.forEach(r => {
         const nombreEq = getVal(r, 'equipo');
         if (nombreEq && String(nombreEq).trim() !== '') {
@@ -256,9 +253,9 @@ function renderizarFuncionamientoEquipos() {
             const detalleRaw = String(getVal(r, 'detalle') || '').trim();
 
             const estLower = estadoRaw.toLowerCase();
-            let nivel = 1; // Verde (Operativo)
-            if (estLower.includes('reparacion') || estLower.includes('reparación')) nivel = 2; // Amarillo
-            if (estLower.includes('fuera')) nivel = 3; // Rojo
+            let nivel = 1; // VERDE (OPERATIVO)
+            if (estLower.includes('reparacion') || estLower.includes('reparación')) nivel = 2; // AMARILLO
+            if (estLower.includes('fuera')) nivel = 3; // ROJO
 
             equiposCriticos.push({
                 nombre: String(nombreEq).trim(),
@@ -268,10 +265,9 @@ function renderizarFuncionamientoEquipos() {
                 nivel: nivel
             });
 
-            // Vincular con el punto del mapa según el nombre exacto o coincidencia del sector
+            // VINCULAR LOS PUNTOS EN EL MAPA SEGUN NOMBRE Y SECTOR DE LA PLANTA 
             const secNorm = normalizarTexto(sectorRaw);
             if (secNorm !== '') {
-                // Primero busca coincidencia exacta para evitar confusiones entre Reactor 1 y Reactor 10 o similares
                 let ubicacionMatch = UBICACIONES_PLANTA.find(u => normalizarTexto(u.nombre) === secNorm);
                 if (!ubicacionMatch) {
                     ubicacionMatch = UBICACIONES_PLANTA.find(u => {
@@ -290,24 +286,24 @@ function renderizarFuncionamientoEquipos() {
         }
     });
 
-    // 2. Dibujar los puntos y recuadros fijos coloreados según el estado
+    // 2. DIBUJAR LOS PUNTOS Y RECUADROS 
     const capaMapa = document.getElementById('capa_marcadores_planta');
     if (capaMapa) {
         capaMapa.innerHTML = UBICACIONES_PLANTA.map(u => {
             const nivel = estadoPorSector[u.nombre] || 0;
 
-            let dotClass = 'bg-slate-400 border-slate-950';
-            let badgeBorder = 'border-slate-500/80';
+            let dotClass = 'bg-slate-300 border-slate-950';
+            let badgeBorder = 'border-slate-500/90';
             let pingHTML = '';
 
-            if (nivel === 1) { // Operativo -> Verde
+            if (nivel === 1) { // OPERATIVO (VERDE)
                 dotClass = 'bg-emerald-400 border-slate-950 shadow-[0_0_10px_#10b981]';
-                badgeBorder = 'border-emerald-500/90';
-            } else if (nivel === 2) { // En Reparación -> Amarillo
+                badgeBorder = 'border-emerald-400';
+            } else if (nivel === 2) { // EN REPARACIÓN (AMARILLO)
                 dotClass = 'bg-amber-400 border-slate-950 shadow-[0_0_12px_#fbbf24]';
                 badgeBorder = 'border-amber-400';
                 pingHTML = `<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>`;
-            } else if (nivel === 3) { // Fuera de Servicio -> Rojo
+            } else if (nivel === 3) { // FUERA DE SERVICIO (ROJO)
                 dotClass = 'bg-red-500 border-slate-950 shadow-[0_0_12px_#ef4444]';
                 badgeBorder = 'border-red-500';
                 pingHTML = `<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>`;
@@ -316,11 +312,11 @@ function renderizarFuncionamientoEquipos() {
             return `
                 <div style="top: ${u.top}%; left: ${u.left}%;" 
                      class="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10">
-                    <span class="relative flex h-3 w-3 mb-0.5">
+                    <span class="relative flex h-3.5 w-3.5 mb-1">
                         ${pingHTML}
-                        <span class="relative inline-flex rounded-full h-3 w-3 border-2 ${dotClass}"></span>
+                        <span class="relative inline-flex rounded-full h-3.5 w-3.5 border-2 ${dotClass}"></span>
                     </span>
-                    <span class="bg-slate-950/90 border ${badgeBorder} text-white text-[9.5px] font-semibold px-1.5 py-0.5 rounded shadow-lg whitespace-nowrap leading-tight">
+                    <span class="bg-slate-950/95 border ${badgeBorder} text-white text-[10px] font-semibold px-2 py-0.5 rounded-md shadow-xl whitespace-nowrap leading-tight tracking-tight">
                         ${u.nombre}
                     </span>
                 </div>
@@ -328,7 +324,7 @@ function renderizarFuncionamientoEquipos() {
         }).join('');
     }
 
-    // 3. Renderizar el Listado General de Equipos Críticos debajo del mapa
+    // 3. LISTADO DE EUQIPOS CRITICOS (ESTO ESTA DEBAJO DEL MAPA) 
     setTexto('total_eq_criticos', `${equiposCriticos.length} equipos`);
     const contEquipos = document.getElementById('lista_equipos_criticos');
     if (contEquipos) {
@@ -428,7 +424,7 @@ function calcularYRenderizarResumen() {
         setTexto('hs_extra_lbl', getSum(rawData, 'hs_extra').toLocaleString('es-AR'));
         setTexto('hs_normales_lbl', getSum(rawData, 'hs_normales').toLocaleString('es-AR'));
 
-        // Cantidades y Horas generales
+        // CANTIDADES Y HORAS GENERALES 
         const countPrev = getSum(rawData, 'mant_preventivos');
         const countCorr = getSum(rawData, 'mant_correctivos');
         const countAct = getSum(rawData, 'mant_actividades');
@@ -446,7 +442,7 @@ function calcularYRenderizarResumen() {
         setTexto('res_hs_tareas', hsTareas);
         setTexto('res_hs_total', hsTotal);
 
-        // Gráficos Mensuales
+        // GRÁFICOS MENSUALES
         const resumenMensual = {};
         rawData.forEach(r => {
             const mesKey = getMonthYear(getVal(r, 'fecha'));
@@ -499,7 +495,7 @@ function calcularYRenderizarResumen() {
         cMensualArenas = buildMonthlyBar('chartMensualArenas', cMensualArenas, 'Arenas', serieArenas, '#fb923c', 'Ton');
         cMensualPolimero = buildMonthlyBar('chartMensualPolimero', cMensualPolimero, 'Polímero', seriePolimero, '#818cf8', 'Kg');
 
-        // Doughnut Energía Sectores
+        // ENERGIA DE LO SECTORES 
         if(cEnergia) cEnergia.destroy();
         const ctxEnergia = document.getElementById('chartEnergiaSectores');
         if (ctxEnergia) {
@@ -774,7 +770,7 @@ function calcularYRenderizarResumen() {
         }
 
         // ==============================
-        // 4. PESTAÑA FUNCIONAMIENTO (KPIs Hoja 1)
+        // 4. PESTAÑA FUNCIONAMIENTO 
         // ==============================
         setTexto('func_cant_rsu', getSum(rawData, 'cant_rsu').toLocaleString('es-AR'));
         setTexto('func_cant_ot', getSum(rawData, 'cant_ot').toLocaleString('es-AR'));
