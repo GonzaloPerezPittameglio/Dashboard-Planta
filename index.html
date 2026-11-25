@@ -393,8 +393,8 @@
             <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl relative overflow-hidden">
                 <div class="absolute top-0 right-0 p-4 opacity-10 pointer-events-none"><i data-lucide="alert-triangle" class="w-32 h-32 text-red-500"></i></div>
                 <div class="flex justify-between items-center mb-4 relative z-10">
-                    <h3 class="text-sm font-bold text-white uppercase tracking-wider">Semáforo: Control Normativo Anual</h3>
-                    <span class="bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-xs font-bold border border-red-500/50">Cupo Máximo: 37 Días</span>
+                    <h3 class="text-sm font-bold text-white uppercase tracking-wider">Control Normativo Anual Fuera de Norma</h3>
+                    <span class="bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-xs font-bold border border-red-500/50">CUPO MAXIMO: 37 DÍAS</span>
                 </div>
                 <div class="flex flex-col sm:flex-row items-center gap-8 relative z-10">
                     <div class="text-center bg-slate-900 border border-slate-700 rounded-2xl p-6 min-w-[150px]">
@@ -402,7 +402,7 @@
                         <div class="text-xs text-slate-400 mt-2 uppercase tracking-wide">Días Restantes</div>
                     </div>
                     <div class="flex-1 w-full">
-                        <div class="text-sm font-medium text-slate-300 mb-3">Fechas con desvíos registrados <span class="text-xs text-slate-500 italic">(Toque una fecha para ver el motivo)</span>:</div>
+                        <div class="text-sm font-medium text-slate-300 mb-3">Fechas con desvíos registrados <span class="text-xs text-slate-500 italic"></span>:</div>
                         <div id="fechas_fuera_norma" class="flex flex-wrap gap-2">
                             <span class="text-slate-500 text-sm italic">Cargando fechas...</span>
                         </div>
@@ -420,7 +420,7 @@
                     <div>
                         <div class="text-xs text-slate-400 uppercase tracking-wider mb-1">Cantidad de RSU</div>
                         <div class="text-4xl font-bold text-white" id="func_cant_rsu">0</div>
-                        <div class="text-xs text-slate-500 mt-1">Residuos Sólidos Urbanos acumulados</div>
+                        <div class="text-xs text-slate-500 mt-1">RESIDUOS SÓLIDOS URBANOS ACUMULADOS</div>
                     </div>
                     <div class="bg-amber-500/10 p-4 rounded-2xl border border-amber-500/20">
                         <i data-lucide="trash-2" class="w-8 h-8 text-amber-400"></i>
@@ -431,7 +431,7 @@
                     <div>
                         <div class="text-xs text-slate-400 uppercase tracking-wider mb-1">Cantidad de Órdenes de Trabajo</div>
                         <div class="text-4xl font-bold text-cyan-400" id="func_cant_ot">0</div>
-                        <div class="text-xs text-slate-500 mt-1">OT generadas / gestionadas</div>
+                        <div class="text-xs text-slate-500 mt-1">OT GENERADAS / GESTIONADAS</div>
                     </div>
                     <div class="bg-cyan-500/10 p-4 rounded-2xl border border-cyan-500/20">
                         <i data-lucide="clipboard-list" class="w-8 h-8 text-cyan-400"></i>
@@ -447,15 +447,15 @@
                         <h3 class="text-base font-bold text-white uppercase tracking-wider">Plano General de Planta</h3>
                     </div>
                     <div class="flex flex-wrap items-center gap-4 text-xs bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-700">
-                        <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]"></span> Operativo</span>
-                        <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]"></span> En Reparación</span>
-                        <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]"></span> Fuera de Servicio</span>
-                        <span class="flex items-center gap-1.5 text-slate-400"><span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span> Sin novedad</span>
+                        <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]"></span>OPERATIVO</span>
+                        <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]"></span>EN REPARACIÓN</span>
+                        <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]"></span>FUERA DE SERVICIO</span>
+                        <span class="flex items-center gap-1.5 text-slate-400"><span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span>SIN NOVEDAD</span>
                     </div>
                 </div>
 
                 <div class="overflow-x-auto pb-2">
-                    <div class="relative min-w-[1150px] w-full rounded-xl overflow-hidden border border-slate-700 bg-slate-950 shadow-2xl">
+                    <div class="relative min-w-[1350px] w-full rounded-xl overflow-hidden border border-slate-700 bg-slate-950 shadow-2xl">
                         <img src="mapa-planta.jpg" alt="Mapa Aéreo Planta Hurlingham" class="w-full h-auto block select-none" />
                         
                         <!-- Capa donde JS coloca los puntos y nombres fijos -->
@@ -471,7 +471,7 @@
                         <i data-lucide="cpu" class="w-5 h-5 text-amber-400"></i>
                         <h3 class="text-base font-bold text-white uppercase tracking-wider">Listado General de Equipos Críticos</h3>
                     </div>
-                    <span class="text-xs bg-slate-900 text-cyan-400 font-semibold px-3 py-1 rounded-full border border-slate-700" id="total_eq_criticos">0 equipos</span>
+                    <span class="text-xs bg-slate-900 text-cyan-400 font-semibold px-3 py-1 rounded-full border border-slate-700" id="total_eq_criticos">0 EQUIPOS</span>
                 </div>
 
                 <div id="lista_equipos_criticos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -600,7 +600,7 @@
                         <table class="w-full text-left border-collapse">
                             <thead>
                                 <tr class="text-xs uppercase text-slate-500 border-b border-slate-700">
-                                    <th class="py-3 px-4 w-16">N!</th>
+                                    <th class="py-3 px-4 w-16">N°</th>
                                     <th class="py-3 px-4">Equipo / Componente</th>
                                     <th class="py-3 px-4">Sector (Ubicación)</th>
                                     <th class="py-3 px-4 text-right">Intervenciones</th>
