@@ -614,12 +614,328 @@
         </div>
 
         <!-- PESTAÑA: CONTROL Y GESTIÓN -->
-        <div id="tab-gestion" class="tab-content hidden">
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-10 text-center">
-                <i data-lucide="bar-chart-3" class="w-12 h-12 text-slate-600 mx-auto mb-3"></i>
-                <h2 class="text-xl font-bold text-slate-300">Sector: Control y Gestión</h2>
-                <p class="text-slate-500 mt-2">Reportes gerenciales y presupuesto.</p>
-            </div>
+        <div id="tab-gestion" class="tab-content hidden space-y-8">
+            
+            <!-- ========================================================= -->
+            <!-- BLOQUE 1: GESTIÓN DE PAÑOL E INVENTARIO                   -->
+            <!-- ========================================================= -->
+            <section class="space-y-6">
+                <div class="flex items-center gap-2.5 border-b border-slate-800 pb-3">
+                    <div class="bg-amber-500/15 p-2 rounded-lg border border-amber-500/30">
+                        <i data-lucide="package" class="w-5 h-5 text-amber-400"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-white uppercase tracking-wider">Gestión de Pañol</h2>
+                        <p class="text-xs text-slate-400">Valorización de stock, consumos mensuales, rotación y materiales críticos</p>
+                    </div>
+                </div>
+
+                <!-- KPIs Superiores de Pañol -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-slate-800 rounded-2xl p-6 border border-amber-500/40 shadow-xl flex items-center justify-between">
+                        <div>
+                            <div class="text-xs text-amber-400 font-bold uppercase tracking-wider mb-1">Plata Total Valorizada del Pañol</div>
+                            <div class="text-3xl font-bold text-white" id="gest_panol_valorizado">$ 0</div>
+                            <div class="text-xs text-slate-400 mt-1">Costo total de materiales en inventario</div>
+                        </div>
+                        <div class="bg-amber-500/10 p-3.5 rounded-2xl border border-amber-500/20">
+                            <i data-lucide="vault" class="w-7 h-7 text-amber-400"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl flex items-center justify-between">
+                        <div>
+                            <div class="text-xs text-slate-400 uppercase tracking-wider mb-1">Consumo Pañol (Ítems)</div>
+                            <div class="text-3xl font-bold text-cyan-400" id="gest_panol_items_tot">0</div>
+                            <div class="text-xs text-slate-500 mt-1">Unidades / ítems retirados acumulados</div>
+                        </div>
+                        <div class="bg-cyan-500/10 p-3.5 rounded-2xl border border-cyan-500/20">
+                            <i data-lucide="boxes" class="w-7 h-7 text-cyan-400"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl flex items-center justify-between">
+                        <div>
+                            <div class="text-xs text-slate-400 uppercase tracking-wider mb-1">Consumo Pañol (Plata)</div>
+                            <div class="text-3xl font-bold text-emerald-400" id="gest_panol_plata_tot">$ 0</div>
+                            <div class="text-xs text-slate-500 mt-1">Monto total consumido en materiales</div>
+                        </div>
+                        <div class="bg-emerald-500/10 p-3.5 rounded-2xl border border-emerald-500/20">
+                            <i data-lucide="banknote" class="w-7 h-7 text-emerald-400"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráficos Mensuales de Consumo de Pañol (Ítems y Plata) -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                        <div class="flex items-center gap-2 mb-4">
+                            <i data-lucide="package-minus" class="w-4 h-4 text-cyan-400"></i>
+                            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Consumos Mensuales Pañol (Cantidad de Ítems)</h3>
+                        </div>
+                        <div class="h-56 relative"><canvas id="chartPanolItemsMensual"></canvas></div>
+                    </div>
+
+                    <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                        <div class="flex items-center gap-2 mb-4">
+                            <i data-lucide="dollar-sign" class="w-4 h-4 text-emerald-400"></i>
+                            <h3 class="text-sm font-bold text-white uppercase tracking-wider">Consumos Mensuales Pañol (Plata $)</h3>
+                        </div>
+                        <div class="h-56 relative"><canvas id="chartPanolPlataMensual"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Tablas: 10 Ítems con Menos Rotación y 5 Ítems Más Caros -->
+                <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                    <!-- Top 10 Menos Rotación -->
+                    <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl xl:col-span-7">
+                        <div class="flex items-center justify-between gap-2 mb-4 border-b border-slate-700 pb-3">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="arrow-down-circle" class="w-5 h-5 text-sky-400"></i>
+                                <h3 class="text-sm font-bold text-white uppercase tracking-wider">Ítems con Menos Rotación</h3>
+                            </div>
+                            <span class="text-[11px] text-slate-400 bg-slate-900 px-2.5 py-1 rounded-full border border-slate-700">Menor salida</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="text-[11px] uppercase text-slate-500 border-b border-slate-700">
+                                        <th class="py-2.5 px-3 w-12">#</th>
+                                        <th class="py-2.5 px-3">Código</th>
+                                        <th class="py-2.5 px-3">Descripción</th>
+                                        <th class="py-2.5 px-3 text-right">Stock</th>
+                                        <th class="py-2.5 px-3 text-right">Salidas</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla_panol_menos_rotacion">
+                                    <tr><td colspan="5" class="text-center py-6 text-slate-500 text-sm italic">Sin datos cargados en pestaña Pañol</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Top 5 Ítems Más Caros -->
+                    <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl xl:col-span-5">
+                        <div class="flex items-center justify-between gap-2 mb-4 border-b border-slate-700 pb-3">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="gem" class="w-5 h-5 text-amber-400"></i>
+                                <h3 class="text-sm font-bold text-white uppercase tracking-wider">Ítems Más Caros del Pañol</h3>
+                            </div>
+                            <span class="text-[11px] text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/30">Mayor valor</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="text-[11px] uppercase text-slate-500 border-b border-slate-700">
+                                        <th class="py-2.5 px-3 w-10">#</th>
+                                        <th class="py-2.5 px-3">Código</th>
+                                        <th class="py-2.5 px-3">Descripción</th>
+                                        <th class="py-2.5 px-3 text-right">Valor ($)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla_panol_mas_caros">
+                                    <tr><td colspan="4" class="text-center py-6 text-slate-500 text-sm italic">Sin datos cargados en pestaña Pañol</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================= -->
+            <!-- BLOQUE 2: RECURSOS HUMANOS (HORAS TRABAJADAS)             -->
+            <!-- ========================================================= -->
+            <section class="space-y-6">
+                <div class="flex items-center gap-2.5 border-b border-slate-800 pb-3">
+                    <div class="bg-cyan-500/15 p-2 rounded-lg border border-cyan-500/30">
+                        <i data-lucide="users" class="w-5 h-5 text-cyan-400"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-white uppercase tracking-wider">Recursos Humanos - Control de Horas</h2>
+                        <p class="text-xs text-slate-400">Horas normales y horas extra mensuales de toda la planta y desglose por sector</p>
+                    </div>
+                </div>
+
+                <!-- KPIs Totales de Planta -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl flex items-center justify-between">
+                        <div>
+                            <div class="text-xs text-slate-400 uppercase tracking-wider mb-1">Hs Normales Trabajadas (Total Planta)</div>
+                            <div class="text-3xl font-bold text-emerald-400"><span id="gest_rrhh_hs_normales_tot">0</span> <span class="text-base font-normal text-slate-400">hs</span></div>
+                            <div class="text-xs text-slate-500 mt-1">Acumulado mensual de toda la planta</div>
+                        </div>
+                        <div class="bg-emerald-500/10 p-3.5 rounded-2xl border border-emerald-500/20">
+                            <i data-lucide="clock" class="w-7 h-7 text-emerald-400"></i>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl flex items-center justify-between">
+                        <div>
+                            <div class="text-xs text-slate-400 uppercase tracking-wider mb-1">Hs Extra Trabajadas (Total Planta)</div>
+                            <div class="text-3xl font-bold text-amber-400"><span id="gest_rrhh_hs_extra_tot">0</span> <span class="text-base font-normal text-slate-400">hs</span></div>
+                            <div class="text-xs text-slate-500 mt-1">Acumulado mensual de toda la planta</div>
+                        </div>
+                        <div class="bg-amber-500/10 p-3.5 rounded-2xl border border-amber-500/20">
+                            <i data-lucide="alarm-clock-plus" class="w-7 h-7 text-amber-400"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráficos Mensuales Total Planta -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                        <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Hs Normales Trabajadas - Total Mensual Planta</h3>
+                        <div class="h-56 relative"><canvas id="chartRrhhHsNormalesMensual"></canvas></div>
+                    </div>
+                    <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                        <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">Hs Extra Trabajadas - Total Mensual Planta</h3>
+                        <div class="h-56 relative"><canvas id="chartRrhhHsExtraMensual"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Gráficos por Sector -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                        <div class="flex items-center gap-2 mb-4 border-b border-slate-700 pb-2">
+                            <i data-lucide="building-2" class="w-4 h-4 text-emerald-400"></i>
+                            <h3 class="text-sm font-bold text-emerald-400 uppercase tracking-wider">Hs Normales Trabajadas por Sector</h3>
+                        </div>
+                        <div class="h-64 relative"><canvas id="chartRrhhHsNormalesSector"></canvas></div>
+                    </div>
+
+                    <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                        <div class="flex items-center gap-2 mb-4 border-b border-slate-700 pb-2">
+                            <i data-lucide="building-2" class="w-4 h-4 text-amber-400"></i>
+                            <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wider">Hs Extra Trabajadas por Sector</h3>
+                        </div>
+                        <div class="h-64 relative"><canvas id="chartRrhhHsExtraSector"></canvas></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ========================================================= -->
+            <!-- BLOQUE 3: PLATA CONSUMIDA (COSTOS OPERATIVOS)             -->
+            <!-- ========================================================= -->
+            <section class="space-y-6">
+                <div class="flex items-center gap-2.5 border-b border-slate-800 pb-3">
+                    <div class="bg-emerald-500/15 p-2 rounded-lg border border-emerald-500/30">
+                        <i data-lucide="wallet" class="w-5 h-5 text-emerald-400"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-white uppercase tracking-wider">Plata Consumida</h2>
+                        <p class="text-xs text-slate-400">Desglose económico en RRHH, Pañol, Energía Eléctrica y Combustible de Flota</p>
+                    </div>
+                </div>
+
+                <!-- 1. RRHH: Hs Normales, Hs Extra y Hs Licencia -->
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-4 border-b border-slate-700 pb-3">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="user-check" class="w-5 h-5 text-cyan-400"></i>
+                            <h3 class="text-sm font-bold text-white uppercase tracking-wider">1. RRHH - Plata Consumida</h3>
+                        </div>
+                        <div class="text-sm font-bold text-cyan-400 bg-slate-900 px-3 py-1 rounded-full border border-slate-700">
+                            Total RRHH: <span id="gest_plata_rrhh_total">$ 0</span>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="bg-slate-900 rounded-xl p-4 border border-slate-700">
+                            <div class="text-xs text-slate-400 uppercase tracking-wider mb-1">Hs Normales ($)</div>
+                            <div class="text-2xl font-bold text-emerald-400" id="gest_plata_rrhh_normales">$ 0</div>
+                        </div>
+                        <div class="bg-slate-900 rounded-xl p-4 border border-slate-700">
+                            <div class="text-xs text-slate-400 uppercase tracking-wider mb-1">Hs Extra ($)</div>
+                            <div class="text-2xl font-bold text-amber-400" id="gest_plata_rrhh_extra">$ 0</div>
+                        </div>
+                        <div class="bg-slate-900 rounded-xl p-4 border border-slate-700">
+                            <div class="text-xs text-slate-400 uppercase tracking-wider mb-1">Hs Licencia ($)</div>
+                            <div class="text-2xl font-bold text-purple-400" id="gest_plata_rrhh_licencia">$ 0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. PAÑOL & 3. ENERGÍA TOTAL (Coste y por sector) -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- Columna Izquierda: Pañol Consumo + Energía Total KPI + Gráfico Distribución -->
+                    <div class="lg:col-span-5 space-y-6">
+                        <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i data-lucide="package-check" class="w-5 h-5 text-amber-400"></i>
+                                <h3 class="text-sm font-bold text-white uppercase tracking-wider">2. Pañol - Consumo ($)</h3>
+                            </div>
+                            <div class="bg-slate-900 rounded-xl p-5 border border-slate-700 flex items-center justify-between">
+                                <div>
+                                    <div class="text-xs text-slate-400 mb-1">Total Consumido en Materiales</div>
+                                    <div class="text-3xl font-bold text-amber-400" id="gest_plata_panol_consumo">$ 0</div>
+                                </div>
+                                <i data-lucide="shopping-cart" class="w-8 h-8 text-amber-400/40"></i>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                            <div class="flex items-center gap-2 mb-3">
+                                <i data-lucide="zap" class="w-5 h-5 text-yellow-400"></i>
+                                <h3 class="text-sm font-bold text-white uppercase tracking-wider">3. Energía Total - Coste ($)</h3>
+                            </div>
+                            <div class="bg-slate-900 rounded-xl p-5 border border-yellow-500/30 flex items-center justify-between">
+                                <div>
+                                    <div class="text-xs text-slate-400 mb-1">Coste Total Energía Eléctrica</div>
+                                    <div class="text-3xl font-bold text-yellow-400" id="gest_plata_energia_total">$ 0</div>
+                                </div>
+                                <i data-lucide="plug-zap" class="w-8 h-8 text-yellow-400/40"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Columna Derecha: Coste de Energía por Sector -->
+                    <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl lg:col-span-7 flex flex-col justify-between">
+                        <div class="flex items-center justify-between gap-2 mb-4 border-b border-slate-700 pb-3">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="pie-chart" class="w-5 h-5 text-yellow-400"></i>
+                                <h3 class="text-sm font-bold text-white uppercase tracking-wider">Coste de Energía por Sector ($)</h3>
+                            </div>
+                            <span class="text-[11px] text-slate-400">M1 y M2 (TS1 / TS2 / TS3)</span>
+                        </div>
+                        <div class="h-64 relative"><canvas id="chartCostoEnergiaSectores"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- 4. Combustible de Vehículos (Marca, Modelo, Tipo y Plata) -->
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4 border-b border-slate-700 pb-3">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="fuel" class="w-5 h-5 text-rose-400"></i>
+                            <h3 class="text-sm font-bold text-white uppercase tracking-wider">4. Combustible de Vehículos</h3>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-3">
+                            <span class="text-xs bg-slate-900 text-slate-300 px-3 py-1 rounded-full border border-slate-700">
+                                Total Litros: <strong class="text-white" id="gest_litros_combustible_total">0 L</strong>
+                            </span>
+                            <span class="text-xs bg-rose-500/15 text-rose-300 px-3 py-1 rounded-full border border-rose-500/30 font-bold">
+                                Plata Consumida: <span id="gest_plata_combustible_total">$ 0</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-xs uppercase text-slate-500 border-b border-slate-700">
+                                    <th class="py-3 px-4">Marca</th>
+                                    <th class="py-3 px-4">Modelo</th>
+                                    <th class="py-3 px-4">Tipo de Vehículo</th>
+                                    <th class="py-3 px-4 text-right">Litros Consumidos</th>
+                                    <th class="py-3 px-4 text-right">Plata Consumida ($)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla_combustible_vehiculos">
+                                <tr><td colspan="5" class="text-center py-6 text-slate-500 text-sm italic">Sin registros de vehículos cargados aún</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
         </div>
     </main>
 
