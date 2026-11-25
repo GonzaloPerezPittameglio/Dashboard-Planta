@@ -1,5 +1,8 @@
 let rawData = [];
 let equiposCriticosData = [];
+let panolData = [];
+let rrhhSectoresData = [];
+let combustibleData = [];
 
 let cEnergia = null;
 let cCaudales = null;
@@ -16,9 +19,23 @@ let cCriticidad = null;
 let cUbicacionesM1 = null;
 let cUbicacionesM2 = null;
 
+// Gráficos Pestaña Control y Gestión
+let cPanolItemsMensual = null;
+let cPanolPlataMensual = null;
+let cRrhhHsNormalesMensual = null;
+let cRrhhHsExtraMensual = null;
+let cRrhhHsNormalesSector = null;
+let cRrhhHsExtraSector = null;
+let cCostoEnergiaSectores = null;
+
 const urlPrimary = "https://docs.google.com/spreadsheets/d/17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA/gviz/tq?tqx=out:csv";
 const urlBackup = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=0&single=true&output=csv";
 const urlEquiposCriticos = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=316369111&single=true&output=csv";
+
+// URLs de las nuevas pestañas de Google Sheets para Control y Gestión (pegar enlaces CSV publicados)
+const urlPanol = "";
+const urlRrhhSectores = "";
+const urlCombustible = "";
 
 const UBICACIONES_PLANTA = [
     // ==========================================
@@ -86,6 +103,7 @@ window.onload = () => {
     renderizarFuncionamientoEquipos();
     cargarDatosDesdeGoogle(urlPrimary);
     cargarEquiposCriticos();
+    cargarHojasGestion();
 };
 
 function cargarDatosDesdeGoogle(urlTarget) {
@@ -107,6 +125,7 @@ function cargarDatosDesdeGoogle(urlTarget) {
                     dsLabel.className = "text-xs font-medium px-3 py-1.5 bg-green-900/40 text-green-300 rounded-full border border-green-700";
                 }
                 calcularYRenderizarResumen();
+                renderizarControlYGestion();
             } else if (urlTarget !== urlBackup) {
                 cargarDatosDesdeGoogle(urlBackup);
             } else {
@@ -147,6 +166,35 @@ function cargarEquiposCriticos() {
     });
 }
 
+function cargarHojasGestion() {
+    const parseSheet = (url, assignFn) => {
+        if (!url || url.trim() === '') {
+            renderizarControlYGestion();
+            return;
+        }
+        const conCache = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+        Papa.parse(conCache, {
+            download: true,
+            header: true,
+            dynamicTyping: false,
+            skipEmptyLines: true,
+            complete: function(results) {
+                if (results.data) {
+                    assignFn(results.data);
+                    renderizarControlYGestion();
+                }
+            },
+            error: function(err) {
+                console.error("Error cargando hoja de Control y Gestión:", err);
+            }
+        });
+    };
+
+    parseSheet(urlPanol, data => { panolData = data; });
+    parseSheet(urlRrhhSectores, data => { rrhhSectoresData = data; });
+    parseSheet(urlCombustible, data => { combustibleData = data; });
+}
+
 function openTab(tabId, event) {
     document.querySelectorAll('.tab-content').forEach(t => {
         t.classList.add('hidden');
@@ -171,9 +219,21 @@ function openTab(tabId, event) {
 function getCleanNumber(val) {
     if (val === null || val === undefined || val === '') return 0;
     if (typeof val === 'number') return isNaN(val) ? 0 : val;
-    let clean = String(val).replace(',', '.').replace(/[^\d.-]/g, '').trim();
+    let clean = String(val).replace(/\$/g, '').trim();
+    // Si tiene punto de miles y coma decimal (ej: 1.250,50)
+    if (clean.includes('.') && clean.includes(',')) {
+        clean = clean.replace(/\./g, '').replace(',', '.');
+    } else if (clean.includes(',')) {
+        clean = clean.replace(',', '.');
+    }
+    clean = clean.replace(/[^\d.-]/g, '').trim();
     let num = parseFloat(clean);
     return isNaN(num) ? 0 : num;
+}
+
+function formatPesos(val) {
+    const num = getCleanNumber(val);
+    return '$ ' + num.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
 function getVal(row, colName) {
@@ -242,9 +302,8 @@ function normalizarTexto(str) {
 
 function renderizarFuncionamientoEquipos() {
     const equiposCriticos = [];
-    const estadoPorSector = {}; // 1=Verde (Operativo), 2=Amarillo (En Reparación), 3=Rojo (Fuera de Servicio)
+    const estadoPorSector = {};
 
-    // 1. Procesar equipos de Google Sheets y calcular el color de cada sector
     equiposCriticosData.forEach(r => {
         const nombreEq = getVal(r, 'equipo');
         if (nombreEq && String(nombreEq).trim() !== '') {
@@ -253,9 +312,9 @@ function renderizarFuncionamientoEquipos() {
             const detalleRaw = String(getVal(r, 'detalle') || '').trim();
 
             const estLower = estadoRaw.toLowerCase();
-            let nivel = 1; // Verde (Operativo)
-            if (estLower.includes('reparacion') || estLower.includes('reparación')) nivel = 2; // Amarillo
-            if (estLower.includes('fuera')) nivel = 3; // Rojo
+            let nivel = 1;
+            if (estLower.includes('reparacion') || estLower.includes('reparación')) nivel = 2;
+            if (estLower.includes('fuera')) nivel = 3;
 
             equiposCriticos.push({
                 nombre: String(nombreEq).trim(),
@@ -265,7 +324,6 @@ function renderizarFuncionamientoEquipos() {
                 nivel: nivel
             });
 
-            // Vincular con el punto del mapa según el nombre exacto o coincidencia del sector
             const secNorm = normalizarTexto(sectorRaw);
             if (secNorm !== '') {
                 let ubicacionMatch = UBICACIONES_PLANTA.find(u => normalizarTexto(u.nombre) === secNorm);
@@ -286,7 +344,6 @@ function renderizarFuncionamientoEquipos() {
         }
     });
 
-    // 2. Dibujar los puntos y recuadros fijos coloreados según el estado (proporcionados al ancho completo)
     const capaMapa = document.getElementById('capa_marcadores_planta');
     if (capaMapa) {
         capaMapa.innerHTML = UBICACIONES_PLANTA.map(u => {
@@ -296,14 +353,14 @@ function renderizarFuncionamientoEquipos() {
             let badgeBorder = 'border-slate-500/90';
             let pingHTML = '';
 
-            if (nivel === 1) { // Operativo -> Verde
+            if (nivel === 1) {
                 dotClass = 'bg-emerald-400 border-slate-950 shadow-[0_0_8px_#10b981]';
                 badgeBorder = 'border-emerald-400';
-            } else if (nivel === 2) { // En Reparación -> Amarillo
+            } else if (nivel === 2) {
                 dotClass = 'bg-amber-400 border-slate-950 shadow-[0_0_10px_#fbbf24]';
                 badgeBorder = 'border-amber-400';
                 pingHTML = `<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>`;
-            } else if (nivel === 3) { // Fuera de Servicio -> Rojo
+            } else if (nivel === 3) {
                 dotClass = 'bg-red-500 border-slate-950 shadow-[0_0_10px_#ef4444]';
                 badgeBorder = 'border-red-500';
                 pingHTML = `<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>`;
@@ -324,7 +381,6 @@ function renderizarFuncionamientoEquipos() {
         }).join('');
     }
 
-    // 3. Renderizar el Listado General de Equipos Críticos debajo del mapa
     setTexto('total_eq_criticos', `${equiposCriticos.length} equipos`);
     const contEquipos = document.getElementById('lista_equipos_criticos');
     if (contEquipos) {
@@ -371,6 +427,419 @@ function generarTarjetaEquipoHTML(eq) {
             ${detalleHTML}
         </div>
     `;
+}
+
+function renderizarControlYGestion() {
+    Chart.defaults.color = '#94a3b8';
+    Chart.defaults.font.family = 'Inter';
+
+    try {
+        // =========================================================
+        // 1. GESTIÓN DE PAÑOL
+        // =========================================================
+        let valorTotalInventario = 0;
+        const itemsPanolLimpios = [];
+
+        panolData.forEach(r => {
+            const codigo = String(getVal(r, 'codigo') || '').trim();
+            const descripcion = String(getVal(r, 'descripcion') || '').trim();
+            if (codigo !== '' || descripcion !== '') {
+                const valorUnitario = getCleanNumber(getVal(r, 'valor_unitario'));
+                const stock = getCleanNumber(getVal(r, 'stock'));
+                const salidas = getCleanNumber(getVal(r, 'salidas') ?? getVal(r, 'consumo_cantidad'));
+                const valorFila = getCleanNumber(getVal(r, 'valor_total')) || (valorUnitario * stock);
+
+                valorTotalInventario += valorFila;
+                itemsPanolLimpios.push({
+                    codigo: codigo || '-',
+                    descripcion: descripcion || 'Sin descripción',
+                    valorUnitario,
+                    stock,
+                    salidas
+                });
+            }
+        });
+
+        setTexto('gest_panol_valorizado', formatPesos(valorTotalInventario));
+
+        // Consumos Mensuales de Pañol (leídos desde Hoja 1)
+        const panolMensualMap = {};
+        let totalItemsConsumidos = 0;
+        let totalPlataPanolConsumida = 0;
+
+        rawData.forEach(r => {
+            const mes = getMonthYear(getVal(r, 'fecha'));
+            const cantItems = getCleanNumber(getVal(r, 'panol_items_consumidos'));
+            const plataCons = getCleanNumber(getVal(r, 'panol_plata_consumida'));
+
+            if (!panolMensualMap[mes]) {
+                panolMensualMap[mes] = { items: 0, plata: 0 };
+            }
+            panolMensualMap[mes].items += cantItems;
+            panolMensualMap[mes].plata += plataCons;
+
+            totalItemsConsumidos += cantItems;
+            totalPlataPanolConsumida += plataCons;
+        });
+
+        setTexto('gest_panol_items_tot', totalItemsConsumidos.toLocaleString('es-AR'));
+        setTexto('gest_panol_plata_tot', formatPesos(totalPlataPanolConsumida));
+        setTexto('gest_plata_panol_consumo', formatPesos(totalPlataPanolConsumida));
+
+        const mesesPanol = Object.keys(panolMensualMap);
+        if (cPanolItemsMensual) cPanolItemsMensual.destroy();
+        const ctxPanolItems = document.getElementById('chartPanolItemsMensual');
+        if (ctxPanolItems) {
+            cPanolItemsMensual = new Chart(ctxPanolItems.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: mesesPanol.length ? mesesPanol : ['Sin datos'],
+                    datasets: [{
+                        label: 'Ítems Consumidos',
+                        data: mesesPanol.length ? mesesPanol.map(m => panolMensualMap[m].items) : [0],
+                        backgroundColor: '#22d3ee',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        if (cPanolPlataMensual) cPanolPlataMensual.destroy();
+        const ctxPanolPlata = document.getElementById('chartPanolPlataMensual');
+        if (ctxPanolPlata) {
+            cPanolPlataMensual = new Chart(ctxPanolPlata.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: mesesPanol.length ? mesesPanol : ['Sin datos'],
+                    datasets: [{
+                        label: 'Plata Consumida ($)',
+                        data: mesesPanol.length ? mesesPanol.map(m => panolMensualMap[m].plata) : [0],
+                        backgroundColor: '#10b981',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => `Consumo: ${formatPesos(ctx.parsed.y)}`
+                            }
+                        }
+                    },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        // Top 10 Ítems con Menos Rotación (orden ascendente por salidas)
+        const tbodyMenosRot = document.getElementById('tabla_panol_menos_rotacion');
+        if (tbodyMenosRot) {
+            if (itemsPanolLimpios.length === 0) {
+                tbodyMenosRot.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-500 text-sm italic">Conectá la pestaña Pañol para visualizar los 10 ítems con menor rotación</td></tr>';
+            } else {
+                const top10Menos = [...itemsPanolLimpios]
+                    .sort((a, b) => a.salidas - b.salidas)
+                    .slice(0, 10);
+
+                tbodyMenosRot.innerHTML = top10Menos.map((it, idx) => `
+                    <tr class="border-b border-slate-700/50 hover:bg-slate-800/60 transition">
+                        <td class="py-2.5 px-3 text-sky-400 font-semibold text-xs">#${idx + 1}</td>
+                        <td class="py-2.5 px-3 text-slate-300 font-mono text-xs">${it.codigo}</td>
+                        <td class="py-2.5 px-3 text-white text-xs font-medium">${it.descripcion}</td>
+                        <td class="py-2.5 px-3 text-slate-400 text-xs text-right">${it.stock.toLocaleString('es-AR')}</td>
+                        <td class="py-2.5 px-3 text-amber-400 font-bold text-xs text-right">${it.salidas.toLocaleString('es-AR')}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // Top 5 Ítems Más Caros del Pañol (orden descendente por valor unitario)
+        const tbodyMasCaros = document.getElementById('tabla_panol_mas_caros');
+        if (tbodyMasCaros) {
+            if (itemsPanolLimpios.length === 0) {
+                tbodyMasCaros.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-500 text-sm italic">Conectá la pestaña Pañol para visualizar los 5 ítems más caros</td></tr>';
+            } else {
+                const top5Caros = [...itemsPanolLimpios]
+                    .sort((a, b) => b.valorUnitario - a.valorUnitario)
+                    .slice(0, 5);
+
+                tbodyMasCaros.innerHTML = top5Caros.map((it, idx) => `
+                    <tr class="border-b border-slate-700/50 hover:bg-slate-800/60 transition">
+                        <td class="py-2.5 px-3 text-amber-400 font-semibold text-xs">#${idx + 1}</td>
+                        <td class="py-2.5 px-3 text-slate-300 font-mono text-xs">${it.codigo}</td>
+                        <td class="py-2.5 px-3 text-white text-xs font-medium">${it.descripcion}</td>
+                        <td class="py-2.5 px-3 text-emerald-400 font-bold text-xs text-right whitespace-nowrap">${formatPesos(it.valorUnitario)}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        // =========================================================
+        // 2. RECURSOS HUMANOS (HORAS NORMALES Y EXTRA)
+        // =========================================================
+        const rrhhMensualMap = {};
+        const rrhhSectorMap = {};
+
+        // Si existe la pestaña RRHH_Sectores con registros, usamos esa fuente detallada
+        const usarFuenteDetalladaRrhh = rrhhSectoresData.length > 0;
+
+        if (usarFuenteDetalladaRrhh) {
+            rrhhSectoresData.forEach(r => {
+                const mes = getMonthYear(getVal(r, 'fecha'));
+                const sector = String(getVal(r, 'sector') || 'General').trim();
+                const hsNorm = getCleanNumber(getVal(r, 'hs_normales'));
+                const hsExt = getCleanNumber(getVal(r, 'hs_extra'));
+
+                if (!rrhhMensualMap[mes]) rrhhMensualMap[mes] = { normales: 0, extra: 0 };
+                rrhhMensualMap[mes].normales += hsNorm;
+                rrhhMensualMap[mes].extra += hsExt;
+
+                if (!rrhhSectorMap[sector]) rrhhSectorMap[sector] = { normales: 0, extra: 0 };
+                rrhhSectorMap[sector].normales += hsNorm;
+                rrhhSectorMap[sector].extra += hsExt;
+            });
+        } else {
+            // Respaldo automático desde Hoja 1 para los totales mensuales de planta
+            rawData.forEach(r => {
+                const mes = getMonthYear(getVal(r, 'fecha'));
+                const hsNorm = getCleanNumber(getVal(r, 'hs_normales'));
+                const hsExt = getCleanNumber(getVal(r, 'hs_extra'));
+
+                if (!rrhhMensualMap[mes]) rrhhMensualMap[mes] = { normales: 0, extra: 0 };
+                rrhhMensualMap[mes].normales += hsNorm;
+                rrhhMensualMap[mes].extra += hsExt;
+            });
+        }
+
+        const mesesRrhh = Object.keys(rrhhMensualMap);
+        const totalHsNormalesPlanta = mesesRrhh.reduce((acc, m) => acc + rrhhMensualMap[m].normales, 0);
+        const totalHsExtraPlanta = mesesRrhh.reduce((acc, m) => acc + rrhhMensualMap[m].extra, 0);
+
+        setTexto('gest_rrhh_hs_normales_tot', totalHsNormalesPlanta.toLocaleString('es-AR'));
+        setTexto('gest_rrhh_hs_extra_tot', totalHsExtraPlanta.toLocaleString('es-AR'));
+
+        if (cRrhhHsNormalesMensual) cRrhhHsNormalesMensual.destroy();
+        const ctxRrhhNormMes = document.getElementById('chartRrhhHsNormalesMensual');
+        if (ctxRrhhNormMes) {
+            cRrhhHsNormalesMensual = new Chart(ctxRrhhNormMes.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: mesesRrhh.length ? mesesRrhh : ['Sin datos'],
+                    datasets: [{
+                        label: 'Hs Normales Planta',
+                        data: mesesRrhh.length ? mesesRrhh.map(m => rrhhMensualMap[m].normales) : [0],
+                        backgroundColor: '#10b981',
+                        borderRadius: 6
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        if (cRrhhHsExtraMensual) cRrhhHsExtraMensual.destroy();
+        const ctxRrhhExtMes = document.getElementById('chartRrhhHsExtraMensual');
+        if (ctxRrhhExtMes) {
+            cRrhhHsExtraMensual = new Chart(ctxRrhhExtMes.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: mesesRrhh.length ? mesesRrhh : ['Sin datos'],
+                    datasets: [{
+                        label: 'Hs Extra Planta',
+                        data: mesesRrhh.length ? mesesRrhh.map(m => rrhhMensualMap[m].extra) : [0],
+                        backgroundColor: '#f59e0b',
+                        borderRadius: 6
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        const sectoresRrhh = Object.keys(rrhhSectorMap);
+        if (cRrhhHsNormalesSector) cRrhhHsNormalesSector.destroy();
+        const ctxRrhhNormSec = document.getElementById('chartRrhhHsNormalesSector');
+        if (ctxRrhhNormSec) {
+            cRrhhHsNormalesSector = new Chart(ctxRrhhNormSec.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: sectoresRrhh.length ? sectoresRrhh : ['Cargar pestaña RRHH_Sectores'],
+                    datasets: [{
+                        label: 'Hs Normales',
+                        data: sectoresRrhh.length ? sectoresRrhh.map(s => rrhhSectorMap[s].normales) : [0],
+                        backgroundColor: '#34d399',
+                        borderRadius: 6
+                    }]
+                },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
+            });
+        }
+
+        if (cRrhhHsExtraSector) cRrhhHsExtraSector.destroy();
+        const ctxRrhhExtSec = document.getElementById('chartRrhhHsExtraSector');
+        if (ctxRrhhExtSec) {
+            cRrhhHsExtraSector = new Chart(ctxRrhhExtSec.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: sectoresRrhh.length ? sectoresRrhh : ['Cargar pestaña RRHH_Sectores'],
+                    datasets: [{
+                        label: 'Hs Extra',
+                        data: sectoresRrhh.length ? sectoresRrhh.map(s => rrhhSectorMap[s].extra) : [0],
+                        backgroundColor: '#fbbf24',
+                        borderRadius: 6
+                    }]
+                },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
+            });
+        }
+
+        // =========================================================
+        // 3. PLATA CONSUMIDA (RRHH, PAÑOL, ENERGÍA Y COMBUSTIBLE)
+        // =========================================================
+        // 3.1 Plata RRHH (lee de RRHH_Sectores o de Hoja 1)
+        const fuenteRrhhPlata = usarFuenteDetalladaRrhh ? rrhhSectoresData : rawData;
+        const plataHsNormales = getSum(fuenteRrhhPlata, 'plata_hs_normales');
+        const plataHsExtra = getSum(fuenteRrhhPlata, 'plata_hs_extra');
+        const plataHsLicencia = getSum(fuenteRrhhPlata, 'plata_hs_licencia');
+        const plataRrhhTotal = plataHsNormales + plataHsExtra + plataHsLicencia;
+
+        setTexto('gest_plata_rrhh_normales', formatPesos(plataHsNormales));
+        setTexto('gest_plata_rrhh_extra', formatPesos(plataHsExtra));
+        setTexto('gest_plata_rrhh_licencia', formatPesos(plataHsLicencia));
+        setTexto('gest_plata_rrhh_total', formatPesos(plataRrhhTotal));
+
+        // 3.2 Coste de Energía Total y por Sector
+        const kwhSectores = [
+            getSum(rawData, 'energia_m1_ts1'),
+            getSum(rawData, 'energia_m1_ts2'),
+            getSum(rawData, 'energia_m1_ts3'),
+            getSum(rawData, 'energia_m2_ts1'),
+            getSum(rawData, 'energia_m2_ts2'),
+            getSum(rawData, 'energia_m2_ts3')
+        ];
+        const sumaKwhSectores = kwhSectores.reduce((a, b) => a + b, 0);
+
+        let costosEnergiaSectores = [
+            getSum(rawData, 'costo_energia_m1_ts1'),
+            getSum(rawData, 'costo_energia_m1_ts2'),
+            getSum(rawData, 'costo_energia_m1_ts3'),
+            getSum(rawData, 'costo_energia_m2_ts1'),
+            getSum(rawData, 'costo_energia_m2_ts2'),
+            getSum(rawData, 'costo_energia_m2_ts3')
+        ];
+
+        const sumaCostosDirectos = costosEnergiaSectores.reduce((a, b) => a + b, 0);
+        const costoEnergiaTotalHoja = getSum(rawData, 'costo_energia_total');
+        let costoEnergiaFinal = sumaCostosDirectos > 0 ? sumaCostosDirectos : costoEnergiaTotalHoja;
+
+        // Si se cargó el coste total de energía pero no por sector, se prorratea automáticamente según los kWh de cada sector
+        if (sumaCostosDirectos === 0 && costoEnergiaTotalHoja > 0 && sumaKwhSectores > 0) {
+            costosEnergiaSectores = kwhSectores.map(kwh => (kwh / sumaKwhSectores) * costoEnergiaTotalHoja);
+        }
+
+        setTexto('gest_plata_energia_total', formatPesos(costoEnergiaFinal));
+
+        if (cCostoEnergiaSectores) cCostoEnergiaSectores.destroy();
+        const ctxCostoEn = document.getElementById('chartCostoEnergiaSectores');
+        if (ctxCostoEn) {
+            cCostoEnergiaSectores = new Chart(ctxCostoEn.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: [
+                        'M1 - TS1',
+                        'M1 - TS2',
+                        'M1 - TS3',
+                        'M2 - TS1 - Pretratamiento',
+                        'M2 - TS2 - Tratamiento Biológico',
+                        'M2 - TS3 - Línea de Lodos'
+                    ],
+                    datasets: [{
+                        data: costosEnergiaSectores,
+                        backgroundColor: ['#0284c7', '#0ea5e9', '#38bdf8', '#059669', '#10b981', '#34d399'],
+                        borderWidth: 2,
+                        borderColor: '#1e293b'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '62%',
+                    plugins: {
+                        legend: { position: 'right' },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` ${ctx.label}: ${formatPesos(ctx.parsed)}`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 3.3 Combustible de Vehículos (Marca, Modelo, Tipo de Vehículo, Litros y Plata)
+        const vehiculosAgrupados = {};
+        let totalLitrosComb = 0;
+        let totalPlataComb = 0;
+
+        combustibleData.forEach(r => {
+            const marca = String(getVal(r, 'marca') || '').trim();
+            const modelo = String(getVal(r, 'modelo') || '').trim();
+            const tipo = String(getVal(r, 'tipo_vehiculo') || getVal(r, 'tipo') || '').trim();
+            const litros = getCleanNumber(getVal(r, 'litros'));
+            const plata = getCleanNumber(getVal(r, 'plata') ?? getVal(r, 'costo'));
+
+            if (marca !== '' || modelo !== '' || litros > 0 || plata > 0) {
+                const key = `${marca}||${modelo}||${tipo}`;
+                if (!vehiculosAgrupados[key]) {
+                    vehiculosAgrupados[key] = {
+                        marca: marca || '-',
+                        modelo: modelo || '-',
+                        tipo: tipo || '-',
+                        litros: 0,
+                        plata: 0
+                    };
+                }
+                vehiculosAgrupados[key].litros += litros;
+                vehiculosAgrupados[key].plata += plata;
+
+                totalLitrosComb += litros;
+                totalPlataComb += plata;
+            }
+        });
+
+        setTexto('gest_litros_combustible_total', `${totalLitrosComb.toLocaleString('es-AR')} L`);
+        setTexto('gest_plata_combustible_total', formatPesos(totalPlataComb));
+
+        const tbodyComb = document.getElementById('tabla_combustible_vehiculos');
+        if (tbodyComb) {
+            const listaVehiculos = Object.values(vehiculosAgrupados).sort((a, b) => b.plata - a.plata);
+            if (listaVehiculos.length === 0) {
+                tbodyComb.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-500 text-sm italic">Conectá la pestaña Combustible para visualizar el detalle de flota</td></tr>';
+            } else {
+                tbodyComb.innerHTML = listaVehiculos.map(v => `
+                    <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition">
+                        <td class="py-3 px-4 text-white font-semibold text-sm">${v.marca}</td>
+                        <td class="py-3 px-4 text-slate-200 text-sm">${v.modelo}</td>
+                        <td class="py-3 px-4">
+                            <span class="px-2.5 py-1 rounded-full text-xs bg-slate-900 text-cyan-300 border border-slate-700">${v.tipo}</span>
+                        </td>
+                        <td class="py-3 px-4 text-slate-300 text-sm text-right">${v.litros.toLocaleString('es-AR')} L</td>
+                        <td class="py-3 px-4 text-rose-400 font-bold text-sm text-right">${formatPesos(v.plata)}</td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+    } catch (e) {
+        console.error("Error al renderizar Control y Gestión:", e);
+    }
 }
 
 function calcularYRenderizarResumen() {
