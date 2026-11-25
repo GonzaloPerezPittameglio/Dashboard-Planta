@@ -32,10 +32,10 @@ const urlPrimary = "https://docs.google.com/spreadsheets/d/17QH5BKXgwZJexRd34iD4
 const urlBackup = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=0&single=true&output=csv";
 const urlEquiposCriticos = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=316369111&single=true&output=csv";
 
-// URLs de las nuevas pestañas de Google Sheets para Control y Gestión (pegar enlaces CSV publicados)
-const urlPanol = "";
-const urlRrhhSectores = "";
-const urlCombustible = "";
+// Enlaces CSV de Control y Gestión
+const urlPanol = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=1788265059&single=true&output=csv";
+const urlRrhhSectores = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=198066718&single=true&output=csv";
+const urlCombustible = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=215427087&single=true&output=csv";
 
 const UBICACIONES_PLANTA = [
     // ==========================================
@@ -220,7 +220,6 @@ function getCleanNumber(val) {
     if (val === null || val === undefined || val === '') return 0;
     if (typeof val === 'number') return isNaN(val) ? 0 : val;
     let clean = String(val).replace(/\$/g, '').trim();
-    // Si tiene punto de miles y coma decimal (ej: 1.250,50)
     if (clean.includes('.') && clean.includes(',')) {
         clean = clean.replace(/\./g, '').replace(',', '.');
     } else if (clean.includes(',')) {
@@ -540,11 +539,11 @@ function renderizarControlYGestion() {
             });
         }
 
-        // Top 10 Ítems con Menos Rotación (orden ascendente por salidas)
+        // Top 10 Ítems con Menos Rotación
         const tbodyMenosRot = document.getElementById('tabla_panol_menos_rotacion');
         if (tbodyMenosRot) {
             if (itemsPanolLimpios.length === 0) {
-                tbodyMenosRot.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-500 text-sm italic">Conectá la pestaña Pañol para visualizar los 10 ítems con menor rotación</td></tr>';
+                tbodyMenosRot.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-500 text-sm italic">Aún no hay materiales cargados en la pestaña Pañol</td></tr>';
             } else {
                 const top10Menos = [...itemsPanolLimpios]
                     .sort((a, b) => a.salidas - b.salidas)
@@ -562,11 +561,11 @@ function renderizarControlYGestion() {
             }
         }
 
-        // Top 5 Ítems Más Caros del Pañol (orden descendente por valor unitario)
+        // Top 5 Ítems Más Caros del Pañol
         const tbodyMasCaros = document.getElementById('tabla_panol_mas_caros');
         if (tbodyMasCaros) {
             if (itemsPanolLimpios.length === 0) {
-                tbodyMasCaros.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-500 text-sm italic">Conectá la pestaña Pañol para visualizar los 5 ítems más caros</td></tr>';
+                tbodyMasCaros.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-500 text-sm italic">Aún no hay materiales cargados en la pestaña Pañol</td></tr>';
             } else {
                 const top5Caros = [...itemsPanolLimpios]
                     .sort((a, b) => b.valorUnitario - a.valorUnitario)
@@ -589,7 +588,6 @@ function renderizarControlYGestion() {
         const rrhhMensualMap = {};
         const rrhhSectorMap = {};
 
-        // Si existe la pestaña RRHH_Sectores con registros, usamos esa fuente detallada
         const usarFuenteDetalladaRrhh = rrhhSectoresData.length > 0;
 
         if (usarFuenteDetalladaRrhh) {
@@ -608,7 +606,6 @@ function renderizarControlYGestion() {
                 rrhhSectorMap[sector].extra += hsExt;
             });
         } else {
-            // Respaldo automático desde Hoja 1 para los totales mensuales de planta
             rawData.forEach(r => {
                 const mes = getMonthYear(getVal(r, 'fecha'));
                 const hsNorm = getCleanNumber(getVal(r, 'hs_normales'));
@@ -670,7 +667,7 @@ function renderizarControlYGestion() {
             cRrhhHsNormalesSector = new Chart(ctxRrhhNormSec.getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: sectoresRrhh.length ? sectoresRrhh : ['Cargar pestaña RRHH_Sectores'],
+                    labels: sectoresRrhh.length ? sectoresRrhh : ['Sin datos por sector aún'],
                     datasets: [{
                         label: 'Hs Normales',
                         data: sectoresRrhh.length ? sectoresRrhh.map(s => rrhhSectorMap[s].normales) : [0],
@@ -688,7 +685,7 @@ function renderizarControlYGestion() {
             cRrhhHsExtraSector = new Chart(ctxRrhhExtSec.getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: sectoresRrhh.length ? sectoresRrhh : ['Cargar pestaña RRHH_Sectores'],
+                    labels: sectoresRrhh.length ? sectoresRrhh : ['Sin datos por sector aún'],
                     datasets: [{
                         label: 'Hs Extra',
                         data: sectoresRrhh.length ? sectoresRrhh.map(s => rrhhSectorMap[s].extra) : [0],
@@ -703,7 +700,6 @@ function renderizarControlYGestion() {
         // =========================================================
         // 3. PLATA CONSUMIDA (RRHH, PAÑOL, ENERGÍA Y COMBUSTIBLE)
         // =========================================================
-        // 3.1 Plata RRHH (lee de RRHH_Sectores o de Hoja 1)
         const fuenteRrhhPlata = usarFuenteDetalladaRrhh ? rrhhSectoresData : rawData;
         const plataHsNormales = getSum(fuenteRrhhPlata, 'plata_hs_normales');
         const plataHsExtra = getSum(fuenteRrhhPlata, 'plata_hs_extra');
@@ -715,7 +711,7 @@ function renderizarControlYGestion() {
         setTexto('gest_plata_rrhh_licencia', formatPesos(plataHsLicencia));
         setTexto('gest_plata_rrhh_total', formatPesos(plataRrhhTotal));
 
-        // 3.2 Coste de Energía Total y por Sector
+        // Coste de Energía Total y por Sector
         const kwhSectores = [
             getSum(rawData, 'energia_m1_ts1'),
             getSum(rawData, 'energia_m1_ts2'),
@@ -739,7 +735,6 @@ function renderizarControlYGestion() {
         const costoEnergiaTotalHoja = getSum(rawData, 'costo_energia_total');
         let costoEnergiaFinal = sumaCostosDirectos > 0 ? sumaCostosDirectos : costoEnergiaTotalHoja;
 
-        // Si se cargó el coste total de energía pero no por sector, se prorratea automáticamente según los kWh de cada sector
         if (sumaCostosDirectos === 0 && costoEnergiaTotalHoja > 0 && sumaKwhSectores > 0) {
             costosEnergiaSectores = kwhSectores.map(kwh => (kwh / sumaKwhSectores) * costoEnergiaTotalHoja);
         }
@@ -783,7 +778,7 @@ function renderizarControlYGestion() {
             });
         }
 
-        // 3.3 Combustible de Vehículos (Marca, Modelo, Tipo de Vehículo, Litros y Plata)
+        // Combustible de Vehículos
         const vehiculosAgrupados = {};
         let totalLitrosComb = 0;
         let totalPlataComb = 0;
@@ -821,7 +816,7 @@ function renderizarControlYGestion() {
         if (tbodyComb) {
             const listaVehiculos = Object.values(vehiculosAgrupados).sort((a, b) => b.plata - a.plata);
             if (listaVehiculos.length === 0) {
-                tbodyComb.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-500 text-sm italic">Conectá la pestaña Combustible para visualizar el detalle de flota</td></tr>';
+                tbodyComb.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-500 text-sm italic">Aún no hay cargas de combustible registradas</td></tr>';
             } else {
                 tbodyComb.innerHTML = listaVehiculos.map(v => `
                     <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition">
