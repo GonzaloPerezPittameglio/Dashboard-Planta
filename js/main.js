@@ -20,22 +20,23 @@ let cUbicacionesM1 = null;
 let cUbicacionesM2 = null;
 
 // Gráficos Pestaña Control y Gestión
-let cPanolItemsMensual = null;
-let cPanolPlataMensual = null;
+let cPanolItemsVsPlata = null;
+let cBiosolidosRsuM1M2 = null;
+let cCostoBiosolidosRsu = null;
 let cRrhhHsNormalesMensual = null;
 let cRrhhHsExtraMensual = null;
 let cRrhhHsNormalesSector = null;
 let cRrhhHsExtraSector = null;
 let cCostoEnergiaSectores = null;
 
-const urlPrimary = "https://docs.google.com/spreadsheets/d/17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA/gviz/tq?tqx=out:csv";
-const urlBackup = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=0&single=true&output=csv";
-const urlEquiposCriticos = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=316369111&single=true&output=csv";
+const urlPrimary = "[https://docs.google.com/spreadsheets/d/17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA/gviz/tq?tqx=out:csv](https://docs.google.com/spreadsheets/d/17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA/gviz/tq?tqx=out:csv)";
+const urlBackup = "[https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=0&single=true&output=csv](https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=0&single=true&output=csv)";
+const urlEquiposCriticos = "[https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=316369111&single=true&output=csv](https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=316369111&single=true&output=csv)";
 
 // Enlaces CSV de Control y Gestión
-const urlPanol = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=1788265059&single=true&output=csv";
-const urlRrhhSectores = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=198066718&single=true&output=csv";
-const urlCombustible = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=215427087&single=true&output=csv";
+const urlPanol = "[https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=1788265059&single=true&output=csv](https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=1788265059&single=true&output=csv)";
+const urlRrhhSectores = "[https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=198066718&single=true&output=csv](https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=198066718&single=true&output=csv)";
+const urlCombustible = "[https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=215427087&single=true&output=csv](https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=215427087&single=true&output=csv)";
 
 const UBICACIONES_PLANTA = [
     // ==========================================
@@ -485,59 +486,91 @@ function renderizarControlYGestion() {
         setTexto('gest_panol_plata_tot', formatPesos(totalPlataPanolConsumida));
         setTexto('gest_plata_panol_consumo', formatPesos(totalPlataPanolConsumida));
 
+        // Gráfico Único: Consumo Mensual Pañol Ítems vs Plata ($)
         const mesesPanol = Object.keys(panolMensualMap);
-        if (cPanolItemsMensual) cPanolItemsMensual.destroy();
-        const ctxPanolItems = document.getElementById('chartPanolItemsMensual');
-        if (ctxPanolItems) {
-            cPanolItemsMensual = new Chart(ctxPanolItems.getContext('2d'), {
+        if (cPanolItemsVsPlata) cPanolItemsVsPlata.destroy();
+        const ctxPanolCombo = document.getElementById('chartPanolItemsVsPlata');
+        if (ctxPanolCombo) {
+            cPanolItemsVsPlata = new Chart(ctxPanolCombo.getContext('2d'), {
                 type: 'bar',
                 data: {
                     labels: mesesPanol.length ? mesesPanol : ['Sin datos'],
-                    datasets: [{
-                        label: 'Ítems Consumidos',
-                        data: mesesPanol.length ? mesesPanol.map(m => panolMensualMap[m].items) : [0],
-                        backgroundColor: '#22d3ee',
-                        borderRadius: 6
-                    }]
+                    datasets: [
+                        {
+                            label: 'Consumo Plata ($)',
+                            data: mesesPanol.length ? mesesPanol.map(m => panolMensualMap[m].plata) : [0],
+                            backgroundColor: '#10b981',
+                            borderRadius: 6,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Consumo Ítems',
+                            data: mesesPanol.length ? mesesPanol.map(m => panolMensualMap[m].items) : [0],
+                            backgroundColor: '#22d3ee',
+                            borderRadius: 6,
+                            yAxisID: 'y1'
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true } }
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(ctx) {
+                                    if (ctx.dataset.yAxisID === 'y') {
+                                        return ` Plata ($): ${formatPesos(ctx.parsed.y)}`;
+                                    }
+                                    return ` Ítems: ${(ctx.parsed.y || 0).toLocaleString('es-AR')} un.`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            beginAtZero: true,
+                            title: { display: true, text: 'Plata ($)', color: '#10b981', font: { size: 11 } },
+                            ticks: {
+                                callback: val => '$ ' + Number(val).toLocaleString('es-AR')
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            beginAtZero: true,
+                            grid: { drawOnChartArea: false },
+                            title: { display: true, text: 'Ítems (un.)', color: '#22d3ee', font: { size: 11 } },
+                            ticks: { precision: 0 }
+                        }
+                    }
                 }
             });
         }
 
-        if (cPanolPlataMensual) cPanolPlataMensual.destroy();
-        const ctxPanolPlata = document.getElementById('chartPanolPlataMensual');
-        if (ctxPanolPlata) {
-            cPanolPlataMensual = new Chart(ctxPanolPlata.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: mesesPanol.length ? mesesPanol : ['Sin datos'],
-                    datasets: [{
-                        label: 'Plata Consumida ($)',
-                        data: mesesPanol.length ? mesesPanol.map(m => panolMensualMap[m].plata) : [0],
-                        backgroundColor: '#10b981',
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: ctx => `Consumo: ${formatPesos(ctx.parsed.y)}`
-                            }
-                        }
-                    },
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
+        // Tabla Mensual de Pañol y Totalizado abajo
+        const tbodyPanolMensual = document.getElementById('tabla_panol_consumo_mensual');
+        if (tbodyPanolMensual) {
+            if (mesesPanol.length === 0) {
+                tbodyPanolMensual.innerHTML = '<tr><td colspan="3" class="text-center py-6 text-slate-500 text-xs italic">Sin datos mensuales registrados</td></tr>';
+            } else {
+                tbodyPanolMensual.innerHTML = mesesPanol.map(mes => `
+                    <tr class="border-b border-slate-700/50 hover:bg-slate-800/60 transition">
+                        <td class="py-2.5 px-3 text-white text-xs font-medium">${mes}</td>
+                        <td class="py-2.5 px-3 text-cyan-400 font-semibold text-xs text-right">${panolMensualMap[mes].items.toLocaleString('es-AR')}</td>
+                        <td class="py-2.5 px-3 text-emerald-400 font-semibold text-xs text-right">${formatPesos(panolMensualMap[mes].plata)}</td>
+                    </tr>
+                `).join('');
+            }
         }
+        setTexto('tot_tabla_panol_items', totalItemsConsumidos.toLocaleString('es-AR'));
+        setTexto('tot_tabla_panol_plata', formatPesos(totalPlataPanolConsumida));
 
         // Top 10 Ítems con Menos Rotación
         const tbodyMenosRot = document.getElementById('tabla_panol_menos_rotacion');
@@ -583,7 +616,119 @@ function renderizarControlYGestion() {
         }
 
         // =========================================================
-        // 2. RECURSOS HUMANOS (HORAS NORMALES Y EXTRA)
+        // 2. BIOSÓLIDOS Y RSU (M1 VS M2 Y COSTES EN $)
+        // =========================================================
+        const bioM1Total = getSum(rawData, 'biosolidos_ton_m1') || getSum(rawData, 'ton_ms_m1') || getSum(rawData, 'biosolidos_m1');
+        const bioM2Total = getSum(rawData, 'biosolidos_ton_m2') || getSum(rawData, 'ton_ms_m2') || getSum(rawData, 'biosolidos_m2');
+        const rsuM1Total = getSum(rawData, 'cant_rsu_m1');
+        const rsuM2Total = getSum(rawData, 'cant_rsu_m2');
+
+        setTexto('gest_bio_m1_tot', bioM1Total.toLocaleString('es-AR'));
+        setTexto('gest_bio_m2_tot', bioM2Total.toLocaleString('es-AR'));
+        setTexto('gest_rsu_m1_tot', rsuM1Total.toLocaleString('es-AR'));
+        setTexto('gest_rsu_m2_tot', rsuM2Total.toLocaleString('es-AR'));
+
+        // Gráfico único: Totalizado Biosólidos y RSU (M1 por un lado y M2 por el otro)
+        if (cBiosolidosRsuM1M2) cBiosolidosRsuM1M2.destroy();
+        const ctxBioRsu = document.getElementById('chartBiosolidosRsuM1M2');
+        if (ctxBioRsu) {
+            cBiosolidosRsuM1M2 = new Chart(ctxBioRsu.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['Módulo 1 (M1)', 'Módulo 2 (M2)'],
+                    datasets: [
+                        {
+                            label: 'Biosólidos Totalizado (Ton)',
+                            data: [bioM1Total, bioM2Total],
+                            backgroundColor: '#f59e0b',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'RSU Totalizado',
+                            data: [rsuM1Total, rsuM2Total],
+                            backgroundColor: '#38bdf8',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top' } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        // Coste de Biosólidos y RSU en $
+        const costesBioRsuMensual = {};
+        let totalCostoBiosolidos = 0;
+        let totalCostoRsu = 0;
+
+        rawData.forEach(r => {
+            const mes = getMonthYear(getVal(r, 'fecha'));
+            const cBio = getCleanNumber(getVal(r, 'costo_biosolidos'));
+            const cRsu = getCleanNumber(getVal(r, 'costo_rsu'));
+
+            if (!costesBioRsuMensual[mes]) {
+                costesBioRsuMensual[mes] = { bio: 0, rsu: 0 };
+            }
+            costesBioRsuMensual[mes].bio += cBio;
+            costesBioRsuMensual[mes].rsu += cRsu;
+
+            totalCostoBiosolidos += cBio;
+            totalCostoRsu += cRsu;
+        });
+
+        setTexto('gest_costo_biosolidos_tot', formatPesos(totalCostoBiosolidos));
+        setTexto('gest_costo_rsu_tot', formatPesos(totalCostoRsu));
+
+        const mesesCostesBioRsu = Object.keys(costesBioRsuMensual);
+        if (cCostoBiosolidosRsu) cCostoBiosolidosRsu.destroy();
+        const ctxCostoBioRsu = document.getElementById('chartCostoBiosolidosRsu');
+        if (ctxCostoBioRsu) {
+            cCostoBiosolidosRsu = new Chart(ctxCostoBioRsu.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: mesesCostesBioRsu.length ? mesesCostesBioRsu : ['Sin datos'],
+                    datasets: [
+                        {
+                            label: 'Coste Biosólidos ($)',
+                            data: mesesCostesBioRsu.length ? mesesCostesBioRsu.map(m => costesBioRsuMensual[m].bio) : [0],
+                            backgroundColor: '#d97706',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Coste RSU ($)',
+                            data: mesesCostesBioRsu.length ? mesesCostesBioRsu.map(m => costesBioRsuMensual[m].rsu) : [0],
+                            backgroundColor: '#06b6d4',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => ` ${ctx.dataset.label}: ${formatPesos(ctx.parsed.y)}`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: val => '$ ' + Number(val).toLocaleString('es-AR') }
+                        }
+                    }
+                }
+            });
+        }
+
+        // =========================================================
+        // 3. RECURSOS HUMANOS (HORAS NORMALES Y EXTRA)
         // =========================================================
         const rrhhMensualMap = {};
         const rrhhSectorMap = {};
@@ -698,7 +843,7 @@ function renderizarControlYGestion() {
         }
 
         // =========================================================
-        // 3. PLATA CONSUMIDA (RRHH, PAÑOL, ENERGÍA Y COMBUSTIBLE)
+        // 4. PLATA CONSUMIDA (RRHH, PAÑOL, ENERGÍA Y COMBUSTIBLE)
         // =========================================================
         const fuenteRrhhPlata = usarFuenteDetalladaRrhh ? rrhhSectoresData : rawData;
         const plataHsNormales = getSum(fuenteRrhhPlata, 'plata_hs_normales');
@@ -831,6 +976,22 @@ function renderizarControlYGestion() {
                 `).join('');
             }
         }
+
+        // =========================================================
+        // 5. INVERSIONES Y EXPLOTACIONES (SIN GRÁFICOS)
+        // =========================================================
+        const invObras = getSum(rawData, 'inv_obras');
+        const invEquipamiento = getSum(rawData, 'inv_equipamiento');
+        const invTotal = invObras + invEquipamiento;
+
+        const expReparaciones = getSum(rawData, 'exp_reparaciones');
+
+        setTexto('gest_inv_obras', formatPesos(invObras));
+        setTexto('gest_inv_equipamiento', formatPesos(invEquipamiento));
+        setTexto('gest_inv_total', formatPesos(invTotal));
+
+        setTexto('gest_exp_reparaciones', formatPesos(expReparaciones));
+        setTexto('gest_exp_total', formatPesos(expReparaciones));
 
     } catch (e) {
         console.error("Error al renderizar Control y Gestión:", e);
@@ -1236,7 +1397,9 @@ function calcularYRenderizarResumen() {
         // ==============================
         // 4. PESTAÑA FUNCIONAMIENTO (KPIs Hoja 1)
         // ==============================
-        setTexto('func_cant_rsu', getSum(rawData, 'cant_rsu').toLocaleString('es-AR'));
+        const rsuGeneral = getSum(rawData, 'cant_rsu');
+        const rsuM1M2 = getSum(rawData, 'cant_rsu_m1') + getSum(rawData, 'cant_rsu_m2');
+        setTexto('func_cant_rsu', (rsuGeneral > 0 ? rsuGeneral : rsuM1M2).toLocaleString('es-AR'));
         setTexto('func_cant_ot', getSum(rawData, 'cant_ot').toLocaleString('es-AR'));
 
     } catch (e) {
