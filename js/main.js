@@ -1,211 +1,195 @@
-let rawData = [];
-let equiposCriticosData = [];
-let panolData = [];
-let rrhhSectoresData = [];
-let combustibleData = [];
+const SHEET_ID = "17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA";
 
+// Almacenamiento global de datos por pestaña
+let rawData = [];
+let panolData = [];
+let rrhhData = [];
+let combustibleData = [];
+let equiposCriticosData = [];
+
+// Instancias de gráficos (Chart.js)
 let cEnergia = null;
 let cCaudales = null;
 let cLimites = null;
-
 let cMensualEnergia = null;
 let cMensualBiosolidos = null;
 let cMensualArenas = null;
 let cMensualPolimero = null;
+let cSectores = null;
+let cGastosRubro = null;
+let cCombustible = null;
 
-let cMantMensual = null;
-let cMantTortas = null;
-let cCriticidad = null;
-let cUbicacionesM1 = null;
-let cUbicacionesM2 = null;
-
-// Gráficos Pestaña Control y Gestión
-let cPanolItemsVsPlata = null;
-let cBiosolidosRsuM1M2 = null;
-let cCostoBiosolidosRsu = null;
-let cRrhhHsNormalesMensual = null;
-let cRrhhHsExtraMensual = null;
-let cRrhhHsNormalesSector = null;
-let cRrhhHsExtraSector = null;
-let cCostoEnergiaSectores = null;
-
-const urlPrimary = "[https://docs.google.com/spreadsheets/d/17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA/gviz/tq?tqx=out:csv](https://docs.google.com/spreadsheets/d/17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA/gviz/tq?tqx=out:csv)";
-const urlBackup = "[https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=0&single=true&output=csv](https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=0&single=true&output=csv)";
-const urlEquiposCriticos = "[https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=316369111&single=true&output=csv](https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=316369111&single=true&output=csv)";
-
-// Enlaces CSV de Control y Gestión
-const urlPanol = "[https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=1788265059&single=true&output=csv](https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=1788265059&single=true&output=csv)";
-const urlRrhhSectores = "[https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=198066718&single=true&output=csv](https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=198066718&single=true&output=csv)";
-const urlCombustible = "[https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=215427087&single=true&output=csv](https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=215427087&single=true&output=csv)";
-
-const UBICACIONES_PLANTA = [
-    // ==========================================
-    // ZONA IZQUIERDA (M2 y Digestión)
-    // ==========================================
-    { nombre: 'Silo de Lodos', top: 10.5, left: 4.5 },
-    { nombre: 'Deshidratación M2', top: 22.0, left: 4.3 },
-    { nombre: 'Sub Estación Transformadora 3', top: 30.5, left: 4.3 },
-
-    // Caldera (diagonal arriba a la izquierda) y Digestor (diagonal abajo a la derecha)
-    { nombre: 'Caldera', top: 17.5, left: 11.8 },
-    { nombre: 'Digestor', top: 23.5, left: 13.8 },
-
-    { nombre: 'Gasómetro', top: 8.5, left: 16.0 },
-    { nombre: 'Flotador', top: 17.5, left: 19.0 },
-    { nombre: 'Espesador', top: 23.5, left: 22.8 },
-    { nombre: 'Depósito de Hidrocarburo', top: 15.5, left: 26.8 },
-    { nombre: 'Sala de Soplantes M2', top: 71.0, left: 9.8 },
-
-    // Reactores Biológicos M2 (4 celdas de arriba hacia abajo)
-    { nombre: 'Reactor 1', top: 53.0, left: 15.5 },
-    { nombre: 'Reactor 2', top: 59.5, left: 15.5 },
-    { nombre: 'Reactor 3', top: 66.0, left: 15.5 },
-    { nombre: 'Reactor 4', top: 72.5, left: 15.5 },
-
-    // Clarificadores M2 y Cámara de Distribución
-    { nombre: 'Clarificador 1', top: 49.5, left: 23.2 },
-    { nombre: 'Clarificador 2', top: 51.5, left: 29.8 },
-    { nombre: 'Cámara de Distribución de Clarificadores', top: 60.5, left: 26.5 },
-    { nombre: 'Clarificador 3', top: 69.5, left: 23.2 },
-    { nombre: 'Clarificador 4', top: 71.0, left: 29.8 },
-
-    // ==========================================
-    // ZONA CENTRAL (M1)
-    // ==========================================
-    { nombre: 'Deshidratación M1', top: 56.5, left: 39.8 },
-    { nombre: 'Grupo Electrogeno', top: 66.5, left: 38.8 },
-    { nombre: 'Sala Soplantes M1', top: 73.5, left: 41.2 },
-
-    // Clarificadores M1 (C a la izquierda, B al centro, A a la derecha)
-    { nombre: 'Clarificador C', top: 51.5, left: 45.8 },
-    { nombre: 'Clarificador B', top: 48.0, left: 50.8 },
-    { nombre: 'Clarificador A', top: 52.5, left: 55.8 },
-
-    // Reactores M1 (C a la izquierda, B al centro, A a la derecha)
-    { nombre: 'Reactor C', top: 73.5, left: 45.2 },
-    { nombre: 'Reactor B', top: 73.5, left: 50.2 },
-    { nombre: 'Reactor A', top: 73.5, left: 55.2 },
-
-    { nombre: 'Pretratamiento M1', top: 82.0, left: 61.5 },
-
-    // ==========================================
-    // ZONA DERECHA (Pretratamiento General)
-    // ==========================================
-    { nombre: 'Sedimentador 1', top: 76.5, left: 85.0 },
-    { nombre: 'Sedimentador 2', top: 76.5, left: 91.2 },
-    { nombre: 'Tratamiento de Grasas', top: 67.0, left: 96.2 },
-    { nombre: 'Desarenador', top: 76.0, left: 96.5 },
-    { nombre: 'Tratamiento de Arenas', top: 84.5, left: 96.2 },
-    { nombre: 'Sub Estación Transformadora 1', top: 91.5, left: 92.5 }
+// Catálogo oficial de los 24 sectores de Maximo
+const SECTORES_MAXIMO = [
+    { code: '0099', name: 'Báscula', label: '0099 (Báscula)' },
+    { code: '0100', name: 'Pretratamiento M1', label: '0100 (Pretratamiento M1)' },
+    { code: '0101', name: 'Tratamiento Biológico M1', label: '0101 (Tratamiento Biológico M1)' },
+    { code: '0102', name: 'Sedimentación Secundaria M1', label: '0102 (Sedimentación Secundaria M1)' },
+    { code: '0103', name: 'Salida de Liquido M1', label: '0103 (Salida de Liquido M1)' },
+    { code: '0104', name: 'Deshidratación de Lodos M1', label: '0104 (Deshidratación de Lodos M1)' },
+    { code: '0105', name: 'Sistema de Provisión de Agua M1', label: '0105 (Sistema de Provisión de Agua M1)' },
+    { code: '0106', name: 'Sistema Eléctrico M1', label: '0106 (Sistema Eléctrico M1)' },
+    { code: '0107', name: 'Depósito', label: '0107 (Depósito)' },
+    { code: '0108', name: 'Laboratorio', label: '0108 (Laboratorio)' },
+    { code: '0109', name: 'Administración', label: '0109 (Administración)' },
+    { code: '0110', name: 'Taller de Planta', label: '0110 (Taller de Planta)' },
+    { code: '0111', name: 'Pañol', label: '0111 (Pañol)' },
+    { code: '0200', name: 'Pretratamiento M2', label: '0200 (Pretratamiento M2)' },
+    { code: '0201', name: 'Sedimentación Primaria', label: '0201 (Sedimentación Primaria)' },
+    { code: '020105', name: 'Agua de Servicio Pretratamiento', label: '020105 (Agua de Servicio Pretratamiento)' },
+    { code: '0202', name: 'Tratamiento Biológico', label: '0202 (Tratamiento Biológico)' },
+    { code: '0203', name: 'Sedimentación Secundaria', label: '0203 (Sedimentación Secundaria)' },
+    { code: '020305', name: 'Agua de Servicio', label: '020305 (Agua de Servicio)' },
+    { code: '0204', name: 'Espesamiento de Lodos', label: '0204 (Espesamiento de Lodos)' },
+    { code: '0205', name: 'Flotación de Lodos', label: '0205 (Flotación de Lodos)' },
+    { code: '0206', name: 'Digestión y Producción de Gas', label: '0206 (Digestión y Producción de Gas)' },
+    { code: '0207', name: 'Almacenamiento de Lodos', label: '0207 (Almacenamiento de Lodos)' },
+    { code: '0208', name: 'Deshidratación', label: '0208 (Deshidratación)' }
 ];
 
+// ============================================================================
+// 1. INICIALIZACIÓN Y CONEXIÓN SIN BLOQUEOS CORS (JSONP GViz)
+// ============================================================================
+
 window.onload = () => {
-    lucide.createIcons();
-    renderizarFuncionamientoEquipos();
-    cargarDatosDesdeGoogle(urlPrimary);
-    cargarEquiposCriticos();
-    cargarHojasGestion();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    cargarTodasLasHojas();
 };
 
-function cargarDatosDesdeGoogle(urlTarget) {
-    const dsLabel = document.getElementById('dataSourceLabel');
-    if (dsLabel) dsLabel.textContent = "Conectando con Google Sheets...";
-    
-    const conCache = urlTarget + (urlTarget.includes('?') ? '&' : '?') + '_t=' + Date.now();
+function cargarTodasLasHojas() {
+    actualizarEstadoConexion("Conectando con Google Sheets...", "amber");
 
-    Papa.parse(conCache, {
-        download: true,
-        header: true, 
-        dynamicTyping: true, 
-        skipEmptyLines: true,
-        complete: function(results) {
-            if (results.data && results.data.length > 0) {
-                rawData = results.data;
-                if (dsLabel) {
-                    dsLabel.textContent = "Datos en vivo (Google Sheets)";
-                    dsLabel.className = "text-xs font-medium px-3 py-1.5 bg-green-900/40 text-green-300 rounded-full border border-green-700";
-                }
-                calcularYRenderizarResumen();
-                renderizarControlYGestion();
-            } else if (urlTarget !== urlBackup) {
-                cargarDatosDesdeGoogle(urlBackup);
+    // Timeout de seguridad para la hoja principal
+    clearTimeout(window.gvizTimeout);
+    window.gvizTimeout = setTimeout(() => {
+        if (!rawData.length) {
+            actualizarEstadoConexion("Error de conexión (verificá permisos de la planilla)", "red");
+        }
+    }, 12000);
+
+    // Carga de hoja principal (Hoja 1)
+    inyectarScriptGViz("Hoja 1", "recibirDatosPrincipal", "gviz-hoja1", () => {
+        clearTimeout(window.gvizTimeout);
+        actualizarEstadoConexion("Error de conexión con Google Sheets", "red");
+    });
+
+    // Carga independiente de pestañas secundarias (si están vacías no rompen el resto)
+    inyectarScriptGViz("Pañol", "recibirDatosPanol", "gviz-panol");
+    inyectarScriptGViz("RRHH_Sectores", "recibirDatosRRHH", "gviz-rrhh");
+    inyectarScriptGViz("Combustible", "recibirDatosCombustible", "gviz-combustible");
+    inyectarScriptGViz("Equipos_Criticos", "recibirDatosEquipos", "gviz-equipos");
+}
+
+function inyectarScriptGViz(nombreHoja, handlerName, scriptId, onErrorFn) {
+    const old = document.getElementById(scriptId);
+    if (old) old.remove();
+
+    const script = document.createElement('script');
+    script.id = scriptId;
+    const sheetParam = encodeURIComponent(nombreHoja);
+    script.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?sheet=${sheetParam}&headers=1&tqx=out:json;responseHandler:${handlerName}&_t=${Date.now()}`;
+    if (onErrorFn) script.onerror = onErrorFn;
+    document.body.appendChild(script);
+}
+
+function parsearTablaGViz(respuesta) {
+    if (!respuesta || respuesta.status !== 'ok' || !respuesta.table || !respuesta.table.rows) {
+        return [];
+    }
+    const headers = respuesta.table.cols.map(col => (col.label || col.id || '').trim());
+    return respuesta.table.rows.map(row => {
+        const filaObj = {};
+        headers.forEach((header, idx) => {
+            if (!header) return;
+            const cell = row.c && row.c[idx];
+            if (!cell) {
+                filaObj[header] = '';
+            } else if (typeof cell.v === 'number') {
+                filaObj[header] = cell.v;
             } else {
-                if (dsLabel) {
-                    dsLabel.textContent = "Planilla vacía o sin publicar";
-                    dsLabel.className = "text-xs font-medium px-3 py-1.5 bg-red-900/40 text-red-300 rounded-full border border-red-700";
-                }
-            }
-        },
-        error: function(err) {
-            console.error("Error al conectar:", err);
-            if (urlTarget !== urlBackup) {
-                cargarDatosDesdeGoogle(urlBackup);
-            } else if (dsLabel) {
-                dsLabel.textContent = "Error de conexión";
-                dsLabel.className = "text-xs font-medium px-3 py-1.5 bg-red-900/40 text-red-300 rounded-full border border-red-700";
-            }
-        }
-    });
-}
-
-function cargarEquiposCriticos() {
-    const conCache = urlEquiposCriticos + '&_t=' + Date.now();
-    Papa.parse(conCache, {
-        download: true,
-        header: true,
-        dynamicTyping: false,
-        skipEmptyLines: true,
-        complete: function(results) {
-            if (results.data) {
-                equiposCriticosData = results.data;
-                renderizarFuncionamientoEquipos();
-            }
-        },
-        error: function(err) {
-            console.error("Error cargando Equipos Críticos:", err);
-        }
-    });
-}
-
-function cargarHojasGestion() {
-    const parseSheet = (url, assignFn) => {
-        if (!url || url.trim() === '') {
-            renderizarControlYGestion();
-            return;
-        }
-        const conCache = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
-        Papa.parse(conCache, {
-            download: true,
-            header: true,
-            dynamicTyping: false,
-            skipEmptyLines: true,
-            complete: function(results) {
-                if (results.data) {
-                    assignFn(results.data);
-                    renderizarControlYGestion();
-                }
-            },
-            error: function(err) {
-                console.error("Error cargando hoja de Control y Gestión:", err);
+                filaObj[header] = (cell.f !== undefined && cell.f !== null) ? cell.f : (cell.v ?? '');
             }
         });
-    };
-
-    parseSheet(urlPanol, data => { panolData = data; });
-    parseSheet(urlRrhhSectores, data => { rrhhSectoresData = data; });
-    parseSheet(urlCombustible, data => { combustibleData = data; });
+        return filaObj;
+    }).filter(obj => Object.values(obj).some(v => v !== '' && v !== null && v !== undefined));
 }
 
-function openTab(tabId, event) {
+window.recibirDatosPrincipal = function(respuesta) {
+    clearTimeout(window.gvizTimeout);
+    const filas = parsearTablaGViz(respuesta);
+    if (!filas.length) {
+        actualizarEstadoConexion("Planilla vacía o sin permisos de lectura", "red");
+        return;
+    }
+    rawData = filas;
+    actualizarEstadoConexion("Datos en vivo (Google Sheets)", "green");
+    calcularYRenderizarResumen();
+};
+
+window.recibirDatosPanol = function(respuesta) {
+    panolData = parsearTablaGViz(respuesta);
+    if (panolData.length) renderizarPanol();
+};
+
+window.recibirDatosRRHH = function(respuesta) {
+    rrhhData = parsearTablaGViz(respuesta);
+    if (rrhhData.length) renderizarRRHHSectores();
+};
+
+window.recibirDatosCombustible = function(respuesta) {
+    combustibleData = parsearTablaGViz(respuesta);
+    if (combustibleData.length) renderizarCombustible();
+};
+
+window.recibirDatosEquipos = function(respuesta) {
+    equiposCriticosData = parsearTablaGViz(respuesta);
+    if (equiposCriticosData.length) renderizarEquiposCriticos();
+};
+
+function actualizarEstadoConexion(texto, color) {
+    const dsLabel = document.getElementById('dataSourceLabel');
+    if (!dsLabel) return;
+    dsLabel.textContent = texto;
+    const estilos = {
+        green: "text-xs font-medium px-3 py-1.5 bg-green-900/40 text-green-300 rounded-full border border-green-700",
+        amber: "text-xs font-medium px-3 py-1.5 bg-amber-900/40 text-amber-300 rounded-full border border-amber-700",
+        red: "text-xs font-medium px-3 py-1.5 bg-red-900/40 text-red-300 rounded-full border border-red-700"
+    };
+    dsLabel.className = estilos[color] || estilos.amber;
+}
+
+// Soporte por si existe carga manual de CSV en el HTML
+window.cargarArchivoLocal = function(event) {
+    const file = event && event.target && event.target.files[0];
+    if (!file || typeof Papa === 'undefined') return;
+    Papa.parse(file, {
+        header: true,
+        dynamicTyping: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+            if (results.data && results.data.length) {
+                rawData = results.data;
+                actualizarEstadoConexion("Datos cargados desde CSV local", "green");
+                calcularYRenderizarResumen();
+            }
+        }
+    });
+};
+
+// ============================================================================
+// 2. NAVEGACIÓN DE PESTAÑAS Y UTILIDADES
+// ============================================================================
+
+window.openTab = function(tabId, event) {
     document.querySelectorAll('.tab-content').forEach(t => {
         t.classList.add('hidden');
         t.classList.remove('block');
     });
     document.querySelectorAll('.tab-btn').forEach(b => {
-        b.classList.remove('border-cyan-500', 'text-cyan-400');
+        b.classList.remove('active', 'border-cyan-500', 'text-cyan-400');
         b.classList.add('border-transparent', 'text-slate-400');
     });
-    
+
     const target = document.getElementById(tabId);
     if (target) {
         target.classList.remove('hidden');
@@ -213,54 +197,68 @@ function openTab(tabId, event) {
     }
     if (event && event.currentTarget) {
         event.currentTarget.classList.remove('border-transparent', 'text-slate-400');
-        event.currentTarget.classList.add('border-cyan-500', 'text-cyan-400');
+        event.currentTarget.classList.add('active', 'border-cyan-500', 'text-cyan-400');
     }
-}
+};
 
 function getCleanNumber(val) {
     if (val === null || val === undefined || val === '') return 0;
     if (typeof val === 'number') return isNaN(val) ? 0 : val;
-    let clean = String(val).replace(/\$/g, '').trim();
-    if (clean.includes('.') && clean.includes(',')) {
-        clean = clean.replace(/\./g, '').replace(',', '.');
-    } else if (clean.includes(',')) {
-        clean = clean.replace(',', '.');
+    let s = String(val).trim();
+    if (s.includes('.') && s.includes(',')) {
+        s = s.replace(/\./g, '').replace(',', '.');
+    } else if (s.includes(',')) {
+        s = s.replace(',', '.');
     }
-    clean = clean.replace(/[^\d.-]/g, '').trim();
-    let num = parseFloat(clean);
+    s = s.replace(/[^\d.-]/g, '');
+    const num = parseFloat(s);
     return isNaN(num) ? 0 : num;
 }
 
-function formatPesos(val) {
-    const num = getCleanNumber(val);
-    return '$ ' + num.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+function normalizarTexto(str) {
+    return String(str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
 }
 
 function getVal(row, colName) {
     if (!row) return undefined;
     if (row[colName] !== undefined) return row[colName];
-    
-    const target = String(colName).toLowerCase().trim();
+
+    const target = normalizarTexto(colName);
     for (let k of Object.keys(row)) {
-        if (String(k).toLowerCase().trim() === target) return row[k];
+        if (normalizarTexto(k) === target) return row[k];
+    }
+
+    const aliasMap = {
+        'caudal_trat_m1': ['cuadal_trat_m1', 'caudal_m1', 'trat_m1'],
+        'caudal_trat_m2': ['cuadal_trat_m2', 'caudal_m2', 'trat_m2'],
+        'biosolidos_ton': ['biosolidos_m1', 'lodo_tonelada_'],
+        'arenas_ton': ['arenas_m1', 'cant_rsu_m1']
+    };
+
+    if (aliasMap[colName]) {
+        for (let alt of aliasMap[colName]) {
+            for (let k of Object.keys(row)) {
+                if (normalizarTexto(k) === normalizarTexto(alt)) return row[k];
+            }
+        }
     }
     return undefined;
 }
 
-function getSum(arr, col) { 
-    return arr.reduce((acc, row) => acc + getCleanNumber(getVal(row, col)), 0); 
+function getSum(arr, col) {
+    return arr.reduce((acc, row) => acc + getCleanNumber(getVal(row, col)), 0);
 }
 
-function getAvg(arr, col) { 
+function getAvg(arr, col) {
     const validRows = arr.filter(row => getCleanNumber(getVal(row, col)) > 0);
     if (validRows.length === 0) return 0;
     const sum = validRows.reduce((acc, row) => acc + getCleanNumber(getVal(row, col)), 0);
-    return (sum / validRows.length).toFixed(1); 
+    return (sum / validRows.length).toFixed(1);
 }
 
 function calcRemocion(ent, sal) {
-    let entrada = getCleanNumber(ent);
-    let salida = getCleanNumber(sal);
+    const entrada = getCleanNumber(ent);
+    const salida = getCleanNumber(sal);
     if (entrada > 0) return (((entrada - salida) / entrada) * 100).toFixed(1);
     return 0;
 }
@@ -280,7 +278,6 @@ function getMonthYear(fechaRaw) {
             const mIdx = parseInt(parts[1], 10) - 1;
             const year = parts[2] ? parts[2].slice(-2) : '';
             if (mIdx >= 0 && mIdx < 12) return `${meses[mIdx]} ${year}`.trim();
-            return `${parts[1]}/${parts[2] || ''}`;
         }
     } else if (str.includes('-')) {
         const parts = str.split('-');
@@ -288,740 +285,55 @@ function getMonthYear(fechaRaw) {
             const mIdx = parseInt(parts[1], 10) - 1;
             const year = parts[0] ? parts[0].slice(-2) : '';
             if (mIdx >= 0 && mIdx < 12) return `${meses[mIdx]} ${year}`.trim();
-            return `${parts[1]}/${parts[0]}`;
         }
     }
     return str;
 }
 
-function normalizarTexto(str) {
-    return String(str || '').toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]/g, '');
+function identificarSectorMaximo(texto) {
+    if (!texto) return null;
+    const norm = normalizarTexto(texto);
+    const porCodigo = [...SECTORES_MAXIMO].sort((a, b) => b.code.length - a.code.length);
+    for (const sec of porCodigo) {
+        const regex = new RegExp(`(^|[^0-9])${sec.code}([^0-9]|$)`);
+        if (regex.test(norm)) return sec;
+    }
+    const porNombre = [...SECTORES_MAXIMO].sort((a, b) => b.name.length - a.name.length);
+    for (const sec of porNombre) {
+        if (norm.includes(normalizarTexto(sec.name))) return sec;
+    }
+    return null;
 }
 
-function renderizarFuncionamientoEquipos() {
-    const equiposCriticos = [];
-    const estadoPorSector = {};
-
-    equiposCriticosData.forEach(r => {
-        const nombreEq = getVal(r, 'equipo');
-        if (nombreEq && String(nombreEq).trim() !== '') {
-            const sectorRaw = String(getVal(r, 'sector_mapa') || '').trim();
-            const estadoRaw = String(getVal(r, 'estado') || 'Operativo').trim();
-            const detalleRaw = String(getVal(r, 'detalle') || '').trim();
-
-            const estLower = estadoRaw.toLowerCase();
-            let nivel = 1;
-            if (estLower.includes('reparacion') || estLower.includes('reparación')) nivel = 2;
-            if (estLower.includes('fuera')) nivel = 3;
-
-            equiposCriticos.push({
-                nombre: String(nombreEq).trim(),
-                sector: sectorRaw,
-                estado: estadoRaw,
-                detalle: detalleRaw,
-                nivel: nivel
-            });
-
-            const secNorm = normalizarTexto(sectorRaw);
-            if (secNorm !== '') {
-                let ubicacionMatch = UBICACIONES_PLANTA.find(u => normalizarTexto(u.nombre) === secNorm);
-                if (!ubicacionMatch) {
-                    ubicacionMatch = UBICACIONES_PLANTA.find(u => {
-                        const uNorm = normalizarTexto(u.nombre);
-                        return uNorm.includes(secNorm) || secNorm.includes(uNorm);
-                    });
-                }
-
-                if (ubicacionMatch) {
-                    const currentMax = estadoPorSector[ubicacionMatch.nombre] || 0;
-                    if (nivel > currentMax) {
-                        estadoPorSector[ubicacionMatch.nombre] = nivel;
-                    }
-                }
-            }
-        }
-    });
-
-    const capaMapa = document.getElementById('capa_marcadores_planta');
-    if (capaMapa) {
-        capaMapa.innerHTML = UBICACIONES_PLANTA.map(u => {
-            const nivel = estadoPorSector[u.nombre] || 0;
-
-            let dotClass = 'bg-slate-300 border-slate-950';
-            let badgeBorder = 'border-slate-500/90';
-            let pingHTML = '';
-
-            if (nivel === 1) {
-                dotClass = 'bg-emerald-400 border-slate-950 shadow-[0_0_8px_#10b981]';
-                badgeBorder = 'border-emerald-400';
-            } else if (nivel === 2) {
-                dotClass = 'bg-amber-400 border-slate-950 shadow-[0_0_10px_#fbbf24]';
-                badgeBorder = 'border-amber-400';
-                pingHTML = `<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>`;
-            } else if (nivel === 3) {
-                dotClass = 'bg-red-500 border-slate-950 shadow-[0_0_10px_#ef4444]';
-                badgeBorder = 'border-red-500';
-                pingHTML = `<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>`;
-            }
-
-            return `
-                <div style="top: ${u.top}%; left: ${u.left}%;" 
-                     class="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10">
-                    <span class="relative flex h-2.5 w-2.5 mb-0.5">
-                        ${pingHTML}
-                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 border border-slate-950 ${dotClass}"></span>
-                    </span>
-                    <span class="bg-slate-950/90 border ${badgeBorder} text-white text-[8px] xl:text-[9px] font-semibold px-1.5 py-0.5 rounded shadow-md whitespace-nowrap leading-none">
-                        ${u.nombre}
-                    </span>
-                </div>
-            `;
-        }).join('');
-    }
-
-    setTexto('total_eq_criticos', `${equiposCriticos.length} equipos`);
-    const contEquipos = document.getElementById('lista_equipos_criticos');
-    if (contEquipos) {
-        if (equiposCriticos.length === 0) {
-            contEquipos.innerHTML = '<div class="text-center py-8 text-slate-500 text-sm italic col-span-full">Aún no hay equipos cargados en la hoja Equipos_Criticos.</div>';
-        } else {
-            contEquipos.innerHTML = equiposCriticos.map(eq => generarTarjetaEquipoHTML(eq)).join('');
-            lucide.createIcons();
-        }
-    }
-}
-
-function generarTarjetaEquipoHTML(eq) {
-    let badgeClass = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
-    let dotClass = 'bg-emerald-400';
-
-    if (eq.nivel === 2) {
-        badgeClass = 'bg-amber-500/15 text-amber-300 border-amber-500/30';
-        dotClass = 'bg-amber-400 animate-pulse';
-    } else if (eq.nivel === 3) {
-        badgeClass = 'bg-red-500/15 text-red-400 border-red-500/30';
-        dotClass = 'bg-red-500';
-    }
-
-    const detalleHTML = eq.detalle !== '' 
-        ? `<div class="mt-2.5 text-xs bg-slate-950/70 text-amber-200/90 px-2.5 py-1.5 rounded-lg border border-amber-500/20 flex items-center gap-1.5">
-             <i data-lucide="wrench" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
-             <span>${eq.detalle}</span>
-           </div>` 
-        : '';
-
-    return `
-        <div class="bg-slate-900 rounded-xl p-4 border border-slate-700/80 hover:border-slate-600 transition flex flex-col justify-between">
-            <div class="flex justify-between items-start gap-2">
-                <div>
-                    <div class="font-bold text-white text-sm">${eq.nombre}</div>
-                    <div class="text-[11px] text-slate-400 mt-0.5">${eq.sector || 'Sector general'}</div>
-                </div>
-                <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold border flex items-center gap-1.5 shrink-0 ${badgeClass}">
-                    <span class="w-2 h-2 rounded-full ${dotClass}"></span>
-                    ${eq.estado}
-                </span>
-            </div>
-            ${detalleHTML}
-        </div>
-    `;
-}
-
-function renderizarControlYGestion() {
-    Chart.defaults.color = '#94a3b8';
-    Chart.defaults.font.family = 'Inter';
-
-    try {
-        // =========================================================
-        // 1. GESTIÓN DE PAÑOL
-        // =========================================================
-        let valorTotalInventario = 0;
-        const itemsPanolLimpios = [];
-
-        panolData.forEach(r => {
-            const codigo = String(getVal(r, 'codigo') || '').trim();
-            const descripcion = String(getVal(r, 'descripcion') || '').trim();
-            if (codigo !== '' || descripcion !== '') {
-                const valorUnitario = getCleanNumber(getVal(r, 'valor_unitario'));
-                const stock = getCleanNumber(getVal(r, 'stock'));
-                const salidas = getCleanNumber(getVal(r, 'salidas') ?? getVal(r, 'consumo_cantidad'));
-                const valorFila = getCleanNumber(getVal(r, 'valor_total')) || (valorUnitario * stock);
-
-                valorTotalInventario += valorFila;
-                itemsPanolLimpios.push({
-                    codigo: codigo || '-',
-                    descripcion: descripcion || 'Sin descripción',
-                    valorUnitario,
-                    stock,
-                    salidas
-                });
-            }
-        });
-
-        setTexto('gest_panol_valorizado', formatPesos(valorTotalInventario));
-
-        // Consumos Mensuales de Pañol (leídos desde Hoja 1)
-        const panolMensualMap = {};
-        let totalItemsConsumidos = 0;
-        let totalPlataPanolConsumida = 0;
-
-        rawData.forEach(r => {
-            const mes = getMonthYear(getVal(r, 'fecha'));
-            const cantItems = getCleanNumber(getVal(r, 'panol_items_consumidos'));
-            const plataCons = getCleanNumber(getVal(r, 'panol_plata_consumida'));
-
-            if (!panolMensualMap[mes]) {
-                panolMensualMap[mes] = { items: 0, plata: 0 };
-            }
-            panolMensualMap[mes].items += cantItems;
-            panolMensualMap[mes].plata += plataCons;
-
-            totalItemsConsumidos += cantItems;
-            totalPlataPanolConsumida += plataCons;
-        });
-
-        setTexto('gest_panol_items_tot', totalItemsConsumidos.toLocaleString('es-AR'));
-        setTexto('gest_panol_plata_tot', formatPesos(totalPlataPanolConsumida));
-        setTexto('gest_plata_panol_consumo', formatPesos(totalPlataPanolConsumida));
-
-        // Gráfico Único: Consumo Mensual Pañol Ítems vs Plata ($)
-        const mesesPanol = Object.keys(panolMensualMap);
-        if (cPanolItemsVsPlata) cPanolItemsVsPlata.destroy();
-        const ctxPanolCombo = document.getElementById('chartPanolItemsVsPlata');
-        if (ctxPanolCombo) {
-            cPanolItemsVsPlata = new Chart(ctxPanolCombo.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: mesesPanol.length ? mesesPanol : ['Sin datos'],
-                    datasets: [
-                        {
-                            label: 'Consumo Plata ($)',
-                            data: mesesPanol.length ? mesesPanol.map(m => panolMensualMap[m].plata) : [0],
-                            backgroundColor: '#10b981',
-                            borderRadius: 6,
-                            yAxisID: 'y'
-                        },
-                        {
-                            label: 'Consumo Ítems',
-                            data: mesesPanol.length ? mesesPanol.map(m => panolMensualMap[m].items) : [0],
-                            backgroundColor: '#22d3ee',
-                            borderRadius: 6,
-                            yAxisID: 'y1'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: {
-                        legend: { position: 'top' },
-                        tooltip: {
-                            callbacks: {
-                                label: function(ctx) {
-                                    if (ctx.dataset.yAxisID === 'y') {
-                                        return ` Plata ($): ${formatPesos(ctx.parsed.y)}`;
-                                    }
-                                    return ` Ítems: ${(ctx.parsed.y || 0).toLocaleString('es-AR')} un.`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            beginAtZero: true,
-                            title: { display: true, text: 'Plata ($)', color: '#10b981', font: { size: 11 } },
-                            ticks: {
-                                callback: val => '$ ' + Number(val).toLocaleString('es-AR')
-                            }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            beginAtZero: true,
-                            grid: { drawOnChartArea: false },
-                            title: { display: true, text: 'Ítems (un.)', color: '#22d3ee', font: { size: 11 } },
-                            ticks: { precision: 0 }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Tabla Mensual de Pañol y Totalizado abajo
-        const tbodyPanolMensual = document.getElementById('tabla_panol_consumo_mensual');
-        if (tbodyPanolMensual) {
-            if (mesesPanol.length === 0) {
-                tbodyPanolMensual.innerHTML = '<tr><td colspan="3" class="text-center py-6 text-slate-500 text-xs italic">Sin datos mensuales registrados</td></tr>';
-            } else {
-                tbodyPanolMensual.innerHTML = mesesPanol.map(mes => `
-                    <tr class="border-b border-slate-700/50 hover:bg-slate-800/60 transition">
-                        <td class="py-2.5 px-3 text-white text-xs font-medium">${mes}</td>
-                        <td class="py-2.5 px-3 text-cyan-400 font-semibold text-xs text-right">${panolMensualMap[mes].items.toLocaleString('es-AR')}</td>
-                        <td class="py-2.5 px-3 text-emerald-400 font-semibold text-xs text-right">${formatPesos(panolMensualMap[mes].plata)}</td>
-                    </tr>
-                `).join('');
-            }
-        }
-        setTexto('tot_tabla_panol_items', totalItemsConsumidos.toLocaleString('es-AR'));
-        setTexto('tot_tabla_panol_plata', formatPesos(totalPlataPanolConsumida));
-
-        // Top 10 Ítems con Menos Rotación
-        const tbodyMenosRot = document.getElementById('tabla_panol_menos_rotacion');
-        if (tbodyMenosRot) {
-            if (itemsPanolLimpios.length === 0) {
-                tbodyMenosRot.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-500 text-sm italic">Aún no hay materiales cargados en la pestaña Pañol</td></tr>';
-            } else {
-                const top10Menos = [...itemsPanolLimpios]
-                    .sort((a, b) => a.salidas - b.salidas)
-                    .slice(0, 10);
-
-                tbodyMenosRot.innerHTML = top10Menos.map((it, idx) => `
-                    <tr class="border-b border-slate-700/50 hover:bg-slate-800/60 transition">
-                        <td class="py-2.5 px-3 text-sky-400 font-semibold text-xs">#${idx + 1}</td>
-                        <td class="py-2.5 px-3 text-slate-300 font-mono text-xs">${it.codigo}</td>
-                        <td class="py-2.5 px-3 text-white text-xs font-medium">${it.descripcion}</td>
-                        <td class="py-2.5 px-3 text-slate-400 text-xs text-right">${it.stock.toLocaleString('es-AR')}</td>
-                        <td class="py-2.5 px-3 text-amber-400 font-bold text-xs text-right">${it.salidas.toLocaleString('es-AR')}</td>
-                    </tr>
-                `).join('');
-            }
-        }
-
-        // Top 5 Ítems Más Caros del Pañol
-        const tbodyMasCaros = document.getElementById('tabla_panol_mas_caros');
-        if (tbodyMasCaros) {
-            if (itemsPanolLimpios.length === 0) {
-                tbodyMasCaros.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-500 text-sm italic">Aún no hay materiales cargados en la pestaña Pañol</td></tr>';
-            } else {
-                const top5Caros = [...itemsPanolLimpios]
-                    .sort((a, b) => b.valorUnitario - a.valorUnitario)
-                    .slice(0, 5);
-
-                tbodyMasCaros.innerHTML = top5Caros.map((it, idx) => `
-                    <tr class="border-b border-slate-700/50 hover:bg-slate-800/60 transition">
-                        <td class="py-2.5 px-3 text-amber-400 font-semibold text-xs">#${idx + 1}</td>
-                        <td class="py-2.5 px-3 text-slate-300 font-mono text-xs">${it.codigo}</td>
-                        <td class="py-2.5 px-3 text-white text-xs font-medium">${it.descripcion}</td>
-                        <td class="py-2.5 px-3 text-emerald-400 font-bold text-xs text-right whitespace-nowrap">${formatPesos(it.valorUnitario)}</td>
-                    </tr>
-                `).join('');
-            }
-        }
-
-        // =========================================================
-        // 2. BIOSÓLIDOS Y RSU (M1 VS M2 Y COSTES EN $)
-        // =========================================================
-        const bioM1Total = getSum(rawData, 'biosolidos_ton_m1') || getSum(rawData, 'ton_ms_m1') || getSum(rawData, 'biosolidos_m1');
-        const bioM2Total = getSum(rawData, 'biosolidos_ton_m2') || getSum(rawData, 'ton_ms_m2') || getSum(rawData, 'biosolidos_m2');
-        const rsuM1Total = getSum(rawData, 'cant_rsu_m1');
-        const rsuM2Total = getSum(rawData, 'cant_rsu_m2');
-
-        setTexto('gest_bio_m1_tot', bioM1Total.toLocaleString('es-AR'));
-        setTexto('gest_bio_m2_tot', bioM2Total.toLocaleString('es-AR'));
-        setTexto('gest_rsu_m1_tot', rsuM1Total.toLocaleString('es-AR'));
-        setTexto('gest_rsu_m2_tot', rsuM2Total.toLocaleString('es-AR'));
-
-        // Gráfico único: Totalizado Biosólidos y RSU (M1 por un lado y M2 por el otro)
-        if (cBiosolidosRsuM1M2) cBiosolidosRsuM1M2.destroy();
-        const ctxBioRsu = document.getElementById('chartBiosolidosRsuM1M2');
-        if (ctxBioRsu) {
-            cBiosolidosRsuM1M2 = new Chart(ctxBioRsu.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: ['Módulo 1 (M1)', 'Módulo 2 (M2)'],
-                    datasets: [
-                        {
-                            label: 'Biosólidos Totalizado (Ton)',
-                            data: [bioM1Total, bioM2Total],
-                            backgroundColor: '#f59e0b',
-                            borderRadius: 6
-                        },
-                        {
-                            label: 'RSU Totalizado',
-                            data: [rsuM1Total, rsuM2Total],
-                            backgroundColor: '#38bdf8',
-                            borderRadius: 6
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'top' } },
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
-        }
-
-        // Coste de Biosólidos y RSU en $
-        const costesBioRsuMensual = {};
-        let totalCostoBiosolidos = 0;
-        let totalCostoRsu = 0;
-
-        rawData.forEach(r => {
-            const mes = getMonthYear(getVal(r, 'fecha'));
-            const cBio = getCleanNumber(getVal(r, 'costo_biosolidos'));
-            const cRsu = getCleanNumber(getVal(r, 'costo_rsu'));
-
-            if (!costesBioRsuMensual[mes]) {
-                costesBioRsuMensual[mes] = { bio: 0, rsu: 0 };
-            }
-            costesBioRsuMensual[mes].bio += cBio;
-            costesBioRsuMensual[mes].rsu += cRsu;
-
-            totalCostoBiosolidos += cBio;
-            totalCostoRsu += cRsu;
-        });
-
-        setTexto('gest_costo_biosolidos_tot', formatPesos(totalCostoBiosolidos));
-        setTexto('gest_costo_rsu_tot', formatPesos(totalCostoRsu));
-
-        const mesesCostesBioRsu = Object.keys(costesBioRsuMensual);
-        if (cCostoBiosolidosRsu) cCostoBiosolidosRsu.destroy();
-        const ctxCostoBioRsu = document.getElementById('chartCostoBiosolidosRsu');
-        if (ctxCostoBioRsu) {
-            cCostoBiosolidosRsu = new Chart(ctxCostoBioRsu.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: mesesCostesBioRsu.length ? mesesCostesBioRsu : ['Sin datos'],
-                    datasets: [
-                        {
-                            label: 'Coste Biosólidos ($)',
-                            data: mesesCostesBioRsu.length ? mesesCostesBioRsu.map(m => costesBioRsuMensual[m].bio) : [0],
-                            backgroundColor: '#d97706',
-                            borderRadius: 6
-                        },
-                        {
-                            label: 'Coste RSU ($)',
-                            data: mesesCostesBioRsu.length ? mesesCostesBioRsu.map(m => costesBioRsuMensual[m].rsu) : [0],
-                            backgroundColor: '#06b6d4',
-                            borderRadius: 6
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top' },
-                        tooltip: {
-                            callbacks: {
-                                label: ctx => ` ${ctx.dataset.label}: ${formatPesos(ctx.parsed.y)}`
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { callback: val => '$ ' + Number(val).toLocaleString('es-AR') }
-                        }
-                    }
-                }
-            });
-        }
-
-        // =========================================================
-        // 3. RECURSOS HUMANOS (HORAS NORMALES Y EXTRA)
-        // =========================================================
-        const rrhhMensualMap = {};
-        const rrhhSectorMap = {};
-
-        const usarFuenteDetalladaRrhh = rrhhSectoresData.length > 0;
-
-        if (usarFuenteDetalladaRrhh) {
-            rrhhSectoresData.forEach(r => {
-                const mes = getMonthYear(getVal(r, 'fecha'));
-                const sector = String(getVal(r, 'sector') || 'General').trim();
-                const hsNorm = getCleanNumber(getVal(r, 'hs_normales'));
-                const hsExt = getCleanNumber(getVal(r, 'hs_extra'));
-
-                if (!rrhhMensualMap[mes]) rrhhMensualMap[mes] = { normales: 0, extra: 0 };
-                rrhhMensualMap[mes].normales += hsNorm;
-                rrhhMensualMap[mes].extra += hsExt;
-
-                if (!rrhhSectorMap[sector]) rrhhSectorMap[sector] = { normales: 0, extra: 0 };
-                rrhhSectorMap[sector].normales += hsNorm;
-                rrhhSectorMap[sector].extra += hsExt;
-            });
-        } else {
-            rawData.forEach(r => {
-                const mes = getMonthYear(getVal(r, 'fecha'));
-                const hsNorm = getCleanNumber(getVal(r, 'hs_normales'));
-                const hsExt = getCleanNumber(getVal(r, 'hs_extra'));
-
-                if (!rrhhMensualMap[mes]) rrhhMensualMap[mes] = { normales: 0, extra: 0 };
-                rrhhMensualMap[mes].normales += hsNorm;
-                rrhhMensualMap[mes].extra += hsExt;
-            });
-        }
-
-        const mesesRrhh = Object.keys(rrhhMensualMap);
-        const totalHsNormalesPlanta = mesesRrhh.reduce((acc, m) => acc + rrhhMensualMap[m].normales, 0);
-        const totalHsExtraPlanta = mesesRrhh.reduce((acc, m) => acc + rrhhMensualMap[m].extra, 0);
-
-        setTexto('gest_rrhh_hs_normales_tot', totalHsNormalesPlanta.toLocaleString('es-AR'));
-        setTexto('gest_rrhh_hs_extra_tot', totalHsExtraPlanta.toLocaleString('es-AR'));
-
-        if (cRrhhHsNormalesMensual) cRrhhHsNormalesMensual.destroy();
-        const ctxRrhhNormMes = document.getElementById('chartRrhhHsNormalesMensual');
-        if (ctxRrhhNormMes) {
-            cRrhhHsNormalesMensual = new Chart(ctxRrhhNormMes.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: mesesRrhh.length ? mesesRrhh : ['Sin datos'],
-                    datasets: [{
-                        label: 'Hs Normales Planta',
-                        data: mesesRrhh.length ? mesesRrhh.map(m => rrhhMensualMap[m].normales) : [0],
-                        backgroundColor: '#10b981',
-                        borderRadius: 6
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-            });
-        }
-
-        if (cRrhhHsExtraMensual) cRrhhHsExtraMensual.destroy();
-        const ctxRrhhExtMes = document.getElementById('chartRrhhHsExtraMensual');
-        if (ctxRrhhExtMes) {
-            cRrhhHsExtraMensual = new Chart(ctxRrhhExtMes.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: mesesRrhh.length ? mesesRrhh : ['Sin datos'],
-                    datasets: [{
-                        label: 'Hs Extra Planta',
-                        data: mesesRrhh.length ? mesesRrhh.map(m => rrhhMensualMap[m].extra) : [0],
-                        backgroundColor: '#f59e0b',
-                        borderRadius: 6
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-            });
-        }
-
-        const sectoresRrhh = Object.keys(rrhhSectorMap);
-        if (cRrhhHsNormalesSector) cRrhhHsNormalesSector.destroy();
-        const ctxRrhhNormSec = document.getElementById('chartRrhhHsNormalesSector');
-        if (ctxRrhhNormSec) {
-            cRrhhHsNormalesSector = new Chart(ctxRrhhNormSec.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: sectoresRrhh.length ? sectoresRrhh : ['Sin datos por sector aún'],
-                    datasets: [{
-                        label: 'Hs Normales',
-                        data: sectoresRrhh.length ? sectoresRrhh.map(s => rrhhSectorMap[s].normales) : [0],
-                        backgroundColor: '#34d399',
-                        borderRadius: 6
-                    }]
-                },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
-            });
-        }
-
-        if (cRrhhHsExtraSector) cRrhhHsExtraSector.destroy();
-        const ctxRrhhExtSec = document.getElementById('chartRrhhHsExtraSector');
-        if (ctxRrhhExtSec) {
-            cRrhhHsExtraSector = new Chart(ctxRrhhExtSec.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: sectoresRrhh.length ? sectoresRrhh : ['Sin datos por sector aún'],
-                    datasets: [{
-                        label: 'Hs Extra',
-                        data: sectoresRrhh.length ? sectoresRrhh.map(s => rrhhSectorMap[s].extra) : [0],
-                        backgroundColor: '#fbbf24',
-                        borderRadius: 6
-                    }]
-                },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
-            });
-        }
-
-        // =========================================================
-        // 4. PLATA CONSUMIDA (RRHH, PAÑOL, ENERGÍA Y COMBUSTIBLE)
-        // =========================================================
-        const fuenteRrhhPlata = usarFuenteDetalladaRrhh ? rrhhSectoresData : rawData;
-        const plataHsNormales = getSum(fuenteRrhhPlata, 'plata_hs_normales');
-        const plataHsExtra = getSum(fuenteRrhhPlata, 'plata_hs_extra');
-        const plataHsLicencia = getSum(fuenteRrhhPlata, 'plata_hs_licencia');
-        const plataRrhhTotal = plataHsNormales + plataHsExtra + plataHsLicencia;
-
-        setTexto('gest_plata_rrhh_normales', formatPesos(plataHsNormales));
-        setTexto('gest_plata_rrhh_extra', formatPesos(plataHsExtra));
-        setTexto('gest_plata_rrhh_licencia', formatPesos(plataHsLicencia));
-        setTexto('gest_plata_rrhh_total', formatPesos(plataRrhhTotal));
-
-        // Coste de Energía Total y por Sector
-        const kwhSectores = [
-            getSum(rawData, 'energia_m1_ts1'),
-            getSum(rawData, 'energia_m1_ts2'),
-            getSum(rawData, 'energia_m1_ts3'),
-            getSum(rawData, 'energia_m2_ts1'),
-            getSum(rawData, 'energia_m2_ts2'),
-            getSum(rawData, 'energia_m2_ts3')
-        ];
-        const sumaKwhSectores = kwhSectores.reduce((a, b) => a + b, 0);
-
-        let costosEnergiaSectores = [
-            getSum(rawData, 'costo_energia_m1_ts1'),
-            getSum(rawData, 'costo_energia_m1_ts2'),
-            getSum(rawData, 'costo_energia_m1_ts3'),
-            getSum(rawData, 'costo_energia_m2_ts1'),
-            getSum(rawData, 'costo_energia_m2_ts2'),
-            getSum(rawData, 'costo_energia_m2_ts3')
-        ];
-
-        const sumaCostosDirectos = costosEnergiaSectores.reduce((a, b) => a + b, 0);
-        const costoEnergiaTotalHoja = getSum(rawData, 'costo_energia_total');
-        let costoEnergiaFinal = sumaCostosDirectos > 0 ? sumaCostosDirectos : costoEnergiaTotalHoja;
-
-        if (sumaCostosDirectos === 0 && costoEnergiaTotalHoja > 0 && sumaKwhSectores > 0) {
-            costosEnergiaSectores = kwhSectores.map(kwh => (kwh / sumaKwhSectores) * costoEnergiaTotalHoja);
-        }
-
-        setTexto('gest_plata_energia_total', formatPesos(costoEnergiaFinal));
-
-        if (cCostoEnergiaSectores) cCostoEnergiaSectores.destroy();
-        const ctxCostoEn = document.getElementById('chartCostoEnergiaSectores');
-        if (ctxCostoEn) {
-            cCostoEnergiaSectores = new Chart(ctxCostoEn.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: [
-                        'M1 - TS1',
-                        'M1 - TS2',
-                        'M1 - TS3',
-                        'M2 - TS1 - Pretratamiento',
-                        'M2 - TS2 - Tratamiento Biológico',
-                        'M2 - TS3 - Línea de Lodos'
-                    ],
-                    datasets: [{
-                        data: costosEnergiaSectores,
-                        backgroundColor: ['#0284c7', '#0ea5e9', '#38bdf8', '#059669', '#10b981', '#34d399'],
-                        borderWidth: 2,
-                        borderColor: '#1e293b'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '62%',
-                    plugins: {
-                        legend: { position: 'right' },
-                        tooltip: {
-                            callbacks: {
-                                label: ctx => ` ${ctx.label}: ${formatPesos(ctx.parsed)}`
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Combustible de Vehículos
-        const vehiculosAgrupados = {};
-        let totalLitrosComb = 0;
-        let totalPlataComb = 0;
-
-        combustibleData.forEach(r => {
-            const marca = String(getVal(r, 'marca') || '').trim();
-            const modelo = String(getVal(r, 'modelo') || '').trim();
-            const tipo = String(getVal(r, 'tipo_vehiculo') || getVal(r, 'tipo') || '').trim();
-            const litros = getCleanNumber(getVal(r, 'litros'));
-            const plata = getCleanNumber(getVal(r, 'plata') ?? getVal(r, 'costo'));
-
-            if (marca !== '' || modelo !== '' || litros > 0 || plata > 0) {
-                const key = `${marca}||${modelo}||${tipo}`;
-                if (!vehiculosAgrupados[key]) {
-                    vehiculosAgrupados[key] = {
-                        marca: marca || '-',
-                        modelo: modelo || '-',
-                        tipo: tipo || '-',
-                        litros: 0,
-                        plata: 0
-                    };
-                }
-                vehiculosAgrupados[key].litros += litros;
-                vehiculosAgrupados[key].plata += plata;
-
-                totalLitrosComb += litros;
-                totalPlataComb += plata;
-            }
-        });
-
-        setTexto('gest_litros_combustible_total', `${totalLitrosComb.toLocaleString('es-AR')} L`);
-        setTexto('gest_plata_combustible_total', formatPesos(totalPlataComb));
-
-        const tbodyComb = document.getElementById('tabla_combustible_vehiculos');
-        if (tbodyComb) {
-            const listaVehiculos = Object.values(vehiculosAgrupados).sort((a, b) => b.plata - a.plata);
-            if (listaVehiculos.length === 0) {
-                tbodyComb.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-slate-500 text-sm italic">Aún no hay cargas de combustible registradas</td></tr>';
-            } else {
-                tbodyComb.innerHTML = listaVehiculos.map(v => `
-                    <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition">
-                        <td class="py-3 px-4 text-white font-semibold text-sm">${v.marca}</td>
-                        <td class="py-3 px-4 text-slate-200 text-sm">${v.modelo}</td>
-                        <td class="py-3 px-4">
-                            <span class="px-2.5 py-1 rounded-full text-xs bg-slate-900 text-cyan-300 border border-slate-700">${v.tipo}</span>
-                        </td>
-                        <td class="py-3 px-4 text-slate-300 text-sm text-right">${v.litros.toLocaleString('es-AR')} L</td>
-                        <td class="py-3 px-4 text-rose-400 font-bold text-sm text-right">${formatPesos(v.plata)}</td>
-                    </tr>
-                `).join('');
-            }
-        }
-
-        // =========================================================
-        // 5. INVERSIONES Y EXPLOTACIONES (SIN GRÁFICOS)
-        // =========================================================
-        const invObras = getSum(rawData, 'inv_obras');
-        const invEquipamiento = getSum(rawData, 'inv_equipamiento');
-        const invTotal = invObras + invEquipamiento;
-
-        const expReparaciones = getSum(rawData, 'exp_reparaciones');
-
-        setTexto('gest_inv_obras', formatPesos(invObras));
-        setTexto('gest_inv_equipamiento', formatPesos(invEquipamiento));
-        setTexto('gest_inv_total', formatPesos(invTotal));
-
-        setTexto('gest_exp_reparaciones', formatPesos(expReparaciones));
-        setTexto('gest_exp_total', formatPesos(expReparaciones));
-
-    } catch (e) {
-        console.error("Error al renderizar Control y Gestión:", e);
-    }
-}
+// ============================================================================
+// 3. RENDERIZADO PRINCIPAL (RESUMEN, PROCESO, MANTENIMIENTO Y GESTIÓN)
+// ============================================================================
 
 function calcularYRenderizarResumen() {
     if (!rawData.length) return;
-    const lastRow = rawData[rawData.length - 1]; 
-    Chart.defaults.color = '#94a3b8';
-    Chart.defaults.font.family = 'Inter';
+    const lastRow = rawData[rawData.length - 1];
 
+    if (typeof Chart !== 'undefined') {
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.font.family = 'Inter';
+    }
+
+    // --- BLOQUE A: RESUMEN GENERAL (M1, M2, ENERGÍA, TOTALES) ---
     try {
-        // ==============================
-        // 1. RESUMEN GENERAL
-        // ==============================
         setTexto('m1_dbo_ent', getAvg(rawData, 'dbo_ent_m1'));
         setTexto('m1_dbo_sal', getAvg(rawData, 'dbo_sal_m1'));
-        setTexto('m1_dqo_ent', getAvg(rawData, 'dqo_ent_m1') || getAvg(rawData, 'dbo_ent_m1'));
+        setTexto('m1_dqo_ent', getAvg(rawData, 'dqo_ent_m1'));
         setTexto('m1_dqo_sal', getAvg(rawData, 'dqo_sal_m1'));
         setTexto('m1_mes_ent', getAvg(rawData, 'mes_ent_m1'));
         setTexto('m1_mes_sal', getAvg(rawData, 'mes_sal_m1'));
         setTexto('m1_caudal_dis', getCleanNumber(getVal(lastRow, 'caudal_dis_m1')) || 0.3);
         setTexto('m1_caudal_trat', getCleanNumber(getVal(lastRow, 'caudal_trat_m1')) || 0);
-        
+
         const energiaTotalM1 = getSum(rawData, 'energia_m1_ts1') + getSum(rawData, 'energia_m1_ts2') + getSum(rawData, 'energia_m1_ts3');
         setTexto('m1_energia_val', energiaTotalM1.toLocaleString('es-AR'));
+
         const volTotalM1 = rawData.reduce((acc, r) => acc + (getCleanNumber(getVal(r, 'caudal_trat_m1')) * 86400), 0);
-        const ratioM1 = volTotalM1 > 0 ? (energiaTotalM1 / volTotalM1).toFixed(3) : '0.000';
-        setTexto('m1_kw_m3', ratioM1);
+        setTexto('m1_kw_m3', volTotalM1 > 0 ? (energiaTotalM1 / volTotalM1).toFixed(3) : '0.000');
 
         setTexto('m2_dbo_ent', getAvg(rawData, 'dbo_ent_m2'));
         setTexto('m2_dbo_sal', getAvg(rawData, 'dbo_sal_m2'));
@@ -1031,75 +343,92 @@ function calcularYRenderizarResumen() {
         setTexto('m2_mes_sal', getAvg(rawData, 'mes_sal_m2'));
         setTexto('m2_caudal_dis', getCleanNumber(getVal(lastRow, 'caudal_dis_m2')) || 0.9);
         setTexto('m2_caudal_trat', getCleanNumber(getVal(lastRow, 'caudal_trat_m2')) || 0);
-        
+
         const energiaTotalM2 = getSum(rawData, 'energia_m2_ts1') + getSum(rawData, 'energia_m2_ts2') + getSum(rawData, 'energia_m2_ts3');
         setTexto('m2_energia_val', energiaTotalM2.toLocaleString('es-AR'));
+
         const volTotalM2 = rawData.reduce((acc, r) => acc + (getCleanNumber(getVal(r, 'caudal_trat_m2')) * 86400), 0);
-        const ratioM2 = volTotalM2 > 0 ? (energiaTotalM2 / volTotalM2).toFixed(3) : '0.000';
-        setTexto('m2_kw_m3', ratioM2);
+        setTexto('m2_kw_m3', volTotalM2 > 0 ? (energiaTotalM2 / volTotalM2).toFixed(3) : '0.000');
 
-        setTexto('tot_energia', getSum(rawData, 'energia_total').toLocaleString('es-AR'));
-        setTexto('tot_biosolidos', getSum(rawData, 'biosolidos_ton').toLocaleString('es-AR'));
-        setTexto('tot_arenas', getSum(rawData, 'arenas_ton').toLocaleString('es-AR'));
-        setTexto('tot_polimero', getSum(rawData, 'polimero_kg').toLocaleString('es-AR'));
+        // Totales acumulados (usa columna total si existe, sino suma M1 + M2 automáticamente)
+        const energiaGlobal = getSum(rawData, 'energia_total') || (energiaTotalM1 + energiaTotalM2);
+        const biosolidosGlobal = getSum(rawData, 'biosolidos_ton') || (getSum(rawData, 'biosolidos_ton_m1') + getSum(rawData, 'biosolidos_ton_m2'));
+        const rsuGlobal = getSum(rawData, 'cant_rsu_m1') + getSum(rawData, 'cant_rsu_m2');
+        const arenasGlobal = getSum(rawData, 'arenas_ton') || rsuGlobal;
+        const polimeroGlobal = getSum(rawData, 'polimero_kg');
 
+        setTexto('tot_energia', energiaGlobal.toLocaleString('es-AR'));
+        setTexto('tot_biosolidos', biosolidosGlobal.toLocaleString('es-AR'));
+        setTexto('tot_arenas', arenasGlobal.toLocaleString('es-AR'));
+        setTexto('tot_rsu', rsuGlobal.toLocaleString('es-AR'));
+        setTexto('tot_polimero', polimeroGlobal.toLocaleString('es-AR'));
+
+        // RRHH y Mantenimiento en Resumen General
         setTexto('rrhh_total_lbl', getCleanNumber(getVal(lastRow, 'rrhh_total')));
         setTexto('rrhh_admin_lbl', getCleanNumber(getVal(lastRow, 'rrhh_admin')));
         setTexto('rrhh_operativo_lbl', getCleanNumber(getVal(lastRow, 'rrhh_operativo')));
         setTexto('hs_extra_lbl', getSum(rawData, 'hs_extra').toLocaleString('es-AR'));
         setTexto('hs_normales_lbl', getSum(rawData, 'hs_normales').toLocaleString('es-AR'));
 
-        // Cantidades y Horas generales
-        const countPrev = getSum(rawData, 'mant_preventivos');
-        const countCorr = getSum(rawData, 'mant_correctivos');
-        const countAct = getSum(rawData, 'mant_actividades');
+        setTexto('mant_prev', getSum(rawData, 'mant_preventivos'));
+        setTexto('mant_corr', getSum(rawData, 'mant_correctivos'));
+        setTexto('mant_act', getSum(rawData, 'mant_actividades') || getSum(rawData, 'mant_generales'));
 
-        const hsPrev = getSum(rawData, 'horas_prev');
-        const hsCorr = getSum(rawData, 'horas_corr');
-        const hsTareas = getSum(rawData, 'horas_tareas');
-        const hsTotal = hsPrev + hsCorr + hsTareas;
+        // Gráfico Doughnut Energía por Sectores
+        if (cEnergia) cEnergia.destroy();
+        const ctxEnergia = document.getElementById('chartEnergiaSectores');
+        if (ctxEnergia && typeof Chart !== 'undefined') {
+            cEnergia = new Chart(ctxEnergia.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['M1 - TS1', 'M1 - TS2', 'M1 - TS3', 'M2 - TS1', 'M2 - TS2', 'M2 - TS3'],
+                    datasets: [{
+                        data: [
+                            getSum(rawData, 'energia_m1_ts1'),
+                            getSum(rawData, 'energia_m1_ts2'),
+                            getSum(rawData, 'energia_m1_ts3'),
+                            getSum(rawData, 'energia_m2_ts1'),
+                            getSum(rawData, 'energia_m2_ts2'),
+                            getSum(rawData, 'energia_m2_ts3')
+                        ],
+                        backgroundColor: ['#0284c7', '#0ea5e9', '#38bdf8', '#059669', '#10b981', '#34d399'],
+                        borderWidth: 2,
+                        borderColor: '#1e293b'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right' } }, cutout: '65%' }
+            });
+        }
 
-        setTexto('mant_prev', countPrev);
-        setTexto('mant_corr', countCorr);
-        setTexto('mant_act', countAct);
-        setTexto('res_hs_prev', hsPrev);
-        setTexto('res_hs_corr', hsCorr);
-        setTexto('res_hs_tareas', hsTareas);
-        setTexto('res_hs_total', hsTotal);
-
-        // Gráficos Mensuales
+        // Gráficos Mensuales Generales (si existen los canvas en index.html)
         const resumenMensual = {};
         rawData.forEach(r => {
             const mesKey = getMonthYear(getVal(r, 'fecha'));
             if (!resumenMensual[mesKey]) {
                 resumenMensual[mesKey] = { energia: 0, biosolidos: 0, arenas: 0, polimero: 0 };
             }
-            resumenMensual[mesKey].energia += getCleanNumber(getVal(r, 'energia_total'));
-            resumenMensual[mesKey].biosolidos += getCleanNumber(getVal(r, 'biosolidos_ton'));
-            resumenMensual[mesKey].arenas += getCleanNumber(getVal(r, 'arenas_ton'));
+            const eRow = getCleanNumber(getVal(r, 'energia_total')) || (
+                getCleanNumber(getVal(r, 'energia_m1_ts1')) + getCleanNumber(getVal(r, 'energia_m1_ts2')) + getCleanNumber(getVal(r, 'energia_m1_ts3')) +
+                getCleanNumber(getVal(r, 'energia_m2_ts1')) + getCleanNumber(getVal(r, 'energia_m2_ts2')) + getCleanNumber(getVal(r, 'energia_m2_ts3'))
+            );
+            const bRow = getCleanNumber(getVal(r, 'biosolidos_ton')) || (getCleanNumber(getVal(r, 'biosolidos_ton_m1')) + getCleanNumber(getVal(r, 'biosolidos_ton_m2')));
+            const aRow = getCleanNumber(getVal(r, 'arenas_ton')) || (getCleanNumber(getVal(r, 'cant_rsu_m1')) + getCleanNumber(getVal(r, 'cant_rsu_m2')));
+            resumenMensual[mesKey].energia += eRow;
+            resumenMensual[mesKey].biosolidos += bRow;
+            resumenMensual[mesKey].arenas += aRow;
             resumenMensual[mesKey].polimero += getCleanNumber(getVal(r, 'polimero_kg'));
         });
 
         const mesesLabels = Object.keys(resumenMensual);
-        const serieEnergia = mesesLabels.map(m => resumenMensual[m].energia);
-        const serieBiosolidos = mesesLabels.map(m => resumenMensual[m].biosolidos);
-        const serieArenas = mesesLabels.map(m => resumenMensual[m].arenas);
-        const seriePolimero = mesesLabels.map(m => resumenMensual[m].polimero);
-
         const buildMonthlyBar = (canvasId, instanceRef, label, dataArr, colorHex, unit) => {
             if (instanceRef) instanceRef.destroy();
             const ctx = document.getElementById(canvasId);
-            if (!ctx) return null;
+            if (!ctx || typeof Chart === 'undefined') return null;
             return new Chart(ctx.getContext('2d'), {
                 type: 'bar',
                 data: {
                     labels: mesesLabels,
-                    datasets: [{
-                        label: label,
-                        data: dataArr,
-                        backgroundColor: colorHex,
-                        borderRadius: 6
-                    }]
+                    datasets: [{ label, data: dataArr, backgroundColor: colorHex, borderRadius: 6 }]
                 },
                 options: {
                     responsive: true,
@@ -1107,7 +436,9 @@ function calcularYRenderizarResumen() {
                     plugins: {
                         legend: { display: false },
                         tooltip: {
-                            callbacks: { label: function(context) { return `${label}: ${(context.parsed.y || 0).toLocaleString('es-AR')} ${unit}`; } }
+                            callbacks: {
+                                label: ctxItem => `${label}: ${(ctxItem.parsed.y || 0).toLocaleString('es-AR')} ${unit}`
+                            }
                         }
                     },
                     scales: { y: { beginAtZero: true } }
@@ -1115,90 +446,73 @@ function calcularYRenderizarResumen() {
             });
         };
 
-        cMensualEnergia = buildMonthlyBar('chartMensualEnergia', cMensualEnergia, 'Energía Total', serieEnergia, '#facc15', 'kWh');
-        cMensualBiosolidos = buildMonthlyBar('chartMensualBiosolidos', cMensualBiosolidos, 'Biosólidos', serieBiosolidos, '#d97706', 'Ton');
-        cMensualArenas = buildMonthlyBar('chartMensualArenas', cMensualArenas, 'Arenas', serieArenas, '#fb923c', 'Ton');
-        cMensualPolimero = buildMonthlyBar('chartMensualPolimero', cMensualPolimero, 'Polímero', seriePolimero, '#818cf8', 'Kg');
+        cMensualEnergia = buildMonthlyBar('chartMensualEnergia', cMensualEnergia, 'Energía Total', mesesLabels.map(m => resumenMensual[m].energia), '#facc15', 'kWh');
+        cMensualBiosolidos = buildMonthlyBar('chartMensualBiosolidos', cMensualBiosolidos, 'Biosólidos', mesesLabels.map(m => resumenMensual[m].biosolidos), '#d97706', 'Ton');
+        cMensualArenas = buildMonthlyBar('chartMensualArenas', cMensualArenas, 'Arenas / RSU', mesesLabels.map(m => resumenMensual[m].arenas), '#fb923c', 'Ton');
+        cMensualPolimero = buildMonthlyBar('chartMensualPolimero', cMensualPolimero, 'Polímero', mesesLabels.map(m => resumenMensual[m].polimero), '#818cf8', 'Kg');
+    } catch (e) {
+        console.error("Error en bloque Resumen General:", e);
+    }
 
-        // Doughnut Energía Sectores
-        if(cEnergia) cEnergia.destroy();
-        const ctxEnergia = document.getElementById('chartEnergiaSectores');
-        if (ctxEnergia) {
-            cEnergia = new Chart(ctxEnergia.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['M1 - TS1', 'M1 - TS2', 'M1 - TS3', 'M2 - TS1 - Pretratamiento', 'M2 - TS2 - Tratamiento Biológico', 'M2 - TS3 - Linea de Lodos'],
-                    datasets: [{ 
-                        data: [
-                            getSum(rawData, 'energia_m1_ts1'), getSum(rawData, 'energia_m1_ts2'), getSum(rawData, 'energia_m1_ts3'),
-                            getSum(rawData, 'energia_m2_ts1'), getSum(rawData, 'energia_m2_ts2'), getSum(rawData, 'energia_m2_ts3')
-                        ], 
-                        backgroundColor: ['#0284c7', '#0ea5e9', '#38bdf8', '#059669', '#10b981', '#34d399'], 
-                        borderWidth: 2, borderColor: '#1e293b' 
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'right' } } }
-            });
-        }
-
-        // ==============================
-        // 2. PROCESO
-        // ==============================
+    // --- BLOQUE B: PESTAÑA PROCESO ---
+    try {
         setTexto('proc_rem_dbo_m1', calcRemocion(getAvg(rawData, 'dbo_ent_m1'), getAvg(rawData, 'dbo_sal_m1')));
         setTexto('proc_rem_dqo_m1', calcRemocion(getAvg(rawData, 'dqo_ent_m1'), getAvg(rawData, 'dqo_sal_m1')));
         setTexto('proc_rem_mes_m1', calcRemocion(getAvg(rawData, 'mes_ent_m1'), getAvg(rawData, 'mes_sal_m1')));
         setTexto('proc_norma_m1', getSum(rawData, 'fuera_norma_m1'));
-        
+
         setTexto('proc_rem_dbo_m2', calcRemocion(getAvg(rawData, 'dbo_ent_m2'), getAvg(rawData, 'dbo_sal_m2')));
         setTexto('proc_rem_dqo_m2', calcRemocion(getAvg(rawData, 'dqo_ent_m2'), getAvg(rawData, 'dqo_sal_m2')));
         setTexto('proc_rem_mes_m2', calcRemocion(getAvg(rawData, 'mes_ent_m2'), getAvg(rawData, 'mes_sal_m2')));
         setTexto('proc_norma_m2', getSum(rawData, 'fuera_norma_m2'));
 
+        // Biosólidos acumulados
+        const tonMsM1 = getSum(rawData, 'ton_ms_m1') || getSum(rawData, 'biosolidos_ton_m1');
+        const tonMsM2 = getSum(rawData, 'ton_ms_m2') || getSum(rawData, 'biosolidos_ton_m2');
         setTexto('bio_vol_m1', getSum(rawData, 'biosolidos_m1').toLocaleString('es-AR'));
         setTexto('bio_ms_m1', getAvg(rawData, 'porc_ms_m1'));
-        setTexto('bio_ton_m1', getSum(rawData, 'ton_ms_m1').toLocaleString('es-AR'));
+        setTexto('bio_ton_m1', tonMsM1.toLocaleString('es-AR'));
+
         setTexto('bio_vol_m2', getSum(rawData, 'biosolidos_m2').toLocaleString('es-AR'));
         setTexto('bio_ms_m2', getAvg(rawData, 'porc_ms_m2'));
-        setTexto('bio_ton_m2', getSum(rawData, 'ton_ms_m2').toLocaleString('es-AR'));
+        setTexto('bio_ton_m2', tonMsM2.toLocaleString('es-AR'));
 
-        const fechas = rawData.map(r => getVal(r, 'fecha') || ''); 
+        // Evolución de Caudales
+        const fechas = rawData.map(r => getVal(r, 'fecha') || '');
         const caudalesM1 = rawData.map(r => getCleanNumber(getVal(r, 'caudal_trat_m1')));
         const caudalesM2 = rawData.map(r => getCleanNumber(getVal(r, 'caudal_trat_m2')));
-        const disenoM1 = Array(fechas.length).fill(0.3);
-        const disenoM2 = Array(fechas.length).fill(0.9);
 
-        if(cCaudales) cCaudales.destroy();
+        if (cCaudales) cCaudales.destroy();
         const ctxCaudales = document.getElementById('chartCaudalesLine');
-        if (ctxCaudales) {
+        if (ctxCaudales && typeof Chart !== 'undefined') {
             cCaudales = new Chart(ctxCaudales.getContext('2d'), {
                 type: 'line',
                 data: {
                     labels: fechas,
                     datasets: [
                         { label: 'Caudal Tratado M1', data: caudalesM1, borderColor: '#22d3ee', backgroundColor: 'rgba(34, 211, 238, 0.1)', fill: true, tension: 0.4 },
-                        { label: 'Diseño M1 (0.3)', data: disenoM1, borderColor: '#0284c7', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false },
+                        { label: 'Diseño M1 (0.3)', data: Array(fechas.length).fill(0.3), borderColor: '#0284c7', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false },
                         { label: 'Caudal Tratado M2', data: caudalesM2, borderColor: '#34d399', backgroundColor: 'rgba(52, 211, 153, 0.1)', fill: true, tension: 0.4 },
-                        { label: 'Diseño M2 (0.9)', data: disenoM2, borderColor: '#059669', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false }
+                        { label: 'Diseño M2 (0.9)', data: Array(fechas.length).fill(0.9), borderColor: '#059669', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false }
                     ]
                 },
                 options: { responsive: true, maintainAspectRatio: false, scales: { y: { suggestedMax: 1.2 } } }
             });
         }
 
+        // Semáforo normativo (37 días)
         const diasFuera = rawData.filter(r => {
             const fn1 = getCleanNumber(getVal(r, 'fuera_norma_m1'));
             const fn2 = getCleanNumber(getVal(r, 'fuera_norma_m2'));
             const motivo = getVal(r, 'motivo_desvio');
-            const tieneMotivo = motivo && String(motivo).trim() !== '';
-            return fn1 > 0 || fn2 > 0 || tieneMotivo;
+            return fn1 > 0 || fn2 > 0 || (motivo && String(motivo).trim() !== '');
         });
-        
+
         const diasRestantes = 37 - diasFuera.length;
         const labelRestantes = document.getElementById('dias_restantes_norma');
         if (labelRestantes) {
             labelRestantes.textContent = diasRestantes;
-            if(diasRestantes <= 10) labelRestantes.classList.add('text-red-500');
-            else labelRestantes.classList.remove('text-red-500');
+            labelRestantes.classList.toggle('text-red-500', diasRestantes <= 10);
         }
 
         const divFechas = document.getElementById('fechas_fuera_norma');
@@ -1207,8 +521,8 @@ function calcularYRenderizarResumen() {
                 divFechas.innerHTML = '<span class="bg-green-900/30 text-green-400 px-3 py-1 rounded border border-green-800 text-sm">Planta 100% en norma.</span>';
             } else {
                 divFechas.innerHTML = diasFuera.map(d => {
-                    const fechaTxt = getVal(d, 'fecha') || 'Sin fecha';
-                    const motivoTxt = String(getVal(d, 'motivo_desvio') || 'Sin motivo registrado').replace(/'/g, "\\'"); 
+                    const fechaTxt = String(getVal(d, 'fecha') || 'Sin fecha').replace(/'/g, "\\'");
+                    const motivoTxt = String(getVal(d, 'motivo_desvio') || 'Sin motivo registrado').replace(/'/g, "\\'");
                     return `<button onclick="mostrarMotivo('${fechaTxt}', '${motivoTxt}')" class="bg-red-900/40 hover:bg-red-800/80 text-red-300 px-3 py-1.5 rounded-lg border border-red-800 text-sm font-medium shadow-sm transition cursor-pointer">${fechaTxt}</button>`;
                 }).join('');
             }
@@ -1216,101 +530,95 @@ function calcularYRenderizarResumen() {
 
         const firstActiveBtn = document.querySelector('.chart-btn.active');
         updateChartLimites('dbo_ent', firstActiveBtn);
+    } catch (e) {
+        console.error("Error en bloque Proceso:", e);
+    }
 
-        // ==============================
-        // 3. PESTAÑA MANTENIMIENTO
-        // ==============================
-        setTexto('kpi_mant_total', countPrev + countCorr + countAct);
-        setTexto('kpi_mant_prev', countPrev);
-        setTexto('kpi_mant_corr', countCorr);
-        setTexto('kpi_mant_act', countAct);
+    // --- BLOQUE C: PESTAÑA MANTENIMIENTO (CANTIDADES, HORAS, PROMEDIOS Y 24 SECTORES) ---
+    try {
+        const cantPrev = getSum(rawData, 'mant_preventivos');
+        const cantCorr = getSum(rawData, 'mant_correctivos');
+        const cantGen = getSum(rawData, 'mant_generales') || getSum(rawData, 'mant_actividades');
+        const cantTotal = cantPrev + cantCorr + cantGen;
 
-        setTexto('kpi_horas_total', hsTotal);
-        setTexto('kpi_horas_prev', hsPrev);
-        setTexto('kpi_horas_corr', hsCorr);
-        setTexto('kpi_horas_act', hsTareas);
+        const hsPrev = getSum(rawData, 'horas_prev');
+        const hsCorr = getSum(rawData, 'horas_corr');
+        const hsTareas = getSum(rawData, 'horas_tareas') || getSum(rawData, 'horas_gen');
+        const hsTotal = hsPrev + hsCorr + hsTareas;
 
-        const countTotal = countPrev + countCorr + countAct;
-        const promTotal = countTotal > 0 ? (hsTotal / countTotal).toFixed(1) : 0;
-        const promPrev = countPrev > 0 ? (hsPrev / countPrev).toFixed(1) : 0;
-        const promCorr = countCorr > 0 ? (hsCorr / countCorr).toFixed(1) : 0;
-        const promAct = countAct > 0 ? (hsTareas / countAct).toFixed(1) : 0;
+        setTexto('kpi_mant_prev', cantPrev);
+        setTexto('kpi_mant_corr', cantCorr);
+        setTexto('kpi_mant_gen', cantGen);
+        setTexto('kpi_mant_total', cantTotal);
 
-        setTexto('kpi_prom_total', promTotal);
-        setTexto('kpi_prom_prev', promPrev);
-        setTexto('kpi_prom_corr', promCorr);
-        setTexto('kpi_prom_act', promAct);
+        setTexto('kpi_horas_prev', hsPrev.toLocaleString('es-AR'));
+        setTexto('kpi_horas_corr', hsCorr.toLocaleString('es-AR'));
+        setTexto('kpi_horas_tareas', hsTareas.toLocaleString('es-AR'));
+        setTexto('kpi_horas_total', hsTotal.toLocaleString('es-AR'));
 
-        const monthlyGroups = {};
-        rawData.forEach(r => {
-            const monthStr = getMonthYear(getVal(r, 'fecha'));
-            if (!monthlyGroups[monthStr]) monthlyGroups[monthStr] = { prev: 0, corr: 0, act: 0 };
-            monthlyGroups[monthStr].prev += getCleanNumber(getVal(r, 'mant_preventivos'));
-            monthlyGroups[monthStr].corr += getCleanNumber(getVal(r, 'mant_correctivos'));
-            monthlyGroups[monthStr].act += getCleanNumber(getVal(r, 'mant_actividades'));
+        setTexto('kpi_prom_prev', cantPrev > 0 ? (hsPrev / cantPrev).toFixed(1) : '0.0');
+        setTexto('kpi_prom_corr', cantCorr > 0 ? (hsCorr / cantCorr).toFixed(1) : '0.0');
+        setTexto('kpi_prom_tareas', cantGen > 0 ? (hsTareas / cantGen).toFixed(1) : '0.0');
+
+        // Conteo de los 24 sectores (admite columnas directas o columna sectores_intervenidos)
+        const conteoSectores = {};
+        SECTORES_MAXIMO.forEach(s => { conteoSectores[s.code] = 0; });
+
+        const availableCols = rawData.length > 0 ? Object.keys(rawData[0]) : [];
+        SECTORES_MAXIMO.forEach(sec => {
+            availableCols.forEach(col => {
+                const colNorm = normalizarTexto(col);
+                if (colNorm === normalizarTexto(sec.label) || colNorm.startsWith(sec.code + ' ')) {
+                    conteoSectores[sec.code] += getSum(rawData, col);
+                }
+            });
         });
 
-        const labelsMensual = Object.keys(monthlyGroups);
-        if(cMantMensual) cMantMensual.destroy();
-        const ctxMantMensual = document.getElementById('chartMantMensual');
-        if (ctxMantMensual) {
-            cMantMensual = new Chart(ctxMantMensual.getContext('2d'), {
+        rawData.forEach(r => {
+            const secStr = getVal(r, 'sectores_intervenidos');
+            if (secStr && typeof secStr === 'string') {
+                secStr.split(',').map(s => s.trim()).filter(Boolean).forEach(item => {
+                    const match = identificarSectorMaximo(item);
+                    if (match) conteoSectores[match.code] = (conteoSectores[match.code] || 0) + 1;
+                });
+            }
+        });
+
+        if (cSectores) cSectores.destroy();
+        const ctxSectores = document.getElementById('chartSectores');
+        if (ctxSectores && typeof Chart !== 'undefined') {
+            cSectores = new Chart(ctxSectores.getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: labelsMensual,
-                    datasets: [
-                        { label: 'Preventivos', data: labelsMensual.map(m => monthlyGroups[m].prev), backgroundColor: '#10b981' },
-                        { label: 'Correctivos', data: labelsMensual.map(m => monthlyGroups[m].corr), backgroundColor: '#f43f5e' },
-                        { label: 'Actividades', data: labelsMensual.map(m => monthlyGroups[m].act), backgroundColor: '#38bdf8' }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
-            });
-        }
-
-        if(cMantTortas) cMantTortas.destroy();
-        const ctxMantTortas = document.getElementById('chartMantTortas');
-        if (ctxMantTortas) {
-            cMantTortas = new Chart(ctxMantTortas.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Preventivos', 'Correctivos', 'Actividades'],
-                    datasets: [{ 
-                        data: [countPrev, countCorr, countAct], 
-                        backgroundColor: ['#10b981', '#f43f5e', '#38bdf8'], 
-                        borderWidth: 2, 
-                        borderColor: '#1e293b' 
+                    labels: SECTORES_MAXIMO.map(s => s.label),
+                    datasets: [{
+                        label: 'Intervenciones',
+                        data: SECTORES_MAXIMO.map(s => conteoSectores[s.code] || 0),
+                        backgroundColor: '#06b6d4',
+                        hoverBackgroundColor: '#22d3ee',
+                        borderRadius: 4,
+                        barPercentage: 0.75
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: 'rgba(148, 163, 184, 0.1)' } },
+                        y: { ticks: { color: '#cbd5e1', font: { size: 11 } }, grid: { display: false } }
+                    }
+                }
             });
         }
 
-        if(cCriticidad) cCriticidad.destroy();
-        const ctxCriticidad = document.getElementById('chartCriticidad');
-        if (ctxCriticidad) {
-            cCriticidad = new Chart(ctxCriticidad.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['ALTA', 'MEDIA', 'BAJA'],
-                    datasets: [{ 
-                        data: [getSum(rawData, 'corr_alto'), getSum(rawData, 'corr_medio'), getSum(rawData, 'corr_bajo')], 
-                        backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6'], borderWidth: 2, borderColor: '#1e293b' 
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-        }
-
-        let equiposMap = {};
-        let ubicacionesM1Map = {};
-        let ubicacionesM2Map = {};
-
+        // Top 10 Equipos Intervenidos
+        const equiposMap = {};
         rawData.forEach(r => {
-            let eqStr = getVal(r, 'equipos_intervenidos');
+            const eqStr = getVal(r, 'equipos_intervenidos');
             if (eqStr && typeof eqStr === 'string') {
-                let eqArr = eqStr.split(',').map(s => s.trim()).filter(s => s !== '');
-                eqArr.forEach(rawItem => {
+                eqStr.split(',').map(s => s.trim()).filter(Boolean).forEach(rawItem => {
                     let nombre = rawItem;
                     let sector = 'No especificado';
                     const firstParen = rawItem.indexOf('(');
@@ -1318,74 +626,22 @@ function calcularYRenderizarResumen() {
                         nombre = rawItem.substring(0, firstParen).trim();
                         sector = rawItem.substring(firstParen + 1).replace(/\)+$/, '').trim();
                     }
-                    
                     const key = `${nombre}||${sector}`;
                     if (!equiposMap[key]) equiposMap[key] = { nombre, sector, count: 0 };
                     equiposMap[key].count += 1;
-
-                    if (sector !== 'No especificado' && sector !== '') {
-                        const secUpper = sector.toUpperCase();
-                        const nombreLimpio = sector.replace(/\s*\(?\s*M[12]\s*\)?\s*/gi, '').trim() || sector;
-                        
-                        if (secUpper.includes('M2') || secUpper.includes('MÓDULO 2') || secUpper.includes('MODULO 2')) {
-                            ubicacionesM2Map[nombreLimpio] = (ubicacionesM2Map[nombreLimpio] || 0) + 1;
-                        } else {
-                            ubicacionesM1Map[nombreLimpio] = (ubicacionesM1Map[nombreLimpio] || 0) + 1;
-                        }
-                    }
                 });
             }
         });
 
-        if (cUbicacionesM1) cUbicacionesM1.destroy();
-        const ctxUbiM1 = document.getElementById('chartUbicacionesM1');
-        if (ctxUbiM1) {
-            const labelsM1 = Object.keys(ubicacionesM1Map);
-            const dataM1 = Object.values(ubicacionesM1Map);
-            cUbicacionesM1 = new Chart(ctxUbiM1.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: labelsM1.length ? labelsM1 : ['Sin registros'],
-                    datasets: [{
-                        label: 'Intervenciones M1',
-                        data: dataM1.length ? dataM1 : [0],
-                        backgroundColor: '#22d3ee',
-                        borderRadius: 6
-                    }]
-                },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-            });
-        }
-
-        if (cUbicacionesM2) cUbicacionesM2.destroy();
-        const ctxUbiM2 = document.getElementById('chartUbicacionesM2');
-        if (ctxUbiM2) {
-            const labelsM2 = Object.keys(ubicacionesM2Map);
-            const dataM2 = Object.values(ubicacionesM2Map);
-            cUbicacionesM2 = new Chart(ctxUbiM2.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: labelsM2.length ? labelsM2 : ['Sin registros'],
-                    datasets: [{
-                        label: 'Intervenciones M2',
-                        data: dataM2.length ? dataM2 : [0],
-                        backgroundColor: '#34d399',
-                        borderRadius: 6
-                    }]
-                },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-            });
-        }
-
-        let topEquipos = Object.values(equiposMap).sort((a,b) => b.count - a.count).slice(0, 10);
-        let tbody = document.getElementById('tabla_equipos_body');
+        const topEquipos = Object.values(equiposMap).sort((a, b) => b.count - a.count).slice(0, 10);
+        const tbody = document.getElementById('tabla_equipos_body');
         if (tbody) {
             if (topEquipos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-500 italic">No hay registros</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-500 italic">No hay registros de equipos intervenidos aún</td></tr>';
             } else {
-                tbody.innerHTML = topEquipos.map((eq, index) => `
+                tbody.innerHTML = topEquipos.map((eq, idx) => `
                     <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition">
-                        <td class="py-3 px-4 text-cyan-400 font-medium">#${index + 1}</td>
+                        <td class="py-3 px-4 text-cyan-400 font-medium">#${idx + 1}</td>
                         <td class="py-3 px-4 text-white font-medium">${eq.nombre}</td>
                         <td class="py-3 px-4 text-slate-400 text-sm">${eq.sector}</td>
                         <td class="py-3 px-4 text-amber-400 font-bold text-right">${eq.count}</td>
@@ -1393,19 +649,106 @@ function calcularYRenderizarResumen() {
                 `).join('');
             }
         }
-
-        // ==============================
-        // 4. PESTAÑA FUNCIONAMIENTO (KPIs Hoja 1)
-        // ==============================
-        const rsuGeneral = getSum(rawData, 'cant_rsu');
-        const rsuM1M2 = getSum(rawData, 'cant_rsu_m1') + getSum(rawData, 'cant_rsu_m2');
-        setTexto('func_cant_rsu', (rsuGeneral > 0 ? rsuGeneral : rsuM1M2).toLocaleString('es-AR'));
-        setTexto('func_cant_ot', getSum(rawData, 'cant_ot').toLocaleString('es-AR'));
-
     } catch (e) {
-        console.error("Error al renderizar el resumen:", e);
+        console.error("Error en bloque Mantenimiento:", e);
+    }
+
+    // --- BLOQUE D: COSTOS Y CONTROL DE GESTIÓN DESDE HOJA 1 ---
+    try {
+        const costoEnergia = getSum(rawData, 'costo_energia_m1_ts1') + getSum(rawData, 'costo_energia_m1_ts2') + getSum(rawData, 'costo_energia_m1_ts3') +
+                             getSum(rawData, 'costo_energia_m2_ts1') + getSum(rawData, 'costo_energia_m2_ts2') + getSum(rawData, 'costo_energia_m2_ts3');
+        const costoBiosolidos = getSum(rawData, 'costo_biosolidos');
+        const costoRsu = getSum(rawData, 'costo_rsu');
+        const invObras = getSum(rawData, 'inv_obras');
+        const invEquipamiento = getSum(rawData, 'inv_equipamiento');
+        const expReparaciones = getSum(rawData, 'exp_reparaciones');
+
+        setTexto('kpi_costo_energia', '$ ' + costoEnergia.toLocaleString('es-AR'));
+        setTexto('kpi_costo_biosolidos', '$ ' + costoBiosolidos.toLocaleString('es-AR'));
+        setTexto('kpi_costo_rsu', '$ ' + costoRsu.toLocaleString('es-AR'));
+        setTexto('kpi_inv_obras', '$ ' + invObras.toLocaleString('es-AR'));
+        setTexto('kpi_inv_equipamiento', '$ ' + invEquipamiento.toLocaleString('es-AR'));
+        setTexto('kpi_exp_reparaciones', '$ ' + expReparaciones.toLocaleString('es-AR'));
+    } catch (e) {
+        console.error("Error en bloque Costos:", e);
     }
 }
+
+// ============================================================================
+// 4. FUNCIONES PARA PESTAÑAS SECUNDARIAS (PAÑOL, RRHH, COMBUSTIBLE, EQUIPOS)
+// ============================================================================
+
+function renderizarPanol() {
+    try {
+        let valorStockTotal = 0;
+        let totalSalidas = 0;
+        panolData.forEach(r => {
+            const valUnit = getCleanNumber(getVal(r, 'valor_unitario'));
+            const stock = getCleanNumber(getVal(r, 'stock'));
+            const salidas = getCleanNumber(getVal(r, 'salidas'));
+            valorStockTotal += valUnit * stock;
+            totalSalidas += salidas;
+        });
+        setTexto('kpi_panol_valor', '$ ' + valorStockTotal.toLocaleString('es-AR'));
+        setTexto('kpi_panol_items', panolData.length);
+        setTexto('kpi_panol_salidas', totalSalidas.toLocaleString('es-AR'));
+
+        const tbody = document.getElementById('tabla_panol_body');
+        if (tbody) {
+            tbody.innerHTML = panolData.map(r => `
+                <tr class="border-b border-slate-700/50 hover:bg-slate-800/50">
+                    <td class="py-2.5 px-4 text-cyan-400 font-mono text-xs">${getVal(r, 'codigo') || '-'}</td>
+                    <td class="py-2.5 px-4 text-white">${getVal(r, 'descripcion') || '-'}</td>
+                    <td class="py-2.5 px-4 text-right text-slate-300">$ ${getCleanNumber(getVal(r, 'valor_unitario')).toLocaleString('es-AR')}</td>
+                    <td class="py-2.5 px-4 text-right font-bold text-emerald-400">${getCleanNumber(getVal(r, 'stock'))}</td>
+                    <td class="py-2.5 px-4 text-right text-amber-400">${getCleanNumber(getVal(r, 'salidas'))}</td>
+                </tr>
+            `).join('');
+        }
+    } catch (e) {
+        console.error("Error al renderizar Pañol:", e);
+    }
+}
+
+function renderizarRRHHSectores() {
+    try {
+        setTexto('kpi_rrhh_hs_norm', getSum(rrhhData, 'hs_normales').toLocaleString('es-AR'));
+        setTexto('kpi_rrhh_hs_ext', getSum(rrhhData, 'hs_extra').toLocaleString('es-AR'));
+        setTexto('kpi_rrhh_plata_norm', '$ ' + getSum(rrhhData, 'plata_hs_normales').toLocaleString('es-AR'));
+        setTexto('kpi_rrhh_plata_ext', '$ ' + getSum(rrhhData, 'plata_hs_extra').toLocaleString('es-AR'));
+        setTexto('kpi_rrhh_plata_lic', '$ ' + getSum(rrhhData, 'plata_hs_licencia').toLocaleString('es-AR'));
+    } catch (e) {
+        console.error("Error al renderizar RRHH_Sectores:", e);
+    }
+}
+
+function renderizarCombustible() {
+    try {
+        setTexto('kpi_comb_litros', getSum(combustibleData, 'litros').toLocaleString('es-AR') + ' L');
+        setTexto('kpi_comb_plata', '$ ' + getSum(combustibleData, 'plata').toLocaleString('es-AR'));
+    } catch (e) {
+        console.error("Error al renderizar Combustible:", e);
+    }
+}
+
+function renderizarEquiposCriticos() {
+    try {
+        const total = equiposCriticosData.length;
+        const operativos = equiposCriticosData.filter(r => {
+            const est = normalizarTexto(getVal(r, 'eq_estado') || getVal(r, 'estado'));
+            return est.includes('operativo') || est.includes('disponible');
+        }).length;
+        setTexto('kpi_eq_totales', total);
+        setTexto('kpi_eq_operativos', operativos);
+        setTexto('kpi_eq_fuera', total - operativos);
+    } catch (e) {
+        console.error("Error al renderizar Equipos_Criticos:", e);
+    }
+}
+
+// ============================================================================
+// 5. MODAL DE DESVÍOS Y GRÁFICO DE LÍMITES LEGALES
+// ============================================================================
 
 window.mostrarMotivo = function(fecha, motivo) {
     const elFecha = document.getElementById('modalFecha');
@@ -1420,6 +763,7 @@ window.mostrarMotivo = function(fecha, motivo) {
 
 window.updateChartLimites = function(param, btnElement) {
     if (!rawData || rawData.length === 0) return;
+
     if (btnElement) {
         document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active', 'bg-sky-500', 'text-white', 'border-sky-500'));
         btnElement.classList.add('active', 'bg-sky-500', 'text-white', 'border-sky-500');
@@ -1446,12 +790,10 @@ window.updateChartLimites = function(param, btnElement) {
         maxLimit = 35; title = 'MES Salida';
     }
 
-    const limitLine = Array(fechas.length).fill(maxLimit);
-
     if (cLimites) cLimites.destroy();
     const ctx = document.getElementById('chartLimitesLine');
-    if (!ctx) return;
-    
+    if (!ctx || typeof Chart === 'undefined') return;
+
     cLimites = new Chart(ctx.getContext('2d'), {
         type: 'line',
         data: {
@@ -1459,9 +801,14 @@ window.updateChartLimites = function(param, btnElement) {
             datasets: [
                 { label: `${title} M1`, data: dataM1, borderColor: '#22d3ee', borderWidth: 2, tension: 0.2 },
                 { label: `${title} M2`, data: dataM2, borderColor: '#34d399', borderWidth: 2, tension: 0.2 },
-                { label: `Límite Legal (${maxLimit})`, data: limitLine, borderColor: '#ef4444', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false }
+                { label: `Límite Legal (${maxLimit})`, data: Array(fechas.length).fill(maxLimit), borderColor: '#ef4444', borderWidth: 2, borderDash: [5, 5], pointRadius: 0, fill: false }
             ]
         },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } }, scales: { y: { suggestedMax: maxLimit * 1.2 } } }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'top' } },
+            scales: { y: { suggestedMax: maxLimit * 1.2 } }
+        }
     });
 };
