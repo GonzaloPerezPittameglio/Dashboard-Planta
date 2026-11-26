@@ -1,848 +1,813 @@
-let rawData = [];
-let equiposCriticosData = [];
-let sectorSeleccionadoMapa = null;
+// ============================================================================
+// CONEXIÓN DIRECTA A TU PLANILLA "Base_Datos_AySA"
+// ============================================================================
+const SHEET_ID = "17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA";
 
-// Instancias de Chart.js
-let cMensualEnergia = null;
-let cMensualBiosolidos = null;
-let cMensualArenas = null;
-let cMensualPolimero = null;
+function getSheetUrl(sheetName) {
+    return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&_t=${Date.now()}`;
+}
 
-let cProcesoDbo = null;
-let cProcesoCaudales = null;
-
-let cMantMensual = null;
-let cMantTortas = null;
-let cCriticidad = null;
-let cSectores = null;
-
-let cPanol = null;
-let cCosteResiduos = null;
-let cBiosolidosRsu = null;
-
-// Catálogo oficial de los 24 sectores de Máximo
-const SECTORES_MAXIMO = [
-    { code: '0099', label: '0099 (Báscula)' },
-    { code: '0100', label: '0100 (Pretratamiento M1)' },
-    { code: '0101', label: '0101 (Tratamiento Biológico M1)' },
-    { code: '0102', label: '0102 (Sedimentación Secundaria M1)' },
-    { code: '0103', label: '0103 (Salida de Liquido M1)' },
-    { code: '0104', label: '0104 (Deshidratación de Lodos M1)' },
-    { code: '0105', label: '0105 (Sistema de Provisión de Agua M1)' },
-    { code: '0106', label: '0106 (Sistema Eléctrico M1)' },
-    { code: '0107', label: '0107 (Depósito)' },
-    { code: '0108', label: '0108 (Laboratorio)' },
-    { code: '0109', label: '0109 (Administración)' },
-    { code: '0110', label: '0110 (Taller de Planta)' },
-    { code: '0111', label: '0111 (Pañol)' },
-    { code: '0200', label: '0200 (Pretratamiento M2)' },
-    { code: '0201', label: '0201 (Sedimentación Primaria)' },
-    { code: '020105', label: '020105 (Agua de Servicio Pretratamiento)' },
-    { code: '0202', label: '0202 (Tratamiento Biológico)' },
-    { code: '0203', label: '0203 (Sedimentación Secundaria)' },
-    { code: '020305', label: '020305 (Agua de Servicio)' },
-    { code: '0204', label: '0204 (Espesamiento de Lodos)' },
-    { code: '0205', label: '0205 (Flotación de Lodos)' },
-    { code: '0206', label: '0206 (Digestión y Producción de Gas)' },
-    { code: '0207', label: '0207 (Almacenamiento de Lodos)' },
-    { code: '0208', label: '0208 (Deshidratación)' }
-];
-
-// Ubicaciones sobre el mapa aéreo (mapa-planta.jpg)
-const UBICACIONES_PLANTA = [
-    // Zona Izquierda (M2 y Digestión)
-    { nombre: 'Silo de Lodos', top: 10, left: 4.5 },
-    { nombre: 'Deshidratación M2', top: 23, left: 4.5 },
-    { nombre: 'Sub Estación Transformadora 3', top: 30, left: 4.2 },
-    { nombre: 'Caldera y Digestor', top: 22, left: 13.5 },
-    { nombre: 'Gasómetro', top: 9, left: 15.8 },
-    { nombre: 'Flotador', top: 18, left: 18.8 },
-    { nombre: 'Espesador', top: 23, left: 22.8 },
-    { nombre: 'Depósito de Hidrocarburo', top: 16, left: 26.5 },
-    { nombre: 'Sala de Soplantes M2', top: 71, left: 10.2 },
-    { nombre: 'Reactores Biológicos M2', top: 63, left: 15.5 },
-    { nombre: 'Camara de Distribución y Clarificadores 1, 2, 3, 4', top: 60, left: 26.5 },
-
-    // Zona Central (M1)
-    { nombre: 'Taller de Mantenimiento', top: 48, left: 34.8 },
-    { nombre: 'Deshidratación M1 y Taller de Soldadura', top: 53, left: 39.8 },
-    { nombre: 'Administración', top: 68, left: 35.5 },
-    { nombre: 'Grupo Electrogeno', top: 68, left: 39.5 },
-    { nombre: 'Sala Soplantes M1', top: 68, left: 41.8 },
-    { nombre: 'Clarificadores A,B,C', top: 51, left: 51.2 },
-    { nombre: 'Reactores M1', top: 74, left: 50.5 },
-    { nombre: 'Laboratorio, Pañol Funcionamiento y Coordinación', top: 63, left: 60.5 },
-    { nombre: 'Pretratamiento M1', top: 82, left: 61.5 },
-
-    // Zona Derecha (Pretratamiento General)
-    { nombre: 'Sedimentador 1 y 2', top: 77, left: 88.0 },
-    { nombre: 'Tratamiento de Grasas', top: 68, left: 96.5 },
-    { nombre: 'Desarenador', top: 77, left: 96.5 },
-    { nombre: 'Tratamiento de Arenas', top: 84, left: 96.2 },
-    { nombre: 'Sub Estación Transformadora 1', top: 88, left: 93.2 }
-];
-
-// Enlaces a Google Sheets
-const urlPrimary = "https://docs.google.com/spreadsheets/d/17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA/gviz/tq?tqx=out:csv";
-const urlBackup = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=0&single=true&output=csv";
-const urlEquiposCriticos = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSJbo6XXFqrrJtIxNAwdLhKsIengafF5OZYMc4l9aV3wPvp6retFo159pKfh_9o-QRT2ZziK-ltwYtC/pub?gid=316369111&single=true&output=csv";
-
-window.onload = () => {
-    lucide.createIcons();
-    cargarDatosDesdeGoogle(urlPrimary);
-    cargarEquiposCriticos();
+// Nombres exactos de las pestañas de tu Google Sheets
+const SHEETS = {
+    PRINCIPAL: "Hoja 1",
+    EQUIPOS: "Equipos_Criticos",
+    PANOL: "Pañol",
+    RRHH: "RRHH_Sectores",
+    COMBUSTIBLE: "Combustible"
 };
 
-function cargarDatosDesdeGoogle(urlTarget) {
-    const dsLabel = document.getElementById('dataSourceLabel');
-    if (dsLabel) dsLabel.textContent = "Conectando con Google Sheets...";
+// ============================================================================
+// VARIABLES GLOBALES Y COORDENADAS DEL MAPA AÉREO
+// ============================================================================
+let chartsInstances = {};
+let globalEquiposCriticos = [];
 
-    const conCache = urlTarget + (urlTarget.includes('?') ? '&' : '?') + '_t=' + Date.now();
+// Coordenadas porcentuales sobre mapa-planta.jpg para los sectores de Equipos_Criticos y Planta
+const COORDS_MAPA_PLANTA = [
+    { sector: "DESHIDRATACIÓN (M1)", x: 43, y: 24 },
+    { sector: "DESHIDRATACIÓN (M2)", x: 49, y: 24 },
+    { sector: "CLARIFICADOR A (M1)", x: 63, y: 38 },
+    { sector: "SILO DE LODOS", x: 26, y: 22 },
+    { sector: "Pretratamiento M1", x: 18, y: 44 },
+    { sector: "Pretratamiento M2", x: 23, y: 56 },
+    { sector: "Sedimentador Primario M1", x: 35, y: 39 },
+    { sector: "Sedimentador Primario M2", x: 38, y: 58 },
+    { sector: "Reactor Biológico M1", x: 48, y: 41 },
+    { sector: "Reactor Biológico M2", x: 52, y: 62 },
+    { sector: "Sedimentador Secundario M2", x: 68, y: 58 },
+    { sector: "Cloración / Desinfección", x: 78, y: 48 },
+    { sector: "Espesador M1", x: 29, y: 26 },
+    { sector: "Espesador M2", x: 34, y: 26 },
+    { sector: "Digestor Anaeróbico", x: 20, y: 19 },
+    { sector: "Gasómetro M1", x: 14, y: 23 },
+    { sector: "Gasómetro M2", x: 14, y: 31 },
+    { sector: "Sopladores M1", x: 45, y: 74 },
+    { sector: "Sopladores M2", x: 55, y: 74 },
+    { sector: "Flotación M1", x: 59, y: 23 },
+    { sector: "Flotación M2", x: 64, y: 23 },
+    { sector: "Sala de Tableros", x: 72, y: 74 },
+    { sector: "Laboratorio M1", x: 84, y: 33 },
+    { sector: "Pañol M1", x: 86, y: 65 }
+];
 
-    Papa.parse(conCache, {
-        download: true,
-        header: true,
-        dynamicTyping: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-            if (results.data && results.data.length > 0) {
-                rawData = results.data;
-                if (dsLabel) {
-                    dsLabel.textContent = "Datos en vivo (Google Sheets)";
-                    dsLabel.className = "text-xs font-medium px-3 py-1.5 bg-green-900/40 text-green-300 rounded-full border border-green-700";
-                }
-                calcularYRenderizarTodo();
-            } else if (urlTarget !== urlBackup) {
-                cargarDatosDesdeGoogle(urlBackup);
-            } else if (dsLabel) {
-                dsLabel.textContent = "Planilla vacía o sin publicar";
-                dsLabel.className = "text-xs font-medium px-3 py-1.5 bg-red-900/40 text-red-300 rounded-full border border-red-700";
-            }
-        },
-        error: function(err) {
-            console.error("Error al conectar:", err);
-            if (urlTarget !== urlBackup) {
-                cargarDatosDesdeGoogle(urlBackup);
-            } else if (dsLabel) {
-                dsLabel.textContent = "Error de conexión con Google Sheets";
-                dsLabel.className = "text-xs font-medium px-3 py-1.5 bg-red-900/40 text-red-300 rounded-full border border-red-700";
-            }
+// ============================================================================
+// FUNCIONES AUXILIARES DE LECTURA Y FORMATO
+// ============================================================================
+function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+}
+
+function num(val) {
+    if (val === null || val === undefined || val === "") return 0;
+    if (typeof val === "number") return isNaN(val) ? 0 : val;
+    let s = String(val).replace(/\$/g, "").replace(/%/g, "").replace(/\s+/g, "").trim();
+    if (s.includes(",") && s.includes(".")) {
+        if (s.lastIndexOf(",") > s.lastIndexOf(".")) {
+            s = s.replace(/\./g, "").replace(",", ".");
+        } else {
+            s = s.replace(/,/g, "");
         }
+    } else if (s.includes(",")) {
+        s = s.replace(",", ".");
+    }
+    const n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+}
+
+function col(row, exactName) {
+    if (!row) return "";
+    if (row[exactName] !== undefined) return row[exactName];
+    const target = exactName.toLowerCase().trim();
+    for (const k of Object.keys(row)) {
+        if (k.toLowerCase().trim() === target) return row[k];
+    }
+    return "";
+}
+
+function sumCol(rows, colName) {
+    return rows.reduce((acc, r) => acc + num(col(r, colName)), 0);
+}
+
+function avgCol(rows, colName) {
+    const valid = rows.map(r => num(col(r, colName))).filter(v => v > 0);
+    if (!valid.length) return 0;
+    return valid.reduce((a, b) => a + b, 0) / valid.length;
+}
+
+function lastNonZero(rows, colName) {
+    for (let i = rows.length - 1; i >= 0; i--) {
+        const v = num(col(rows[i], colName));
+        if (v > 0) return v;
+    }
+    return 0;
+}
+
+function fmtInt(n) {
+    return Math.round(n || 0).toLocaleString("es-AR");
+}
+
+function fmtDec(n, dec = 1) {
+    return (n || 0).toLocaleString("es-AR", {
+        minimumFractionDigits: dec,
+        maximumFractionDigits: dec
     });
 }
 
-function cargarEquiposCriticos() {
-    const conCache = urlEquiposCriticos + '&_t=' + Date.now();
-    Papa.parse(conCache, {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-            equiposCriticosData = results.data || [];
-            renderizarFuncionamientoEquipos();
-        },
-        error: function(err) {
-            console.error("Error cargando Equipos_Criticos:", err);
-            renderizarFuncionamientoEquipos();
-        }
-    });
+function fmtMoney(n) {
+    return "$ " + Math.round(n || 0).toLocaleString("es-AR");
 }
 
-function openTab(tabId, event) {
-    document.querySelectorAll('.tab-content').forEach(t => {
-        t.classList.add('hidden');
-        t.classList.remove('block');
-    });
-    document.querySelectorAll('.tab-btn').forEach(b => {
-        b.classList.remove('border-cyan-500', 'text-cyan-400');
-        b.classList.add('border-transparent', 'text-slate-400');
-    });
+function getMonthKey(fechaStr) {
+    if (!fechaStr) return "Sin fecha";
+    const s = String(fechaStr).trim();
+    const meses = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+    const m1 = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+    if (m1) {
+        const idx = parseInt(m1[2], 10) - 1;
+        const yr = m1[3].slice(-2);
+        if (idx >= 0 && idx < 12) return `${meses[idx]} ${yr}`;
+    }
+    const m2 = s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+    if (m2) {
+        const idx = parseInt(m2[2], 10) - 1;
+        const yr = m2[1].slice(-2);
+        if (idx >= 0 && idx < 12) return `${meses[idx]} ${yr}`;
+    }
+    return s;
+}
 
+function destroyChart(id) {
+    if (chartsInstances[id]) {
+        chartsInstances[id].destroy();
+        delete chartsInstances[id];
+    }
+}
+
+// ============================================================================
+// NAVEGACIÓN DE PESTAÑAS
+// ============================================================================
+function openTab(tabId, evt) {
+    document.querySelectorAll(".tab-content").forEach(el => {
+        el.classList.add("hidden");
+        el.classList.remove("block");
+    });
     const target = document.getElementById(tabId);
     if (target) {
-        target.classList.remove('hidden');
-        target.classList.add('block');
+        target.classList.remove("hidden");
+        target.classList.add("block");
     }
-    if (event && event.currentTarget) {
-        event.currentTarget.classList.remove('border-transparent', 'text-slate-400');
-        event.currentTarget.classList.add('border-cyan-500', 'text-cyan-400');
+
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.classList.remove("border-cyan-500", "text-cyan-400");
+        btn.classList.add("border-transparent", "text-slate-400");
+    });
+    if (evt && evt.currentTarget) {
+        evt.currentTarget.classList.remove("border-transparent", "text-slate-400");
+        evt.currentTarget.classList.add("border-cyan-500", "text-cyan-400");
     }
+
+    setTimeout(() => {
+        Object.values(chartsInstances).forEach(ch => ch && ch.resize());
+    }, 50);
 }
 
-// Utilidades de lectura y cálculo
-function getCleanNumber(val) {
-    if (val === null || val === undefined || val === '') return 0;
-    if (typeof val === 'number') return isNaN(val) ? 0 : val;
-    let clean = String(val).replace(',', '.').replace(/[^\d.-]/g, '').trim();
-    let num = parseFloat(clean);
-    return isNaN(num) ? 0 : num;
+// ============================================================================
+// DESCARGA DE CSV DESDE GOOGLE SHEETS
+// ============================================================================
+function fetchSheetCSV(sheetName) {
+    return new Promise((resolve) => {
+        Papa.parse(getSheetUrl(sheetName), {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
+            complete: (res) => resolve(res.data || []),
+            error: (err) => {
+                console.warn(`Error leyendo pestaña "${sheetName}":`, err);
+                resolve([]);
+            }
+        });
+    });
 }
 
-function getVal(row, colName) {
-    if (!row) return undefined;
-    if (row[colName] !== undefined) return row[colName];
-    const target = String(colName).toLowerCase().trim();
-    for (let k of Object.keys(row)) {
-        if (String(k).toLowerCase().trim() === target) return row[k];
+// ============================================================================
+// ARRANQUE DEL TABLERO
+// ============================================================================
+async function initDashboard() {
+    if (typeof lucide !== "undefined") {
+        lucide.createIcons();
     }
-    return undefined;
-}
 
-function getSum(arr, col) {
-    return arr.reduce((acc, row) => acc + getCleanNumber(getVal(row, col)), 0);
-}
-
-function getSumAliases(arr, aliases) {
-    for (let a of aliases) {
-        const s = getSum(arr, a);
-        if (s !== 0) return s;
-    }
-    return 0;
-}
-
-function getAvg(arr, col) {
-    const validRows = arr.filter(row => getCleanNumber(getVal(row, col)) > 0);
-    if (validRows.length === 0) return 0;
-    const sum = validRows.reduce((acc, row) => acc + getCleanNumber(getVal(row, col)), 0);
-    return (sum / validRows.length).toFixed(1);
-}
-
-function calcRemocion(ent, sal) {
-    let entrada = getCleanNumber(ent);
-    let salida = getCleanNumber(sal);
-    if (entrada > 0) return (((entrada - salida) / entrada) * 100).toFixed(1);
-    return 0;
-}
-
-function setTexto(id, valor) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = valor;
-}
-
-function normalizar(str) {
-    return String(str || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-}
-
-function getMonthYear(fechaRaw) {
-    if (!fechaRaw) return 'General';
-    const str = String(fechaRaw).trim();
-    const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    if (str.includes('/')) {
-        const parts = str.split('/');
-        if (parts.length >= 2) {
-            const mIdx = parseInt(parts[1], 10) - 1;
-            const year = parts[2] ? parts[2].slice(-2) : '';
-            if (mIdx >= 0 && mIdx < 12) return `${meses[mIdx]} ${year}`.trim();
-            return `${parts[1]}/${parts[2] || ''}`;
-        }
-    } else if (str.includes('-')) {
-        const parts = str.split('-');
-        if (parts.length >= 2) {
-            const mIdx = parseInt(parts[1], 10) - 1;
-            const year = parts[0] ? parts[0].slice(-2) : '';
-            if (mIdx >= 0 && mIdx < 12) return `${meses[mIdx]} ${year}`.trim();
-            return `${parts[1]}/${parts[0]}`;
-        }
-    }
-    return str;
-}
-
-function calcularYRenderizarTodo() {
-    if (!rawData.length) return;
-    const lastRow = rawData[rawData.length - 1];
-    Chart.defaults.color = '#94a3b8';
-    Chart.defaults.font.family = 'Inter';
+    const label = document.getElementById("dataSourceLabel");
 
     try {
-        // ==============================================
-        // 1. PESTAÑA RESUMEN GENERAL
-        // ==============================================
-        const avgDboEntM1 = getAvg(rawData, 'dbo_ent_m1');
-        const avgDboSalM1 = getAvg(rawData, 'dbo_sal_m1');
-        const avgDqoEntM1 = getAvg(rawData, 'dqo_ent_m1');
-        const avgDqoSalM1 = getAvg(rawData, 'dqo_sal_m1');
-        const avgMesEntM1 = getAvg(rawData, 'mes_ent_m1');
-        const avgMesSalM1 = getAvg(rawData, 'mes_sal_m1');
+        const [rowsHoja1, rowsEquipos] = await Promise.all([
+            fetchSheetCSV(SHEETS.PRINCIPAL),
+            fetchSheetCSV(SHEETS.EQUIPOS)
+        ]);
 
-        setTexto('m1_dbo_ent', avgDboEntM1);
-        setTexto('m1_dbo_sal', avgDboSalM1);
-        setTexto('m1_dqo_ent', avgDqoEntM1);
-        setTexto('m1_dqo_sal', avgDqoSalM1);
-        setTexto('m1_mes_ent', avgMesEntM1);
-        setTexto('m1_mes_sal', avgMesSalM1);
-        setTexto('m1_caudal_dis', getCleanNumber(getVal(lastRow, 'caudal_dis_m1')) || 0.3);
-        setTexto('m1_caudal_trat', getCleanNumber(getVal(lastRow, 'caudal_trat_m1')) || 0);
-
-        const energiaTotalM1 = getSum(rawData, 'energia_m1_ts1') + getSum(rawData, 'energia_m1_ts2') + getSum(rawData, 'energia_m1_ts3') || getSum(rawData, 'energia_m1');
-        setTexto('m1_energia_val', energiaTotalM1.toLocaleString('es-AR'));
-
-        const volTotalM1 = rawData.reduce((acc, r) => acc + (getCleanNumber(getVal(r, 'caudal_trat_m1')) * 86400), 0);
-        setTexto('m1_kw_m3', volTotalM1 > 0 ? (energiaTotalM1 / volTotalM1).toFixed(3) : '0.000');
-
-        const avgDboEntM2 = getAvg(rawData, 'dbo_ent_m2');
-        const avgDboSalM2 = getAvg(rawData, 'dbo_sal_m2');
-        const avgDqoEntM2 = getAvg(rawData, 'dqo_ent_m2');
-        const avgDqoSalM2 = getAvg(rawData, 'dqo_sal_m2');
-        const avgMesEntM2 = getAvg(rawData, 'mes_ent_m2');
-        const avgMesSalM2 = getAvg(rawData, 'mes_sal_m2');
-
-        setTexto('m2_dbo_ent', avgDboEntM2);
-        setTexto('m2_dbo_sal', avgDboSalM2);
-        setTexto('m2_dqo_ent', avgDqoEntM2);
-        setTexto('m2_dqo_sal', avgDqoSalM2);
-        setTexto('m2_mes_ent', avgMesEntM2);
-        setTexto('m2_mes_sal', avgMesSalM2);
-        setTexto('m2_caudal_dis', getCleanNumber(getVal(lastRow, 'caudal_dis_m2')) || 0.9);
-        setTexto('m2_caudal_trat', getCleanNumber(getVal(lastRow, 'caudal_trat_m2')) || 0);
-
-        const energiaTotalM2 = getSum(rawData, 'energia_m2_ts1') + getSum(rawData, 'energia_m2_ts2') + getSum(rawData, 'energia_m2_ts3') || getSum(rawData, 'energia_m2');
-        setTexto('m2_energia_val', energiaTotalM2.toLocaleString('es-AR'));
-
-        const volTotalM2 = rawData.reduce((acc, r) => acc + (getCleanNumber(getVal(r, 'caudal_trat_m2')) * 86400), 0);
-        setTexto('m2_kw_m3', volTotalM2 > 0 ? (energiaTotalM2 / volTotalM2).toFixed(3) : '0.000');
-
-        setTexto('tot_energia', getSum(rawData, 'energia_total').toLocaleString('es-AR'));
-        setTexto('tot_biosolidos', getSum(rawData, 'biosolidos_ton').toLocaleString('es-AR'));
-        setTexto('tot_arenas', getSum(rawData, 'arenas_ton').toLocaleString('es-AR'));
-        setTexto('tot_polimero', getSum(rawData, 'polimero_kg').toLocaleString('es-AR'));
-
-        // RRHH y Resumen Mantenimiento en Portada
-        setTexto('rrhh_admin_lbl', getCleanNumber(getVal(lastRow, 'rrhh_admin')) || 0);
-        setTexto('rrhh_operativo_lbl', getCleanNumber(getVal(lastRow, 'rrhh_operativo')) || 0);
-        setTexto('hs_normales_lbl', getSum(rawData, 'hs_normales').toLocaleString('es-AR'));
-        setTexto('hs_extra_lbl', getSum(rawData, 'hs_extra').toLocaleString('es-AR'));
-
-        const countPrev = getSum(rawData, 'mant_preventivos');
-        const countCorr = getSum(rawData, 'mant_correctivos');
-        const countAct = getSum(rawData, 'mant_actividades') || getSum(rawData, 'mant_generales');
-
-        setTexto('mant_prev', countPrev);
-        setTexto('mant_corr', countCorr);
-        setTexto('mant_act', countAct);
-
-        // Agrupación Mensual General
-        const resumenMensual = {};
-        rawData.forEach(r => {
-            const mesKey = getMonthYear(getVal(r, 'fecha'));
-            if (!resumenMensual[mesKey]) {
-                resumenMensual[mesKey] = {
-                    energia: 0, biosolidos: 0, arenas: 0, polimero: 0,
-                    prev: 0, corr: 0, act: 0,
-                    panolItems: 0, panolPlata: 0,
-                    costeBio: 0, costeRsu: 0
-                };
-            }
-            resumenMensual[mesKey].energia += getCleanNumber(getVal(r, 'energia_total'));
-            resumenMensual[mesKey].biosolidos += getCleanNumber(getVal(r, 'biosolidos_ton'));
-            resumenMensual[mesKey].arenas += getCleanNumber(getVal(r, 'arenas_ton'));
-            resumenMensual[mesKey].polimero += getCleanNumber(getVal(r, 'polimero_kg'));
-
-            resumenMensual[mesKey].prev += getCleanNumber(getVal(r, 'mant_preventivos'));
-            resumenMensual[mesKey].corr += getCleanNumber(getVal(r, 'mant_correctivos'));
-            resumenMensual[mesKey].act += getCleanNumber(getVal(r, 'mant_actividades')) || getCleanNumber(getVal(r, 'mant_generales'));
-
-            resumenMensual[mesKey].panolItems += getCleanNumber(getVal(r, 'panol_items_consumidos') ?? getVal(r, 'panol_items'));
-            resumenMensual[mesKey].panolPlata += getCleanNumber(getVal(r, 'panol_plata_consumida') ?? getVal(r, 'panol_plata'));
-            resumenMensual[mesKey].costeBio += getCleanNumber(getVal(r, 'coste_biosolidos') ?? getVal(r, 'costo_biosolidos'));
-            resumenMensual[mesKey].costeRsu += getCleanNumber(getVal(r, 'coste_rsu') ?? getVal(r, 'costo_rsu'));
-        });
-
-        const mesesLabels = Object.keys(resumenMensual);
-
-        const buildMonthlyBar = (canvasId, instanceRef, label, dataArr, colorHex, unit) => {
-            if (instanceRef) instanceRef.destroy();
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return null;
-            return new Chart(ctx.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: mesesLabels,
-                    datasets: [{ label, data: dataArr, backgroundColor: colorHex, borderRadius: 6 }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: ctx => `${label}: ${(ctx.parsed.y || 0).toLocaleString('es-AR')} ${unit}`
-                            }
-                        }
-                    },
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
-        };
-
-        cMensualEnergia = buildMonthlyBar('chartMensualEnergia', cMensualEnergia, 'Energía Total', mesesLabels.map(m => resumenMensual[m].energia), '#facc15', 'kWh');
-        cMensualBiosolidos = buildMonthlyBar('chartMensualBiosolidos', cMensualBiosolidos, 'Biosólidos', mesesLabels.map(m => resumenMensual[m].biosolidos), '#d97706', 'Ton');
-        cMensualArenas = buildMonthlyBar('chartMensualArenas', cMensualArenas, 'Arenas', mesesLabels.map(m => resumenMensual[m].arenas), '#fb923c', 'Ton');
-        cMensualPolimero = buildMonthlyBar('chartMensualPolimero', cMensualPolimero, 'Polímero', mesesLabels.map(m => resumenMensual[m].polimero), '#818cf8', 'Kg');
-
-        // ==============================================
-        // 2. PESTAÑA PROCESO
-        // ==============================================
-        setTexto('proc_rem_dbo_m1', calcRemocion(avgDboEntM1, avgDboSalM1));
-        setTexto('proc_rem_dqo_m1', calcRemocion(avgDqoEntM1, avgDqoSalM1));
-        setTexto('proc_rem_mes_m1', calcRemocion(avgMesEntM1, avgMesSalM1));
-        setTexto('proc_norma_m1', getSum(rawData, 'fuera_norma_m1'));
-
-        setTexto('proc_rem_dbo_m2', calcRemocion(avgDboEntM2, avgDboSalM2));
-        setTexto('proc_rem_dqo_m2', calcRemocion(avgDqoEntM2, avgDqoSalM2));
-        setTexto('proc_rem_mes_m2', calcRemocion(avgMesEntM2, avgMesSalM2));
-        setTexto('proc_norma_m2', getSum(rawData, 'fuera_norma_m2'));
-
-        const fechasLabels = rawData.map(r => String(getVal(r, 'fecha') || '').slice(0, 10));
-
-        if (cProcesoDbo) cProcesoDbo.destroy();
-        const ctxProcDbo = document.getElementById('chartProcesoDbo');
-        if (ctxProcDbo) {
-            cProcesoDbo = new Chart(ctxProcDbo.getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: fechasLabels,
-                    datasets: [
-                        { label: 'DBO Salida M1', data: rawData.map(r => getCleanNumber(getVal(r, 'dbo_sal_m1'))), borderColor: '#22d3ee', backgroundColor: 'rgba(34,211,238,0.1)', tension: 0.3 },
-                        { label: 'DBO Salida M2', data: rawData.map(r => getCleanNumber(getVal(r, 'dbo_sal_m2'))), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', tension: 0.3 }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
-            });
+        if (!rowsHoja1.length) {
+            throw new Error("Hoja 1 vacía o sin permisos públicos de lectura.");
         }
 
-        if (cProcesoCaudales) cProcesoCaudales.destroy();
-        const ctxProcCaud = document.getElementById('chartProcesoCaudales');
-        if (ctxProcCaud) {
-            cProcesoCaudales = new Chart(ctxProcCaud.getContext('2d'), {
-                type: 'line',
-                data: {
-                    labels: fechasLabels,
-                    datasets: [
-                        { label: 'Caudal M1 (m³/s)', data: rawData.map(r => getCleanNumber(getVal(r, 'caudal_trat_m1'))), borderColor: '#06b6d4', tension: 0.3 },
-                        { label: 'Caudal M2 (m³/s)', data: rawData.map(r => getCleanNumber(getVal(r, 'caudal_trat_m2'))), borderColor: '#34d399', tension: 0.3 }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
-            });
+        renderResumenYProceso(rowsHoja1);
+        renderFuncionamiento(rowsHoja1, rowsEquipos);
+        renderMantenimiento(rowsHoja1);
+        renderControlYGestion(rowsHoja1);
+
+        if (label) {
+            label.textContent = "Datos en vivo (Google Sheets)";
+            label.className = "text-xs font-medium px-3 py-1.5 bg-emerald-950/80 text-emerald-400 rounded-full border border-emerald-700/60";
         }
-
-        // ==============================================
-        // 3. PESTAÑA FUNCIONAMIENTO (KPIs + MAPA)
-        // ==============================================
-        const totalRsu = getSumAliases(rawData, ['rsu_ton', 'cant_rsu', 'rsu']) || (getSum(rawData, 'rsu_m1') + getSum(rawData, 'rsu_m2'));
-        const totalOt = getSumAliases(rawData, ['ot_cantidad', 'cant_ot', 'ordenes_trabajo', 'ot']);
-        setTexto('func_cant_rsu', totalRsu.toLocaleString('es-AR'));
-        setTexto('func_cant_ot', totalOt.toLocaleString('es-AR'));
-        renderizarFuncionamientoEquipos();
-
-        // ==============================================
-        // 4. PESTAÑA MANTENIMIENTO
-        // ==============================================
-        const countTotal = countPrev + countCorr + countAct;
-        setTexto('kpi_mant_total', countTotal);
-        setTexto('kpi_mant_prev', countPrev);
-        setTexto('kpi_mant_corr', countCorr);
-        setTexto('kpi_mant_act', countAct);
-
-        const hsPrev = getSum(rawData, 'horas_prev');
-        const hsCorr = getSum(rawData, 'horas_corr');
-        const hsTareas = getSum(rawData, 'horas_tareas');
-        const hsTotal = hsPrev + hsCorr + hsTareas;
-
-        setTexto('kpi_horas_total', hsTotal);
-        setTexto('kpi_horas_prev', hsPrev);
-        setTexto('kpi_horas_corr', hsCorr);
-        setTexto('kpi_horas_tareas', hsTareas);
-
-        // Promedios
-        setTexto('kpi_prom_total', countTotal > 0 ? (hsTotal / countTotal).toFixed(1) : 0);
-        setTexto('kpi_prom_prev', countPrev > 0 ? (hsPrev / countPrev).toFixed(1) : 0);
-        setTexto('kpi_prom_corr', countCorr > 0 ? (hsCorr / countCorr).toFixed(1) : 0);
-        setTexto('kpi_prom_act', countAct > 0 ? (hsTareas / countAct).toFixed(1) : 0);
-
-        // Gráfico Barras Mensual Mantenimiento
-        if (cMantMensual) cMantMensual.destroy();
-        const ctxMantMensual = document.getElementById('chartMantMensual');
-        if (ctxMantMensual) {
-            cMantMensual = new Chart(ctxMantMensual.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: mesesLabels,
-                    datasets: [
-                        { label: 'Preventivos', data: mesesLabels.map(m => resumenMensual[m].prev), backgroundColor: '#22c55e', borderRadius: 4 },
-                        { label: 'Correctivos', data: mesesLabels.map(m => resumenMensual[m].corr), backgroundColor: '#ef4444', borderRadius: 4 },
-                        { label: 'Actividades', data: mesesLabels.map(m => resumenMensual[m].act), backgroundColor: '#38bdf8', borderRadius: 4 }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-                }
-            });
+    } catch (err) {
+        console.error("Error cargando datos:", err);
+        if (label) {
+            label.textContent = "Error de conexión con Google Sheets";
+            label.className = "text-xs font-medium px-3 py-1.5 bg-red-950/80 text-red-400 rounded-full border border-red-700/60";
         }
-
-        // Gráfico Torta: Preventivos vs Correctivos vs Actividades
-        if (cMantTortas) cMantTortas.destroy();
-        const ctxMantTortas = document.getElementById('chartMantTortas');
-        if (ctxMantTortas) {
-            cMantTortas = new Chart(ctxMantTortas.getContext('2d'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Preventivos', 'Correctivos', 'Actividades'],
-                    datasets: [{
-                        data: [countPrev, countCorr, countAct],
-                        backgroundColor: ['#22c55e', '#ef4444', '#38bdf8'],
-                        borderColor: '#1e293b',
-                        borderWidth: 2
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-        }
-
-        // Gráfico Criticidad Correctivos
-        if (cCriticidad) cCriticidad.destroy();
-        const ctxCrit = document.getElementById('chartCriticidad');
-        if (ctxCrit) {
-            cCriticidad = new Chart(ctxCrit.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: ['Alta', 'Media', 'Baja'],
-                    datasets: [{
-                        label: 'Correctivos',
-                        data: [getSum(rawData, 'corr_alto'), getSum(rawData, 'corr_medio'), getSum(rawData, 'corr_bajo')],
-                        backgroundColor: ['#ef4444', '#f59e0b', '#10b981'],
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-                }
-            });
-        }
-
-        // Gráfico de los 24 Sectores (Escala libre y coincidencia exacta sin solapamientos)
-        const availableCols = rawData.length > 0 ? Object.keys(rawData[0]) : [];
-        const conteoSectores = {};
-
-        SECTORES_MAXIMO.forEach(sec => {
-            let totalSec = 0;
-            const codeNorm = normalizar(sec.code);
-            const labelNorm = normalizar(sec.label);
-
-            availableCols.forEach(col => {
-                const cNorm = normalizar(col);
-                const coincide =
-                    cNorm === labelNorm ||
-                    cNorm === codeNorm ||
-                    cNorm === `sec_${codeNorm}` ||
-                    cNorm.startsWith(`${codeNorm} (`);
-
-                if (coincide) {
-                    totalSec += getSum(rawData, col);
-                }
-            });
-            conteoSectores[sec.code] = totalSec;
-        });
-
-        if (cSectores) cSectores.destroy();
-        const ctxSectores = document.getElementById('chartSectores');
-        if (ctxSectores) {
-            cSectores = new Chart(ctxSectores.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: SECTORES_MAXIMO.map(s => s.label),
-                    datasets: [{
-                        label: 'Intervenciones',
-                        data: SECTORES_MAXIMO.map(s => conteoSectores[s.code] || 0),
-                        backgroundColor: '#06b6d4',
-                        hoverBackgroundColor: '#22d3ee',
-                        borderRadius: 4,
-                        barPercentage: 0.75
-                    }]
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            ticks: { precision: 0 },
-                            grid: { color: 'rgba(148, 163, 184, 0.1)' }
-                        },
-                        y: {
-                            ticks: { color: '#cbd5e1', font: { size: 11 } },
-                            grid: { display: false }
-                        }
-                    }
-                }
-            });
-        }
-
-        // Top 10 Equipos Más Intervenidos
-        let equiposMap = {};
-        rawData.forEach(r => {
-            let eqStr = getVal(r, 'equipos_intervenidos');
-            if (eqStr && typeof eqStr === 'string') {
-                eqStr.split(',').map(s => s.trim()).filter(s => s !== '').forEach(rawItem => {
-                    let nombre = rawItem;
-                    let sector = 'No especificado';
-                    const firstParen = rawItem.indexOf('(');
-                    if (firstParen !== -1) {
-                        nombre = rawItem.substring(0, firstParen).trim();
-                        sector = rawItem.substring(firstParen + 1).replace(/\)+$/, '').trim();
-                    }
-                    const key = `${nombre}||${sector}`;
-                    if (!equiposMap[key]) equiposMap[key] = { nombre, sector, count: 0 };
-                    equiposMap[key].count += 1;
-                });
-            }
-        });
-
-        const topEquipos = Object.values(equiposMap).sort((a, b) => b.count - a.count).slice(0, 10);
-        const tbodyEq = document.getElementById('tabla_equipos_body');
-        if (tbodyEq) {
-            if (topEquipos.length === 0) {
-                tbodyEq.innerHTML = '<tr><td colspan="4" class="text-center py-6 text-slate-500 italic">No hay registros de equipos intervenidos aún</td></tr>';
-            } else {
-                tbodyEq.innerHTML = topEquipos.map((eq, idx) => `
-                    <tr class="border-b border-slate-700/50 hover:bg-slate-800/50 transition">
-                        <td class="py-3 px-3 text-cyan-400 font-medium">#${idx + 1}</td>
-                        <td class="py-3 px-3 text-white font-medium">${eq.nombre}</td>
-                        <td class="py-3 px-3 text-slate-400 text-xs">${eq.sector}</td>
-                        <td class="py-3 px-3 text-amber-400 font-bold text-right">${eq.count}</td>
-                    </tr>
-                `).join('');
-            }
-        }
-
-        // ==============================================
-        // 5. PESTAÑA CONTROL Y GESTIÓN
-        // ==============================================
-        const totPanolItems = mesesLabels.reduce((acc, m) => acc + resumenMensual[m].panolItems, 0);
-        const totPanolPlata = mesesLabels.reduce((acc, m) => acc + resumenMensual[m].panolPlata, 0);
-
-        setTexto('tot_panol_items', totPanolItems.toLocaleString('es-AR'));
-        setTexto('tot_panol_plata', '$ ' + totPanolPlata.toLocaleString('es-AR'));
-
-        const tbodyPanol = document.getElementById('tabla_panol_mensual');
-        if (tbodyPanol) {
-            if (mesesLabels.length === 0) {
-                tbodyPanol.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-slate-500 italic">Sin registros</td></tr>';
-            } else {
-                tbodyPanol.innerHTML = mesesLabels.map(m => `
-                    <tr class="border-b border-slate-700/50">
-                        <td class="py-2 px-3 text-slate-200 font-medium">${m}</td>
-                        <td class="py-2 px-3 text-right text-cyan-400 font-semibold">${resumenMensual[m].panolItems.toLocaleString('es-AR')}</td>
-                        <td class="py-2 px-3 text-right text-emerald-400 font-semibold">$ ${resumenMensual[m].panolPlata.toLocaleString('es-AR')}</td>
-                    </tr>
-                `).join('');
-            }
-        }
-
-        if (cPanol) cPanol.destroy();
-        const ctxPanol = document.getElementById('chartPanol');
-        if (ctxPanol) {
-            cPanol = new Chart(ctxPanol.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: mesesLabels,
-                    datasets: [
-                        { label: 'Ítems Consumidos', data: mesesLabels.map(m => resumenMensual[m].panolItems), backgroundColor: '#22d3ee', yAxisID: 'y', borderRadius: 4 },
-                        { label: 'Consumo en Plata ($)', data: mesesLabels.map(m => resumenMensual[m].panolPlata), type: 'line', borderColor: '#10b981', backgroundColor: '#10b981', borderWidth: 2, yAxisID: 'y1', tension: 0.3 }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { type: 'linear', position: 'left', beginAtZero: true, title: { display: true, text: 'Ítems' } },
-                        y1: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: 'Pesos ($)' } }
-                    }
-                }
-            });
-        }
-
-        // Coste Biosólidos y RSU ($)
-        if (cCosteResiduos) cCosteResiduos.destroy();
-        const ctxCosteRes = document.getElementById('chartCosteResiduos');
-        if (ctxCosteRes) {
-            cCosteResiduos = new Chart(ctxCosteRes.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: mesesLabels,
-                    datasets: [
-                        { label: 'Coste Biosólidos ($)', data: mesesLabels.map(m => resumenMensual[m].costeBio), backgroundColor: '#d97706', borderRadius: 4 },
-                        { label: 'Coste RSU ($)', data: mesesLabels.map(m => resumenMensual[m].costeRsu), backgroundColor: '#f59e0b', borderRadius: 4 }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
-            });
-        }
-
-        // Totalizado Biosólidos y RSU M1 vs M2
-        const bioM1 = getSum(rawData, 'biosolidos_m1');
-        const bioM2 = getSum(rawData, 'biosolidos_m2');
-        const rsuM1 = getSum(rawData, 'rsu_m1');
-        const rsuM2 = getSum(rawData, 'rsu_m2');
-
-        if (cBiosolidosRsu) cBiosolidosRsu.destroy();
-        const ctxBioRsu = document.getElementById('chartBiosolidosRsu');
-        if (ctxBioRsu) {
-            cBiosolidosRsu = new Chart(ctxBioRsu.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: ['Módulo 1 (M1)', 'Módulo 2 (M2)'],
-                    datasets: [
-                        { label: 'Biosólidos (Ton)', data: [bioM1, bioM2], backgroundColor: '#06b6d4', borderRadius: 6 },
-                        { label: 'RSU (Ton)', data: [rsuM1, rsuM2], backgroundColor: '#f59e0b', borderRadius: 6 }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
-            });
-        }
-
-        // Inversiones y Explotaciones
-        const invObras = getSumAliases(rawData, ['inversiones_obras', 'inv_obras', 'obras']);
-        const invEquip = getSumAliases(rawData, ['inversiones_equipamiento', 'inv_equipamiento', 'inv_equip', 'equipamiento']);
-        const expRep = getSumAliases(rawData, ['explotaciones_reparaciones', 'exp_reparaciones', 'reparaciones']);
-
-        setTexto('gest_inv_obras', '$ ' + invObras.toLocaleString('es-AR'));
-        setTexto('gest_inv_equip', '$ ' + invEquip.toLocaleString('es-AR'));
-        setTexto('gest_exp_rep', '$ ' + expRep.toLocaleString('es-AR'));
-
-    } catch (e) {
-        console.error("Error al renderizar el dashboard:", e);
     }
 }
 
-// ==============================================
-// FUNCIONES DE MAPA Y EQUIPOS CRÍTICOS (FUNCIONAMIENTO)
-// ==============================================
-function filtrarEquiposPorSector(nombreSector) {
-    sectorSeleccionadoMapa = nombreSector;
-    renderizarFuncionamientoEquipos();
+// ============================================================================
+// PESTAÑA 1 (RESUMEN GENERAL) Y PESTAÑA 2 (PROCESO)
+// ============================================================================
+function renderResumenYProceso(rows) {
+    // Promedios DBO, DQO, MES
+    const m1DboEnt = avgCol(rows, "dbo_ent_m1");
+    const m1DboSal = avgCol(rows, "dbo_sal_m1");
+    const m1DqoEnt = avgCol(rows, "dqo_ent_m1");
+    const m1DqoSal = avgCol(rows, "dqo_sal_m1");
+    const m1MesEnt = avgCol(rows, "mes_ent_m1");
+    const m1MesSal = avgCol(rows, "mes_sal_m1");
+
+    const m2DboEnt = avgCol(rows, "dbo_ent_m2");
+    const m2DboSal = avgCol(rows, "dbo_sal_m2");
+    const m2DqoEnt = avgCol(rows, "dqo_ent_m2");
+    const m2DqoSal = avgCol(rows, "dqo_sal_m2");
+    const m2MesEnt = avgCol(rows, "mes_ent_m2");
+    const m2MesSal = avgCol(rows, "mes_sal_m2");
+
+    // Caudales (último valor cargado o promedio)
+    const m1CaudalDis = lastNonZero(rows, "caudal_dis_m1") || 0.3;
+    const m1CaudalTrat = avgCol(rows, "caudal_trat_m1");
+    const m2CaudalDis = lastNonZero(rows, "caudal_dis_m2") || 0.9;
+    const m2CaudalTrat = avgCol(rows, "caudal_trat_m2");
+
+    // Energías M1 (TS1+TS2+TS3), M2 (TS1+TS2+TS3) y Total Planta
+    const eM1 = sumCol(rows, "energia_m1_ts1") + sumCol(rows, "energia_m1_ts2") + sumCol(rows, "energia_m1_ts3");
+    const eM2 = sumCol(rows, "energia_m2_ts1") + sumCol(rows, "energia_m2_ts2") + sumCol(rows, "energia_m2_ts3");
+    const eTot = sumCol(rows, "energia_total") || (eM1 + eM2);
+
+    // Ratio energético (kWh / m3)
+    const volM1 = rows.reduce((acc, r) => acc + (num(col(r, "caudal_trat_m1")) * 86400), 0);
+    const volM2 = rows.reduce((acc, r) => acc + (num(col(r, "caudal_trat_m2")) * 86400), 0);
+    const ratioM1 = volM1 > 0 ? eM1 / volM1 : 0;
+    const ratioM2 = volM2 > 0 ? eM2 / volM2 : 0;
+
+    // Tarjetas M1 y M2 en Resumen General
+    setText("m1_caudal_dis", fmtDec(m1CaudalDis, 1));
+    setText("m1_dbo_ent", fmtInt(m1DboEnt));
+    setText("m1_dbo_sal", fmtInt(m1DboSal));
+    setText("m1_dqo_ent", fmtInt(m1DqoEnt));
+    setText("m1_dqo_sal", fmtInt(m1DqoSal));
+    setText("m1_mes_ent", fmtInt(m1MesEnt));
+    setText("m1_mes_sal", fmtInt(m1MesSal));
+    setText("m1_caudal_trat", fmtDec(m1CaudalTrat, 1));
+    setText("m1_energia_val", fmtInt(eM1));
+    setText("m1_kw_m3", fmtDec(ratioM1, 3));
+
+    setText("m2_caudal_dis", fmtDec(m2CaudalDis, 1));
+    setText("m2_dbo_ent", fmtInt(m2DboEnt));
+    setText("m2_dbo_sal", fmtInt(m2DboSal));
+    setText("m2_dqo_ent", fmtInt(m2DqoEnt));
+    setText("m2_dqo_sal", fmtInt(m2DqoSal));
+    setText("m2_mes_ent", fmtInt(m2MesEnt));
+    setText("m2_mes_sal", fmtInt(m2MesSal));
+    setText("m2_caudal_trat", fmtDec(m2CaudalTrat, 1));
+    setText("m2_energia_val", fmtInt(eM2));
+    setText("m2_kw_m3", fmtDec(ratioM2, 3));
+
+    // Totales Acumulados Planta
+    setText("tot_energia", fmtInt(eTot));
+    setText("tot_biosolidos", fmtInt(sumCol(rows, "biosolidos_ton")));
+    setText("tot_arenas", fmtInt(sumCol(rows, "arenas_ton")));
+    setText("tot_polimero", fmtInt(sumCol(rows, "polimero_kg")));
+
+    // Dotación y Horas RRHH en Resumen General
+    setText("rrhh_admin_lbl", fmtInt(sumCol(rows, "rrhh_admin")));
+    setText("rrhh_operativo_lbl", fmtInt(sumCol(rows, "rrhh_operativo")));
+    setText("hs_normales_lbl", fmtInt(sumCol(rows, "hs_normales")));
+    setText("hs_extra_lbl", fmtInt(sumCol(rows, "hs_extra")));
+
+    // Resumen Mantenimiento en Resumen General
+    setText("mant_prev", fmtInt(sumCol(rows, "mant_preventivos")));
+    setText("mant_corr", fmtInt(sumCol(rows, "mant_correctivos")));
+    setText("mant_act", fmtInt(sumCol(rows, "mant_actividades") + sumCol(rows, "mant_generales")));
+
+    // Agrupación Mensual para los 4 gráficos de barras de Resumen General
+    const mensual = {};
+    rows.forEach(r => {
+        const f = col(r, "fecha");
+        if (!f) return;
+        const mKey = getMonthKey(f);
+        if (!mensual[mKey]) {
+            mensual[mKey] = { energia: 0, biosolidos: 0, arenas: 0, polimero: 0 };
+        }
+        mensual[mKey].energia += num(col(r, "energia_total"));
+        mensual[mKey].biosolidos += num(col(r, "biosolidos_ton"));
+        mensual[mKey].arenas += num(col(r, "arenas_ton"));
+        mensual[mKey].polimero += num(col(r, "polimero_kg"));
+    });
+
+    const mLabels = Object.keys(mensual);
+    renderBarChart("chartMensualEnergia", mLabels, mLabels.map(k => mensual[k].energia), "Energía (kWh)", "#facc15");
+    renderBarChart("chartMensualBiosolidos", mLabels, mLabels.map(k => mensual[k].biosolidos), "Biosólidos (Ton)", "#f97316");
+    renderBarChart("chartMensualArenas", mLabels, mLabels.map(k => mensual[k].arenas), "Arenas (Ton)", "#fb923c");
+    renderBarChart("chartMensualPolimero", mLabels, mLabels.map(k => mensual[k].polimero), "Polímero (Kg)", "#818cf8");
+
+    // ------------------------------------------------------------------------
+    // PESTAÑA 2: PROCESO (EFICIENCIA DE REMOCIÓN + FUERA DE NORMA + EVOLUCIÓN)
+    // ------------------------------------------------------------------------
+    const calcRem = (ent, sal) => (ent > 0 ? Math.max(0, ((ent - sal) / ent) * 100) : 0);
+
+    setText("proc_rem_dbo_m1", fmtDec(calcRem(m1DboEnt, m1DboSal), 1));
+    setText("proc_rem_dqo_m1", fmtDec(calcRem(m1DqoEnt, m1DqoSal), 1));
+    setText("proc_rem_mes_m1", fmtDec(calcRem(m1MesEnt, m1MesSal), 1));
+    setText("proc_norma_m1", fmtInt(sumCol(rows, "fuera_norma_m1")));
+
+    setText("proc_rem_dbo_m2", fmtDec(calcRem(m2DboEnt, m2DboSal), 1));
+    setText("proc_rem_dqo_m2", fmtDec(calcRem(m2DqoEnt, m2DqoSal), 1));
+    setText("proc_rem_mes_m2", fmtDec(calcRem(m2MesEnt, m2MesSal), 1));
+    setText("proc_norma_m2", fmtInt(sumCol(rows, "fuera_norma_m2")));
+
+    const rowsConFecha = rows.filter(r => col(r, "fecha") !== "");
+    const fLabels = rowsConFecha.map(r => col(r, "fecha"));
+    const dboM1Arr = rowsConFecha.map(r => num(col(r, "dbo_sal_m1")));
+    const dboM2Arr = rowsConFecha.map(r => num(col(r, "dbo_sal_m2")));
+    const qM1Arr = rowsConFecha.map(r => num(col(r, "caudal_trat_m1")));
+    const qM2Arr = rowsConFecha.map(r => num(col(r, "caudal_trat_m2")));
+
+    renderDualLineChart("chartProcesoDbo", fLabels, "DBO Salida M1 (mg/L)", dboM1Arr, "#22d3ee", "DBO Salida M2 (mg/L)", dboM2Arr, "#34d399");
+    renderDualLineChart("chartProcesoCaudales", fLabels, "Caudal M1 (m³/s)", qM1Arr, "#22d3ee", "Caudal M2 (m³/s)", qM2Arr, "#34d399");
 }
 
-function renderizarFuncionamientoEquipos() {
-    const equiposCriticos = [];
-    equiposCriticosData.forEach(r => {
-        const nombreEq = getVal(r, 'equipo') ?? getVal(r, 'eq_critico');
-        if (nombreEq && String(nombreEq).trim() !== '') {
-            const sectorRaw = String(getVal(r, 'sector_mapa') ?? getVal(r, 'eq_sector') ?? '').trim();
-            const estadoRaw = String(getVal(r, 'estado') ?? getVal(r, 'eq_estado') ?? 'Operativo').trim();
-            const detalleRaw = String(getVal(r, 'detalle') ?? getVal(r, 'eq_detalle') ?? '').trim();
+// ============================================================================
+// PESTAÑA 3: FUNCIONAMIENTO (RSU, OT, MAPA INTERACTIVO Y EQUIPOS CRÍTICOS)
+// ============================================================================
+function renderFuncionamiento(rowsHoja1, rowsEquipos) {
+    setText("func_cant_rsu", fmtInt(sumCol(rowsHoja1, "cant_rsu")));
+    setText("func_cant_ot", fmtInt(sumCol(rowsHoja1, "cant_ot")));
 
-            const estLower = normalizar(estadoRaw);
-            let nivel = 1; // Verde (Operativo)
-            if (estLower.includes('reparacion')) nivel = 2; // Amarillo
-            if (estLower.includes('fuera')) nivel = 3; // Rojo
+    globalEquiposCriticos = rowsEquipos.filter(r => col(r, "equipo") !== "");
 
-            equiposCriticos.push({
-                nombre: String(nombreEq).trim(),
-                sector: sectorRaw,
-                estado: estadoRaw,
-                detalle: detalleRaw,
-                nivel
-            });
+    renderMapaInteractivo();
+    filtrarEquiposPorSector(null);
+}
+
+function renderMapaInteractivo() {
+    const capa = document.getElementById("capa_marcadores_planta");
+    if (!capa) return;
+    capa.innerHTML = "";
+
+    // Unificar sectores predefinidos con cualquier sector nuevo cargado en Equipos_Criticos
+    const puntos = [...COORDS_MAPA_PLANTA];
+    globalEquiposCriticos.forEach(eq => {
+        const sec = String(col(eq, "sector_mapa")).trim();
+        if (sec && !puntos.some(p => p.sector.toLowerCase() === sec.toLowerCase())) {
+            puntos.push({ sector: sec, x: 50, y: 50 });
         }
     });
 
-    // Dibujar los 25 puntos sobre el mapa aéreo con color dinámico según estado
-    const capaMapa = document.getElementById('capa_marcadores_planta');
-    if (capaMapa) {
-        capaMapa.innerHTML = UBICACIONES_PLANTA.map(u => {
-            const uNorm = normalizar(u.nombre);
-            const eqsEnZona = equiposCriticos.filter(e => normalizar(e.sector) === uNorm);
-            let maxNivel = 0;
-            eqsEnZona.forEach(e => { if (e.nivel > maxNivel) maxNivel = e.nivel; });
+    puntos.forEach(pt => {
+        const eqSector = globalEquiposCriticos.filter(eq =>
+            String(col(eq, "sector_mapa")).toLowerCase().includes(pt.sector.toLowerCase()) ||
+            pt.sector.toLowerCase().includes(String(col(eq, "sector_mapa")).toLowerCase())
+        );
 
-            let dotStyle = 'bg-cyan-400 shadow-[0_0_8px_#22d3ee]';
-            if (maxNivel === 1) dotStyle = 'bg-emerald-500 shadow-[0_0_8px_#10b981]';
-            if (maxNivel === 2) dotStyle = 'bg-amber-400 shadow-[0_0_8px_#fbbf24] animate-pulse';
-            if (maxNivel === 3) dotStyle = 'bg-red-500 shadow-[0_0_10px_#ef4444] animate-ping';
+        let colorClass = "bg-cyan-400 shadow-[0_0_10px_#22d3ee]"; // Sin novedad
+        if (eqSector.some(e => /fuera/i.test(String(col(e, "estado"))))) {
+            colorClass = "bg-red-500 shadow-[0_0_12px_#ef4444] animate-pulse";
+        } else if (eqSector.some(e => /reparaci/i.test(String(col(e, "estado"))))) {
+            colorClass = "bg-amber-400 shadow-[0_0_10px_#fbbf24]";
+        } else if (eqSector.length > 0) {
+            colorClass = "bg-emerald-500 shadow-[0_0_10px_#10b981]";
+        }
 
-            const activo = sectorSeleccionadoMapa && normalizar(sectorSeleccionadoMapa) === uNorm;
-            const badgeBorder = activo ? 'border-cyan-400 ring-2 ring-cyan-400/50 bg-slate-900' : 'border-slate-500/80 bg-slate-950/90';
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.style.left = `${pt.x}%`;
+        btn.style.top = `${pt.y}%`;
+        btn.className = "group absolute -translate-x-1/2 -translate-y-1/2 z-10 focus:outline-none";
+        btn.onclick = () => filtrarEquiposPorSector(pt.sector);
 
-            return `
-                <button type="button" onclick="filtrarEquiposPorSector('${u.nombre.replace(/'/g, "\\'")}')"
-                     style="top: ${u.top}%; left: ${u.left}%;"
-                     class="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10 group cursor-pointer focus:outline-none">
-                    <span class="w-3 h-3 rounded-full border-2 border-slate-950 mb-1 transition-transform group-hover:scale-125 ${dotStyle}"></span>
-                    <span class="${badgeBorder} border text-white text-[10px] font-semibold px-2 py-0.5 rounded shadow-lg whitespace-nowrap group-hover:border-cyan-400 transition">
-                        ${u.nombre}
-                    </span>
-                </button>
-            `;
-        }).join('');
-    }
+        btn.innerHTML = `
+            <span class="block w-4 h-4 rounded-full border-2 border-slate-950 ${colorClass} transition-transform group-hover:scale-125"></span>
+            <span class="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap bg-slate-900/95 text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-slate-700 shadow-xl">
+                ${pt.sector} (${eqSector.length})
+            </span>
+        `;
+        capa.appendChild(btn);
+    });
+}
 
-    // Filtrar lista si se hizo clic en un punto del mapa
-    const btnReset = document.getElementById('btn_reset_sector_mapa');
-    const tituloLista = document.getElementById('titulo_lista_equipos');
-    let listaMostrar = equiposCriticos;
+function filtrarEquiposPorSector(sectorFiltro) {
+    const contenedor = document.getElementById("lista_equipos_criticos");
+    const btnReset = document.getElementById("btn_reset_sector_mapa");
+    if (!contenedor) return;
 
-    if (sectorSeleccionadoMapa) {
-        listaMostrar = equiposCriticos.filter(e => normalizar(e.sector) === normalizar(sectorSeleccionadoMapa));
-        if (btnReset) btnReset.classList.remove('hidden');
-        if (tituloLista) tituloLista.textContent = `Equipos Críticos · ${sectorSeleccionadoMapa}`;
+    let filtrados = globalEquiposCriticos;
+    if (sectorFiltro) {
+        filtrados = globalEquiposCriticos.filter(eq => {
+            const s = String(col(eq, "sector_mapa")).toLowerCase();
+            const f = sectorFiltro.toLowerCase();
+            return s.includes(f) || f.includes(s);
+        });
+        setText("titulo_lista_equipos", `Equipos Críticos · ${sectorFiltro}`);
+        if (btnReset) btnReset.classList.remove("hidden");
     } else {
-        if (btnReset) btnReset.classList.add('hidden');
-        if (tituloLista) tituloLista.textContent = 'Listado General de Equipos Críticos';
+        setText("titulo_lista_equipos", "Listado General de Equipos Críticos");
+        if (btnReset) btnReset.classList.add("hidden");
     }
 
-    setTexto('total_eq_criticos', `${listaMostrar.length} equipos`);
-    const contEquipos = document.getElementById('lista_equipos_criticos');
-    if (contEquipos) {
-        if (listaMostrar.length === 0) {
-            contEquipos.innerHTML = '<div class="text-center py-8 text-slate-500 text-sm italic col-span-full">No hay equipos críticos registrados para esta selección.</div>';
+    setText("total_eq_criticos", `${filtrados.length} equipos`);
+
+    if (!filtrados.length) {
+        contenedor.innerHTML = `<div class="text-center py-8 text-slate-500 text-sm italic col-span-full">No hay equipos críticos registrados en este sector.</div>`;
+        return;
+    }
+
+    contenedor.innerHTML = filtrados.map(eq => {
+        const nombre = col(eq, "equipo") || "Equipo";
+        const sector = col(eq, "sector_mapa") || "Sin sector";
+        const estado = col(eq, "estado") || "OPERATIVO";
+        const detalle = col(eq, "detalle") || "Sin novedades reportadas";
+
+        let badgeClass = "bg-emerald-950 text-emerald-400 border-emerald-800";
+        if (/fuera/i.test(estado)) badgeClass = "bg-red-950 text-red-400 border-red-800";
+        else if (/reparaci/i.test(estado)) badgeClass = "bg-amber-950 text-amber-400 border-amber-800";
+
+        return `
+            <div class="bg-slate-900/90 rounded-xl p-4 border border-slate-700/80 flex flex-col justify-between gap-2">
+                <div class="flex items-start justify-between gap-2">
+                    <div>
+                        <div class="text-sm font-bold text-white">${nombre}</div>
+                        <div class="text-xs text-cyan-400 mt-0.5">${sector}</div>
+                    </div>
+                    <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${badgeClass}">${estado}</span>
+                </div>
+                <p class="text-xs text-slate-400 border-t border-slate-800 pt-2 mt-1">${detalle}</p>
+            </div>
+        `;
+    }).join("");
+}
+
+// ============================================================================
+// PESTAÑA 4: MANTENIMIENTO
+// ============================================================================
+function renderMantenimiento(rows) {
+    const cantPrev = sumCol(rows, "mant_preventivos");
+    const cantCorr = sumCol(rows, "mant_correctivos");
+    const cantAct = sumCol(rows, "mant_actividades") + sumCol(rows, "mant_generales");
+    const cantTotal = cantPrev + cantCorr + cantAct;
+
+    const hsPrev = sumCol(rows, "horas_prev");
+    const hsCorr = sumCol(rows, "horas_corr");
+    const hsTareas = sumCol(rows, "horas_tareas");
+    const hsTotal = hsPrev + hsCorr + hsTareas;
+
+    // Fila 1: Cantidades
+    setText("kpi_mant_total", fmtInt(cantTotal));
+    setText("kpi_mant_prev", fmtInt(cantPrev));
+    setText("kpi_mant_corr", fmtInt(cantCorr));
+    setText("kpi_mant_act", fmtInt(cantAct));
+
+    // Fila 2: Horas Invertidas
+    setText("kpi_horas_total", fmtInt(hsTotal));
+    setText("kpi_horas_prev", fmtInt(hsPrev));
+    setText("kpi_horas_corr", fmtInt(hsCorr));
+    setText("kpi_horas_tareas", fmtInt(hsTareas));
+
+    // Fila 3: Promedios de Horas por Intervención
+    setText("kpi_prom_total", fmtDec(cantTotal > 0 ? hsTotal / cantTotal : 0, 2));
+    setText("kpi_prom_prev", fmtDec(cantPrev > 0 ? hsPrev / cantPrev : 0, 2));
+    setText("kpi_prom_corr", fmtDec(cantCorr > 0 ? hsCorr / cantCorr : 0, 2));
+    setText("kpi_prom_act", fmtDec(cantAct > 0 ? hsTareas / cantAct : 0, 2));
+
+    // Evolución Mensual (Prev / Corr / Act)
+    const mensual = {};
+    rows.forEach(r => {
+        const f = col(r, "fecha");
+        if (!f) return;
+        const mKey = getMonthKey(f);
+        if (!mensual[mKey]) mensual[mKey] = { prev: 0, corr: 0, act: 0 };
+        mensual[mKey].prev += num(col(r, "mant_preventivos"));
+        mensual[mKey].corr += num(col(r, "mant_correctivos"));
+        mensual[mKey].act += num(col(r, "mant_actividades")) + num(col(r, "mant_generales"));
+    });
+
+    const mLabels = Object.keys(mensual);
+    destroyChart("chartMantMensual");
+    const ctxM = document.getElementById("chartMantMensual");
+    if (ctxM) {
+        chartsInstances["chartMantMensual"] = new Chart(ctxM, {
+            type: "bar",
+            data: {
+                labels: mLabels,
+                datasets: [
+                    { label: "Preventivos", data: mLabels.map(m => mensual[m].prev), backgroundColor: "#10b981", borderRadius: 4 },
+                    { label: "Correctivos", data: mLabels.map(m => mensual[m].corr), backgroundColor: "#ef4444", borderRadius: 4 },
+                    { label: "Actividades", data: mLabels.map(m => mensual[m].act), backgroundColor: "#06b6d4", borderRadius: 4 }
+                ]
+            },
+            options: baseChartOptions()
+        });
+    }
+
+    // Gráfico Torta: Preventivos vs Correctivos vs Actividades
+    renderDoughnutChart(
+        "chartMantTortas",
+        ["Preventivos", "Correctivos", "Actividades"],
+        [cantPrev, cantCorr, cantAct],
+        ["#10b981", "#ef4444", "#06b6d4"]
+    );
+
+    // Gráfico Torta: Criticidad de Correctivos (corr_alto, corr_medio, corr_bajo)
+    const critAlto = sumCol(rows, "corr_alto");
+    const critMedio = sumCol(rows, "corr_medio");
+    const critBajo = sumCol(rows, "corr_bajo");
+    renderDoughnutChart(
+        "chartCriticidad",
+        ["Alto", "Medio", "Bajo"],
+        [critAlto, critMedio, critBajo],
+        ["#ef4444", "#f59e0b", "#38bdf8"]
+    );
+
+    // Procesar columna equipos_intervenidos para Ranking Top 10 y Sectores
+    const equiposMap = {};
+    const sectoresMap = {};
+
+    rows.forEach(r => {
+        const rawStr = String(col(r, "equipos_intervenidos") || "").trim();
+        if (!rawStr) return;
+
+        rawStr.split(",").map(s => s.trim()).filter(Boolean).forEach(item => {
+            let nombre = item;
+            let sector = "General";
+            const idxParen = item.indexOf("(");
+            if (idxParen !== -1) {
+                nombre = item.substring(0, idxParen).trim();
+                sector = item.substring(idxParen + 1).replace(/\)+$/, "").trim();
+            }
+
+            const keyEq = `${nombre}|||${sector}`;
+            equiposMap[keyEq] = (equiposMap[keyEq] || 0) + 1;
+            sectoresMap[sector] = (sectoresMap[sector] || 0) + 1;
+        });
+    });
+
+    // Gráfico Horizontal de Sectores Intervenidos
+    const sectoresSorted = Object.entries(sectoresMap).sort((a, b) => b[1] - a[1]);
+    destroyChart("chartSectores");
+    const ctxSec = document.getElementById("chartSectores");
+    if (ctxSec) {
+        chartsInstances["chartSectores"] = new Chart(ctxSec, {
+            type: "bar",
+            data: {
+                labels: sectoresSorted.map(s => s[0]),
+                datasets: [{
+                    label: "Intervenciones",
+                    data: sectoresSorted.map(s => s[1]),
+                    backgroundColor: "#06b6d4",
+                    hoverBackgroundColor: "#22d3ee",
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                ...baseChartOptions(),
+                indexAxis: "y",
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true, ticks: { color: "#94a3b8", precision: 0 }, grid: { color: "#1e293b" } },
+                    y: { ticks: { color: "#cbd5e1", font: { size: 11 } }, grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // Tabla Top 10 Equipos Más Intervenidos
+    const top10 = Object.entries(equiposMap).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    const tbody = document.getElementById("tabla_equipos_body");
+    if (tbody) {
+        if (!top10.length) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-slate-500 italic">Sin intervenciones registradas</td></tr>`;
         } else {
-            contEquipos.innerHTML = listaMostrar.map(eq => generarTarjetaEquipoHTML(eq)).join('');
-            lucide.createIcons();
+            tbody.innerHTML = top10.map(([key, cant], idx) => {
+                const [eqName, secName] = key.split("|||");
+                return `
+                    <tr class="border-b border-slate-700/60 hover:bg-slate-700/30">
+                        <td class="py-2.5 px-3 font-bold text-cyan-400">#${idx + 1}</td>
+                        <td class="py-2.5 px-3 font-semibold text-white">${eqName}</td>
+                        <td class="py-2.5 px-3 text-slate-400 text-xs">${secName}</td>
+                        <td class="py-2.5 px-3 text-right font-bold text-amber-400">${cant}</td>
+                    </tr>
+                `;
+            }).join("");
         }
     }
 }
 
-function generarTarjetaEquipoHTML(eq) {
-    let badgeClass = 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30';
-    let dotClass = 'bg-emerald-400';
+// ============================================================================
+// PESTAÑA 5: CONTROL Y GESTIÓN
+// ============================================================================
+function renderControlYGestion(rows) {
+    // Pañol Mensual (panol_items_consumidos y panol_plata_consumida)
+    const panolMes = {};
+    let totItems = 0, totPlata = 0;
 
-    if (eq.nivel === 2) {
-        badgeClass = 'bg-amber-500/15 text-amber-300 border-amber-500/30';
-        dotClass = 'bg-amber-400 animate-pulse';
-    } else if (eq.nivel === 3) {
-        badgeClass = 'bg-red-500/15 text-red-400 border-red-500/30';
-        dotClass = 'bg-red-500';
+    rows.forEach(r => {
+        const f = col(r, "fecha");
+        const items = num(col(r, "panol_items_consumidos"));
+        const plata = num(col(r, "panol_plata_consumida"));
+        if (!f && items === 0 && plata === 0) return;
+
+        const mKey = getMonthKey(f);
+        if (!panolMes[mKey]) panolMes[mKey] = { items: 0, plata: 0 };
+        panolMes[mKey].items += items;
+        panolMes[mKey].plata += plata;
+
+        totItems += items;
+        totPlata += plata;
+    });
+
+    setText("tot_panol_items", fmtInt(totItems));
+    setText("tot_panol_plata", fmtMoney(totPlata));
+
+    const mPanolLabels = Object.keys(panolMes);
+    const tbodyPanol = document.getElementById("tabla_panol_mensual");
+    if (tbodyPanol) {
+        if (!mPanolLabels.length) {
+            tbodyPanol.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-slate-500 italic">Sin datos</td></tr>`;
+        } else {
+            tbodyPanol.innerHTML = mPanolLabels.map(m => `
+                <tr class="border-b border-slate-700/60">
+                    <td class="py-2 px-3 text-slate-200">${m}</td>
+                    <td class="py-2 px-3 text-right text-cyan-400 font-semibold">${fmtInt(panolMes[m].items)}</td>
+                    <td class="py-2 px-3 text-right text-emerald-400 font-semibold">${fmtMoney(panolMes[m].plata)}</td>
+                </tr>
+            `).join("");
+        }
     }
 
-    const detalleHTML = eq.detalle !== ''
-        ? `<div class="mt-2.5 text-xs bg-slate-950/70 text-amber-200/90 px-2.5 py-1.5 rounded-lg border border-amber-500/20 flex items-center gap-1.5">
-             <i data-lucide="wrench" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
-             <span>${eq.detalle}</span>
-           </div>`
-        : '';
+    // Gráfico Doble Eje Pañol (Ítems vs Plata)
+    destroyChart("chartPanol");
+    const ctxPanol = document.getElementById("chartPanol");
+    if (ctxPanol) {
+        chartsInstances["chartPanol"] = new Chart(ctxPanol, {
+            type: "bar",
+            data: {
+                labels: mPanolLabels,
+                datasets: [
+                    {
+                        label: "Importe ($)",
+                        data: mPanolLabels.map(m => panolMes[m].plata),
+                        backgroundColor: "#10b981",
+                        yAxisID: "y",
+                        borderRadius: 4
+                    },
+                    {
+                        label: "Ítems Consumidos",
+                        data: mPanolLabels.map(m => panolMes[m].items),
+                        type: "line",
+                        borderColor: "#22d3ee",
+                        backgroundColor: "#22d3ee",
+                        yAxisID: "y1",
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { ticks: { color: "#94a3b8" }, grid: { color: "#1e293b" } },
+                    y: { type: "linear", position: "left", ticks: { color: "#10b981" }, grid: { color: "#1e293b" } },
+                    y1: { type: "linear", position: "right", ticks: { color: "#22d3ee" }, grid: { drawOnChartArea: false } }
+                },
+                plugins: { legend: { labels: { color: "#cbd5e1" } } }
+            }
+        });
+    }
 
-    return `
-        <div class="bg-slate-900 rounded-xl p-4 border border-slate-700/80 hover:border-slate-600 transition flex flex-col justify-between">
-            <div class="flex justify-between items-start gap-2">
-                <div>
-                    <div class="font-bold text-white text-sm">${eq.nombre}</div>
-                    <div class="text-[11px] text-slate-400 mt-0.5">${eq.sector || 'Sector general'}</div>
-                </div>
-                <span class="px-2.5 py-1 rounded-full text-[11px] font-semibold border flex items-center gap-1.5 shrink-0 ${badgeClass}">
-                    <span class="w-2 h-2 rounded-full ${dotClass}"></span>
-                    ${eq.estado}
-                </span>
-            </div>
-            ${detalleHTML}
-        </div>
-    `;
+    // Coste Mensual de Biosólidos y RSU ($)
+    const costeMes = {};
+    rows.forEach(r => {
+        const f = col(r, "fecha");
+        if (!f) return;
+        const mKey = getMonthKey(f);
+        const cBio = num(col(r, "costo_biosolidos"));
+        const cRsu = num(col(r, "costo_rsu"));
+        costeMes[mKey] = (costeMes[mKey] || 0) + cBio + cRsu;
+    });
+    renderBarChart("chartCosteResiduos", Object.keys(costeMes), Object.values(costeMes), "Coste Residuos ($)", "#f59e0b");
+
+    // Totalizado Biosólidos y RSU: Módulo 1 vs Módulo 2 (Ton)
+    const bioM1 = sumCol(rows, "biosolidos_ton_m1");
+    const bioM2 = sumCol(rows, "biosolidos_ton_m2");
+    const rsuM1 = sumCol(rows, "cant_rsu_m1");
+    const rsuM2 = sumCol(rows, "cant_rsu_m2");
+
+    destroyChart("chartBiosolidosRsu");
+    const ctxBr = document.getElementById("chartBiosolidosRsu");
+    if (ctxBr) {
+        chartsInstances["chartBiosolidosRsu"] = new Chart(ctxBr, {
+            type: "bar",
+            data: {
+                labels: ["Biosólidos (Ton)", "RSU (Ton)"],
+                datasets: [
+                    { label: "Módulo 1 (M1)", data: [bioM1, rsuM1], backgroundColor: "#22d3ee", borderRadius: 6 },
+                    { label: "Módulo 2 (M2)", data: [bioM2, rsuM2], backgroundColor: "#34d399", borderRadius: 6 }
+                ]
+            },
+            options: baseChartOptions()
+        });
+    }
+
+    // Inversiones y Explotaciones
+    setText("gest_inv_obras", fmtMoney(sumCol(rows, "inv_obras")));
+    setText("gest_inv_equip", fmtMoney(sumCol(rows, "inv_equipamiento")));
+    setText("gest_exp_rep", fmtMoney(sumCol(rows, "exp_reparaciones")));
 }
+
+// ============================================================================
+// HELPERS DE CHART.JS
+// ============================================================================
+function baseChartOptions() {
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { labels: { color: "#cbd5e1", font: { size: 11 } } }
+        },
+        scales: {
+            x: { ticks: { color: "#94a3b8", font: { size: 11 } }, grid: { color: "#1e293b" } },
+            y: { ticks: { color: "#94a3b8", font: { size: 11 } }, grid: { color: "#1e293b" }, beginAtZero: true }
+        }
+    };
+}
+
+function renderBarChart(canvasId, labels, data, label, color) {
+    destroyChart(canvasId);
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    chartsInstances[canvasId] = new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels,
+            datasets: [{ label, data, backgroundColor: color, borderRadius: 6 }]
+        },
+        options: {
+            ...baseChartOptions(),
+            plugins: { legend: { display: false } }
+        }
+    });
+}
+
+function renderDualLineChart(canvasId, labels, label1, data1, color1, label2, data2, color2) {
+    destroyChart(canvasId);
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    chartsInstances[canvasId] = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels,
+            datasets: [
+                { label: label1, data: data1, borderColor: color1, backgroundColor: color1 + "33", tension: 0.3, fill: false },
+                { label: label2, data: data2, borderColor: color2, backgroundColor: color2 + "33", tension: 0.3, fill: false }
+            ]
+        },
+        options: baseChartOptions()
+    });
+}
+
+function renderDoughnutChart(canvasId, labels, data, colors) {
+    destroyChart(canvasId);
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    chartsInstances[canvasId] = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+            labels,
+            datasets: [{ data, backgroundColor: colors, borderWidth: 0 }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "65%",
+            plugins: {
+                legend: { position: "bottom", labels: { color: "#cbd5e1", padding: 14, font: { size: 11 } } }
+            }
+        }
+    });
+}
+
+document.addEventListener("DOMContentLoaded", initDashboard);
