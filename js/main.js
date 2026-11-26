@@ -332,13 +332,16 @@ function renderResumen(rows) {
     destroyChart("chartEnergiaSectores");
     const ctxES = document.getElementById("chartEnergiaSectores");
     if (ctxES) {
+        const valoresSets = [eM1Ts1, eM1Ts2, eM1Ts3, eM2Ts1, eM2Ts2, eM2Ts3];
+        const totalSets = valoresSets.reduce((a, b) => a + b, 0);
+
         charts["chartEnergiaSectores"] = new Chart(ctxES, {
             type: "pie",
             data: {
                 labels: ["M1 - TS1", "M1 - TS2", "M1 - TS3", "M2 - TS1", "M2 - TS2", "M2 - TS3"],
                 datasets: [{
                     label: "Energía (kWh)",
-                    data: [eM1Ts1, eM1Ts2, eM1Ts3, eM2Ts1, eM2Ts2, eM2Ts3],
+                    data: valoresSets,
                     backgroundColor: [
                         "#22d3ee",
                         "#06b6d4",
@@ -347,18 +350,56 @@ function renderResumen(rows) {
                         "#10b981",
                         "#059669"
                     ],
-                    borderColor: "#1e293b",
-                    borderWidth: 2
+                    borderColor: "#0f172a",
+                    borderWidth: 2,
+                    hoverOffset: 8
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: {
+                    padding: { left: 8, right: 16, top: 6, bottom: 6 }
+                },
                 plugins: {
-                    legend: { position: "bottom", labels: { color: "#cbd5e1", font: { size: 12 } } },
+                    legend: {
+                        position: "right",
+                        align: "center",
+                        labels: {
+                            color: "#e2e8f0",
+                            font: { size: 12, weight: "500" },
+                            padding: 14,
+                            usePointStyle: true,
+                            pointStyle: "circle",
+                            generateLabels: (chart) => {
+                                const ds = chart.data.datasets[0];
+                                return chart.data.labels.map((label, i) => {
+                                    const val = ds.data[i] || 0;
+                                    return {
+                                        text: `${label}  (${fmtInt(val)} kWh)`,
+                                        fillStyle: ds.backgroundColor[i],
+                                        strokeStyle: ds.borderColor,
+                                        lineWidth: ds.borderWidth,
+                                        hidden: !chart.getDataVisibility(i),
+                                        index: i
+                                    };
+                                });
+                            }
+                        }
+                    },
                     tooltip: {
+                        backgroundColor: "#0f172a",
+                        titleColor: "#f8fafc",
+                        bodyColor: "#cbd5e1",
+                        borderColor: "#334155",
+                        borderWidth: 1,
+                        padding: 10,
                         callbacks: {
-                            label: (ctx) => `${ctx.label}: ${fmtInt(ctx.parsed || 0)} kWh`
+                            label: (ctx) => {
+                                const val = ctx.parsed || 0;
+                                const pct = totalSets > 0 ? ((val / totalSets) * 100).toFixed(1) : "0.0";
+                                return ` ${fmtInt(val)} kWh (${pct}%)`;
+                            }
                         }
                     }
                 }
