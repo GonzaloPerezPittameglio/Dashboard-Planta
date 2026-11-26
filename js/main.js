@@ -328,18 +328,25 @@ function renderResumen(rows) {
     renderSimpleBar("chartMensualArenas", mLabels, mLabels.map(k => mensual[k].arenas), "Arenas (Ton)", "#fb923c");
     renderSimpleBar("chartMensualPolimero", mLabels, mLabels.map(k => mensual[k].polimero), "Polímero (Kg)", "#818cf8");
 
-    // Gráfico de Torta: ENERGÍA TOTAL POR MÓDULO
+    // Gráfico de Torta: ENERGÍA TOTAL POR MÓDULO (Set 1, 2 y 3 de M1 y M2)
     destroyChart("chartEnergiaSectores");
     const ctxES = document.getElementById("chartEnergiaSectores");
     if (ctxES) {
         charts["chartEnergiaSectores"] = new Chart(ctxES, {
             type: "pie",
             data: {
-                labels: ["Módulo 1", "Módulo 2"],
+                labels: ["M1 - TS1", "M1 - TS2", "M1 - TS3", "M2 - TS1", "M2 - TS2", "M2 - TS3"],
                 datasets: [{
                     label: "Energía (kWh)",
-                    data: [eM1, eM2],
-                    backgroundColor: ["#22d3ee", "#10b981"],
+                    data: [eM1Ts1, eM1Ts2, eM1Ts3, eM2Ts1, eM2Ts2, eM2Ts3],
+                    backgroundColor: [
+                        "#22d3ee",
+                        "#06b6d4",
+                        "#0284c7",
+                        "#34d399",
+                        "#10b981",
+                        "#059669"
+                    ],
                     borderColor: "#1e293b",
                     borderWidth: 2
                 }]
