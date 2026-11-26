@@ -852,7 +852,7 @@
                     </div>
                     <div>
                         <h2 class="text-lg font-bold text-white uppercase tracking-wider">Plata Consumida</h2>
-                        <p class="text-xs text-slate-400">Desglose económico en RRHH, Pañol, Energía Eléctrica y Combustible de Flota</p>
+                        <p class="text-xs text-slate-400">Desglose económico en RRHH, Pañol, Energía Eléctrica, Combustible, Biosólidos y RSU</p>
                     </div>
                 </div>
 
@@ -929,6 +929,33 @@
                     </div>
                 </div>
 
+                <!-- NUEVOS GRÁFICOS: Coste de Biosólidos y RSU ($) + Totalizado Biosólidos y RSU M1/M2 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Gráfico 1: Coste de Biosólidos y RSU ($) -->
+                    <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                        <div class="flex items-center justify-between gap-2 mb-4 border-b border-slate-700 pb-3">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="coins" class="w-5 h-5 text-emerald-400"></i>
+                                <h3 class="text-sm font-bold text-white uppercase tracking-wider">Coste de Biosólidos y RSU ($)</h3>
+                            </div>
+                            <span class="text-[11px] text-slate-400">Evolución mensual ($)</span>
+                        </div>
+                        <div class="h-64 relative"><canvas id="chartCostoBiosolidosYRSU"></canvas></div>
+                    </div>
+
+                    <!-- Gráfico 2: Un solo gráfico de barras con Totalizado Biosólidos M1/M2 y RSU M1/M2 -->
+                    <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                        <div class="flex items-center justify-between gap-2 mb-4 border-b border-slate-700 pb-3">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="bar-chart-2" class="w-5 h-5 text-cyan-400"></i>
+                                <h3 class="text-sm font-bold text-white uppercase tracking-wider">Totalizado Biosólidos y RSU (M1 y M2)</h3>
+                            </div>
+                            <span class="text-[11px] text-slate-400">Acumulado por módulo</span>
+                        </div>
+                        <div class="h-64 relative"><canvas id="chartTotalizadoBiosolidosYRSU"></canvas></div>
+                    </div>
+                </div>
+
                 <!-- 4. Combustible de Vehículos (Marca, Modelo, Tipo y Plata) -->
                 <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
                     <div class="flex flex-wrap items-center justify-between gap-3 mb-4 border-b border-slate-700 pb-3">
@@ -980,6 +1007,6 @@
     </div>
 
     <!-- Script Principal -->
-    <script src="js/main.js?v=3"></script>
+    <script src="js/main.js?v=4"></script>
 </body>
 </html>
