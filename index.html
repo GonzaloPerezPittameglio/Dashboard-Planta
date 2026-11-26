@@ -411,7 +411,7 @@
             </div>
         </div>
 
-        <!-- PESTAÑA: FUNCIONAMIENTO -->
+        <!-- PESTAÑA: FUNCIONAMIENTO (MODIFICADA EXACTAMENTE COMO LA IMAGEN) -->
         <div id="tab-funcionamiento" class="tab-content hidden space-y-6">
             
             <!-- KPIs Superiores: RSU y Órdenes de Trabajo -->
@@ -439,7 +439,7 @@
                 </div>
             </div>
 
-            <!-- MAPA DE PLANTA A ANCHO COMPLETO (SIN SCROLL HORIZONTAL) -->
+            <!-- PLANO GENERAL DE PLANTA (CON SCROLL HORIZONTAL PANORÁMICO COMO EN LA CAPTURA) -->
             <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
                 <div class="flex flex-wrap justify-between items-center gap-3 mb-4 border-b border-slate-700 pb-3">
                     <div class="flex items-center gap-2">
@@ -447,18 +447,20 @@
                         <h3 class="text-base font-bold text-white uppercase tracking-wider">Plano General de Planta</h3>
                     </div>
                     <div class="flex flex-wrap items-center gap-4 text-xs bg-slate-900/80 px-3 py-1.5 rounded-full border border-slate-700">
-                        <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]"></span> Operativo</span>
-                        <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]"></span> En Reparación</span>
-                        <span class="flex items-center gap-1.5 text-slate-300"><span class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]"></span> Fuera de Servicio</span>
-                        <span class="flex items-center gap-1.5 text-slate-400"><span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span> Sin novedad</span>
+                        <span class="flex items-center gap-1.5 text-slate-300 uppercase"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#10b981]"></span> Operativo</span>
+                        <span class="flex items-center gap-1.5 text-slate-300 uppercase"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]"></span> En Reparación</span>
+                        <span class="flex items-center gap-1.5 text-slate-300 uppercase"><span class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]"></span> Fuera de Servicio</span>
+                        <span class="flex items-center gap-1.5 text-slate-400 uppercase"><span class="w-2.5 h-2.5 rounded-full bg-slate-400"></span> Sin novedad</span>
                     </div>
                 </div>
 
-                <div class="relative w-full rounded-xl overflow-hidden border border-slate-700 bg-slate-950 shadow-2xl">
-                    <img src="mapa-planta.jpg" alt="Mapa Aéreo Planta Hurlingham" class="w-full h-auto block select-none" />
-                    
-                    <!-- Capa donde JS coloca los puntos y nombres fijos -->
-                    <div id="capa_marcadores_planta" class="absolute inset-0 pointer-events-none"></div>
+                <div class="overflow-x-auto rounded-xl border border-slate-700 bg-slate-950 shadow-2xl">
+                    <div class="relative w-full min-w-[1150px]">
+                        <img src="mapa-planta.jpg" alt="Mapa Aéreo Planta Hurlingham" class="w-full h-auto block select-none" />
+                        
+                        <!-- Capa donde JS coloca los puntos y nombres fijos -->
+                        <div id="capa_marcadores_planta" class="absolute inset-0 pointer-events-none"></div>
+                    </div>
                 </div>
             </div>
 
@@ -466,7 +468,7 @@
             <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
                 <div class="flex flex-wrap items-center justify-between gap-2 mb-4 border-b border-slate-700 pb-3">
                     <div class="flex items-center gap-2">
-                        <i data-lucide="cpu" class="w-5 h-5 text-amber-400"></i>
+                        <i data-lucide="settings" class="w-5 h-5 text-amber-400"></i>
                         <h3 class="text-base font-bold text-white uppercase tracking-wider">Listado General de Equipos Críticos</h3>
                     </div>
                     <span class="text-xs bg-slate-900 text-cyan-400 font-semibold px-3 py-1 rounded-full border border-slate-700" id="total_eq_criticos">0 equipos</span>
@@ -1040,6 +1042,6 @@
     </div>
 
     <!-- Script Principal -->
-    <script src="js/main.js?v=5"></script>
+    <script src="js/main.js?v=6"></script>
 </body>
 </html>
