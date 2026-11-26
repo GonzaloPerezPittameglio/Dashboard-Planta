@@ -15,7 +15,6 @@ const SHEETS = {
 let rawDataPrincipal = [];
 let charts = {};
 
-// Coordenadas exactas sobre mapa-planta.jpg (idénticas a la captura)
 const COORDS_MAPA_PLANTA = [
     // Zona Izquierda (M2 y Digestión)
     { sector: "Silo de Lodos", x: 5.5, y: 15 },
@@ -340,7 +339,6 @@ function renderResumen(rows) {
     renderSimpleBar("chartMensualArenas", mLabels, mLabels.map(k => mensual[k].arenas), "Arenas (Ton)", "#fb923c");
     renderSimpleBar("chartMensualPolimero", mLabels, mLabels.map(k => mensual[k].polimero), "Polímero (Kg)", "#818cf8");
 
-    // Gráfico de Rosquilla: ENERGÍA TOTAL POR MÓDULO (Set 1, 2 y 3 de M1 y M2)
     destroyChart("chartEnergiaSectores");
     const ctxES = document.getElementById("chartEnergiaSectores");
     if (ctxES) {
@@ -528,7 +526,7 @@ function abrirModalDesvio(fecha, motivo) {
 }
 
 // ============================================================================
-// 3. FUNCIONAMIENTO (MAPA DE PLANTA + EQUIPOS CRÍTICOS CON RECUADRO AMARILLO)
+// 3. FUNCIONAMIENTO
 // ============================================================================
 function normalizeTxt(str) {
     return String(str || "")
@@ -554,7 +552,7 @@ function renderFuncionamiento(rowsPrincipal, rowsEquipos) {
             const detalle = String(col(r, "detalle") || "").trim();
             const estNorm = normalizeTxt(estado);
 
-            let nivel = 1; // 1 = Operativo (verde), 2 = En Reparación (amarillo), 3 = Fuera de Servicio (rojo)
+            let nivel = 1; // 1 = Operativo, 2 = En Reparación, 3 = Fuera de Servicio
             if (estNorm.includes("reparaci")) nivel = 2;
             if (estNorm.includes("fuera")) nivel = 3;
 
@@ -563,7 +561,6 @@ function renderFuncionamiento(rowsPrincipal, rowsEquipos) {
 
     setText("total_eq_criticos", `${equipos.length} equipos`);
 
-    // 1. Marcadores sobre el plano aéreo
     const capa = document.getElementById("capa_marcadores_planta");
     if (capa) {
         capa.innerHTML = COORDS_MAPA_PLANTA.map(pt => {
@@ -574,7 +571,6 @@ function renderFuncionamiento(rowsPrincipal, rowsEquipos) {
                 return secNorm.includes(ptNorm) || ptNorm.includes(secNorm);
             });
 
-            // Estado predominante: Fuera de servicio (rojo) > En reparación (amarillo) > Operativo (verde) > Sin novedad (gris)
             let dotClass = "bg-slate-400 border-slate-950";
             if (relacionados.length > 0) {
                 const maxNivel = Math.max(...relacionados.map(e => e.nivel));
@@ -598,11 +594,10 @@ function renderFuncionamiento(rowsPrincipal, rowsEquipos) {
         }).join("");
     }
 
-    // 2. Tarjetas de Listado General de Equipos Críticos
     const lista = document.getElementById("lista_equipos_criticos");
     if (lista) {
         if (!equipos.length) {
-            lista.innerHTML = `<div class="text-center py-8 text-slate-500 text-sm italic col-span-full">Sin equipos críticos registrados en la hoja Equipos_Criticos</div>`;
+            lista.innerHTML = `<div class="text-center py-8 text-slate-500 text-sm italic col-span-full">Sin equipos críticos registrados</div>`;
         } else {
             lista.innerHTML = equipos.map(eq => {
                 let badgeClass = "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
@@ -616,7 +611,6 @@ function renderFuncionamiento(rowsPrincipal, rowsEquipos) {
                     dotClass = "bg-red-500";
                 }
 
-                // Recuadro amarillo inferior cuando está en Reparación, Fuera de Servicio o tiene detalle
                 const mostrarRecuadro = eq.nivel === 2 || eq.nivel === 3 || eq.detalle !== "";
                 const textoDetalle = eq.detalle || (eq.nivel === 3 ? "EQUIPO FUERA DE SERVICIO" : "EN REPARACIÓN");
 
@@ -975,7 +969,6 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
         });
     }
 
-    // Gráfico Coste de Biosólidos y RSU ($)
     const costosMes = {};
     rowsPrincipal.forEach(r => {
         const f = col(r, "fecha");
@@ -1023,7 +1016,6 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
         });
     }
 
-    // Gráfico de barras: Totalizado Biosólidos M1/M2 y RSU M1/M2
     const totBioM1 = sumCol(rowsPrincipal, "biosolidos_ton_m1");
     const totBioM2 = sumCol(rowsPrincipal, "biosolidos_ton_m2");
     const totRsuM1 = sumCol(rowsPrincipal, "cant_rsu_m1");
@@ -1080,7 +1072,6 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
         `).join("");
     }
 
-    // Inversiones (Obras y Equipamiento) y Explotaciones (Reparaciones)
     setText("gest_inv_obras", fmtMoney(sumCol(rowsPrincipal, "inv_obras")));
     setText("gest_inv_equipamiento", fmtMoney(sumCol(rowsPrincipal, "inv_equipamiento")));
     setText("gest_exp_reparaciones", fmtMoney(sumCol(rowsPrincipal, "exp_reparaciones")));
