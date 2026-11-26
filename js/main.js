@@ -304,8 +304,9 @@ function renderResumen(rows) {
     setText("res_hs_tareas", fmtInt(hsTareas));
     setText("res_hs_total", fmtInt(hsPrev + hsCorr + hsTareas));
 
+    const bioTot = sumCol(rows, "biosolidos_ton") || (sumCol(rows, "biosolidos_ton_m1") + sumCol(rows, "biosolidos_ton_m2"));
     setText("tot_energia", fmtInt(eTotal));
-    setText("tot_biosolidos", fmtInt(sumCol(rows, "biosolidos_ton")));
+    setText("tot_biosolidos", fmtInt(bioTot));
     setText("tot_arenas", fmtInt(sumCol(rows, "arenas_ton")));
     setText("tot_polimero", fmtInt(sumCol(rows, "polimero_kg")));
 
@@ -316,7 +317,7 @@ function renderResumen(rows) {
         const k = getMonthKey(f);
         if (!mensual[k]) mensual[k] = { energia: 0, biosolidos: 0, arenas: 0, polimero: 0 };
         mensual[k].energia += num(col(r, "energia_total"));
-        mensual[k].biosolidos += num(col(r, "biosolidos_ton"));
+        mensual[k].biosolidos += (num(col(r, "biosolidos_ton")) || (num(col(r, "biosolidos_ton_m1")) + num(col(r, "biosolidos_ton_m2"))));
         mensual[k].arenas += num(col(r, "arenas_ton"));
         mensual[k].polimero += num(col(r, "polimero_kg"));
     });
@@ -475,7 +476,8 @@ function abrirModalDesvio(fecha, motivo) {
 // 3. FUNCIONAMIENTO
 // ============================================================================
 function renderFuncionamiento(rowsPrincipal, rowsEquipos) {
-    setText("func_cant_rsu", fmtInt(sumCol(rowsPrincipal, "cant_rsu")));
+    const rsuTot = sumCol(rowsPrincipal, "cant_rsu") || (sumCol(rowsPrincipal, "cant_rsu_m1") + sumCol(rowsPrincipal, "cant_rsu_m2"));
+    setText("func_cant_rsu", fmtInt(rsuTot));
     setText("func_cant_ot", fmtInt(sumCol(rowsPrincipal, "cant_ot")));
 
     const equipos = rowsEquipos.filter(r => col(r, "equipo") !== "");
@@ -859,6 +861,96 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
                 }]
             },
             options: { ...baseOptions(), plugins: { legend: { display: false } } }
+        });
+    }
+
+    // ========================================================================
+    // NUEVO 1: Gráfico Coste de Biosólidos y RSU ($)
+    // ========================================================================
+    const costosMes = {};
+    rowsPrincipal.forEach(r => {
+        const f = col(r, "fecha");
+        if (!f) return;
+        const k = getMonthKey(f);
+        if (!costosMes[k]) costosMes[k] = { bio: 0, rsu: 0 };
+        costosMes[k].bio += num(col(r, "costo_biosolidos"));
+        costosMes[k].rsu += num(col(r, "costo_rsu"));
+    });
+    const mCostosLabels = Object.keys(costosMes);
+
+    destroyChart("chartCostoBiosolidosYRSU");
+    const ctxCostos = document.getElementById("chartCostoBiosolidosYRSU");
+    if (ctxCostos) {
+        charts["chartCostoBiosolidosYRSU"] = new Chart(ctxCostos, {
+            type: "bar",
+            data: {
+                labels: mCostosLabels,
+                datasets: [
+                    {
+                        label: "Coste Biosólidos ($)",
+                        data: mCostosLabels.map(k => costosMes[k].bio),
+                        backgroundColor: "#f59e0b",
+                        borderRadius: 6
+                    },
+                    {
+                        label: "Coste RSU ($)",
+                        data: mCostosLabels.map(k => costosMes[k].rsu),
+                        backgroundColor: "#38bdf8",
+                        borderRadius: 6
+                    }
+                ]
+            },
+            options: {
+                ...baseOptions(),
+                plugins: {
+                    legend: { labels: { color: "#cbd5e1", font: { size: 11 } } },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `${ctx.dataset.label}: ${fmtMoney(ctx.parsed.y || 0)}`
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // ========================================================================
+    // NUEVO 2: Un solo gráfico de barras con Totalizado Biosólidos M1/M2 y RSU M1/M2
+    // ========================================================================
+    const totBioM1 = sumCol(rowsPrincipal, "biosolidos_ton_m1");
+    const totBioM2 = sumCol(rowsPrincipal, "biosolidos_ton_m2");
+    const totRsuM1 = sumCol(rowsPrincipal, "cant_rsu_m1");
+    const totRsuM2 = sumCol(rowsPrincipal, "cant_rsu_m2");
+
+    destroyChart("chartTotalizadoBiosolidosYRSU");
+    const ctxTotBioRsu = document.getElementById("chartTotalizadoBiosolidosYRSU");
+    if (ctxTotBioRsu) {
+        charts["chartTotalizadoBiosolidosYRSU"] = new Chart(ctxTotBioRsu, {
+            type: "bar",
+            data: {
+                labels: ["Biosólidos M1", "Biosólidos M2", "RSU M1", "RSU M2"],
+                datasets: [{
+                    label: "Totalizado",
+                    data: [totBioM1, totBioM2, totRsuM1, totRsuM2],
+                    backgroundColor: ["#f59e0b", "#d97706", "#22d3ee", "#0284c7"],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                ...baseOptions(),
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => {
+                                const val = ctx.parsed.y || 0;
+                                const unidad = ctx.dataIndex < 2 ? "Ton" : "unidades";
+                                return `${ctx.label}: ${fmtDec(val, 1)} ${unidad}`;
+                            }
+                        }
+                    }
+                }
+            }
         });
     }
 
