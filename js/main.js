@@ -16,30 +16,41 @@ let rawDataPrincipal = [];
 let charts = {};
 
 const COORDS_MAPA_PLANTA = [
-    { sector: "DESHIDRATACIÓN (M1)", x: 43, y: 24 },
-    { sector: "DESHIDRATACIÓN (M2)", x: 49, y: 24 },
-    { sector: "CLARIFICADOR A (M1)", x: 63, y: 38 },
-    { sector: "SILO DE LODOS", x: 26, y: 22 },
-    { sector: "Pretratamiento M1", x: 18, y: 44 },
-    { sector: "Pretratamiento M2", x: 23, y: 56 },
-    { sector: "Sedimentador Primario M1", x: 35, y: 39 },
-    { sector: "Sedimentador Primario M2", x: 38, y: 58 },
-    { sector: "Reactor Biológico M1", x: 48, y: 41 },
-    { sector: "Reactor Biológico M2", x: 52, y: 62 },
-    { sector: "Sedimentador Secundario M2", x: 68, y: 58 },
-    { sector: "Cloración / Desinfección", x: 78, y: 48 },
-    { sector: "Espesador M1", x: 29, y: 26 },
-    { sector: "Espesador M2", x: 34, y: 26 },
-    { sector: "Digestor Anaeróbico", x: 20, y: 19 },
-    { sector: "Gasómetro M1", x: 14, y: 23 },
-    { sector: "Gasómetro M2", x: 14, y: 31 },
-    { sector: "Sopladores M1", x: 45, y: 74 },
-    { sector: "Sopladores M2", x: 55, y: 74 },
-    { sector: "Flotación M1", x: 59, y: 23 },
-    { sector: "Flotación M2", x: 64, y: 23 },
-    { sector: "Sala de Tableros", x: 72, y: 74 },
-    { sector: "Laboratorio M1", x: 84, y: 33 },
-    { sector: "Pañol M1", x: 86, y: 65 }
+    // Zona Izquierda (M2 y Digestión)
+    { sector: "Silo de Lodos", x: 5.5, y: 15 },
+    { sector: "Deshidratación M2", x: 5.2, y: 27 },
+    { sector: "Estación Transformadora 3", x: 4.8, y: 37 },
+    { sector: "Gasómetro", x: 16.5, y: 12 },
+    { sector: "Caldera", x: 13.0, y: 22 },
+    { sector: "Digestor", x: 14.5, y: 31 },
+    { sector: "Flotador", x: 19.5, y: 22 },
+    { sector: "Espesador", x: 23.8, y: 28 },
+    { sector: "Depósito de Hidrocarburo", x: 27.5, y: 19 },
+    { sector: "Reactor 1", x: 16.0, y: 51 },
+    { sector: "Reactor 2", x: 16.0, y: 58 },
+    { sector: "Reactor 3", x: 16.0, y: 65 },
+    { sector: "Reactor 4", x: 16.0, y: 72 },
+    { sector: "Sala de Soplantes M2", x: 10.5, y: 71 },
+    { sector: "Clarificador 1", x: 24.5, y: 49 },
+    { sector: "Clarificador 2", x: 31.0, y: 50 },
+    { sector: "Cámara de Distribución de Clarificadores", x: 28.0, y: 58 },
+    { sector: "Clarificador 3", x: 24.5, y: 67 },
+    { sector: "Clarificador 4", x: 31.0, y: 68 },
+
+    // Zona Central (M1)
+    { sector: "Deshidratación M1", x: 39.5, y: 53 },
+    { sector: "Grupo Electrógeno", x: 39.5, y: 64 },
+    { sector: "Sala Soplantes M1", x: 41.8, y: 72 },
+    { sector: "Clarificador C", x: 47.0, y: 49 },
+    { sector: "Clarificador B", x: 52.5, y: 46 },
+    { sector: "Clarificador A", x: 57.5, y: 49 },
+    { sector: "Reactor C", x: 47.0, y: 72 },
+    { sector: "Reactor B", x: 52.0, y: 72 },
+    { sector: "Reactor A", x: 57.0, y: 72 },
+    { sector: "Pretratamiento M1", x: 64.0, y: 81 },
+
+    // Zona Derecha
+    { sector: "Sedimentador", x: 87.5, y: 75 }
 ];
 
 // ============================================================================
@@ -105,6 +116,16 @@ function fmtDec(n, dec = 1) {
 
 function fmtMoney(n) {
     return "$ " + Math.round(n || 0).toLocaleString("es-AR");
+}
+
+function normalizeTxt(str) {
+    return String(str || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[()]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
 }
 
 function getMonthKey(fechaStr) {
@@ -398,7 +419,7 @@ function renderResumen(rows) {
     renderSimpleBar("chartMensualArenas", mLabels, mLabels.map(k => mensual[k].arenas), "Arenas (Ton)", "#fb923c");
     renderSimpleBar("chartMensualPolimero", mLabels, mLabels.map(k => mensual[k].polimero), "Polímero (Kg)", "#818cf8");
 
-    // Gráfico de Torta: ENERGÍA TOTAL POR MÓDULO (Set 1, 2 y 3 de M1 y M2)
+    // Gráfico Tipo Rosquilla: ENERGÍA TOTAL POR MÓDULO (letras blancas)
     destroyChart("chartEnergiaSectores");
     const ctxES = document.getElementById("chartEnergiaSectores");
     if (ctxES) {
@@ -406,7 +427,7 @@ function renderResumen(rows) {
         const totalSets = valoresSets.reduce((a, b) => a + b, 0);
 
         charts["chartEnergiaSectores"] = new Chart(ctxES, {
-            type: "pie",
+            type: "doughnut",
             data: {
                 labels: ["M1 - TS1", "M1 - TS2", "M1 - TS3", "M2 - TS1", "M2 - TS2", "M2 - TS3"],
                 datasets: [{
@@ -428,6 +449,7 @@ function renderResumen(rows) {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                cutout: "62%",
                 layout: {
                     padding: { left: 8, right: 16, top: 6, bottom: 6 }
                 },
@@ -436,8 +458,8 @@ function renderResumen(rows) {
                         position: "right",
                         align: "center",
                         labels: {
-                            color: "#e2e8f0",
-                            font: { size: 12, weight: "500" },
+                            color: "#ffffff",
+                            font: { size: 12, weight: "600" },
                             padding: 14,
                             usePointStyle: true,
                             pointStyle: "circle",
@@ -447,6 +469,7 @@ function renderResumen(rows) {
                                     const val = ds.data[i] || 0;
                                     return {
                                         text: `${label}  (${fmtInt(val)} kWh)`,
+                                        fontColor: "#ffffff",
                                         fillStyle: ds.backgroundColor[i],
                                         strokeStyle: ds.borderColor,
                                         lineWidth: ds.borderWidth,
@@ -459,8 +482,8 @@ function renderResumen(rows) {
                     },
                     tooltip: {
                         backgroundColor: "#0f172a",
-                        titleColor: "#f8fafc",
-                        bodyColor: "#cbd5e1",
+                        titleColor: "#ffffff",
+                        bodyColor: "#ffffff",
                         borderColor: "#334155",
                         borderWidth: 1,
                         padding: 10,
@@ -494,7 +517,6 @@ function renderProceso(rows) {
     setText("proc_rem_mes_m2", fmtDec(calcRem(avgCol(rows, "mes_ent_m2"), avgCol(rows, "mes_sal_m2")), 1));
     setText("proc_norma_m2", fmtInt(sumCol(rows, "fuera_norma_m2")));
 
-    // Deshidratación y Biosólidos (soporta los nombres reales de Hoja 1: biosolidos_m1, porc_ms_m1, ton_ms_m1)
     const volM1 = sumCol(rows, "biosolidos_m1") || sumCol(rows, "bio_vol_m1");
     const msM1 = avgCol(rows, "porc_ms_m1") || avgCol(rows, "bio_ms_m1");
     const tonM1 = sumCol(rows, "ton_ms_m1") || sumCol(rows, "bio_ton_m1") || (volM1 * (msM1 / 100));
@@ -605,69 +627,111 @@ function abrirModalDesvio(fecha, motivo) {
 }
 
 // ============================================================================
-// 3. FUNCIONAMIENTO
+// 3. FUNCIONAMIENTO (PLANO DE PLANTA + EQUIPOS CRÍTICOS COMO LA IMAGEN)
 // ============================================================================
 function renderFuncionamiento(rowsPrincipal, rowsEquipos) {
     const rsuTot = sumCol(rowsPrincipal, "cant_rsu") || (sumCol(rowsPrincipal, "cant_rsu_m1") + sumCol(rowsPrincipal, "cant_rsu_m2"));
     setText("func_cant_rsu", fmtInt(rsuTot));
     setText("func_cant_ot", fmtInt(sumCol(rowsPrincipal, "cant_ot")));
 
-    const equipos = rowsEquipos.filter(r => col(r, "equipo") !== "");
-    const operativos = equipos.filter(e => /operativo/i.test(col(e, "estado"))).length;
-    const fuera = equipos.filter(e => /fuera|reparaci/i.test(col(e, "estado"))).length;
+    const equipos = (rowsEquipos || [])
+        .filter(r => String(col(r, "equipo")).trim() !== "")
+        .map(r => {
+            const nombre = String(col(r, "equipo")).trim();
+            const sector = String(col(r, "sector_mapa") || "").trim();
+            const estado = String(col(r, "estado") || "OPERATIVO").trim();
+            const detalle = String(col(r, "detalle") || "").trim();
+            const estNorm = normalizeTxt(estado);
 
-    setText("func_eq_operativos", fmtInt(operativos));
-    setText("func_eq_fuera", fmtInt(fuera));
-    setText("func_eq_totales", fmtInt(equipos.length));
+            let nivel = 1; // 1 = Operativo, 2 = En Reparación, 3 = Fuera de Servicio
+            if (estNorm.includes("reparaci")) nivel = 2;
+            if (estNorm.includes("fuera")) nivel = 3;
 
-    const pinsCont = document.getElementById("mapa_planta_pins");
-    if (pinsCont) {
-        pinsCont.innerHTML = equipos.map(eq => {
-            const nombre = col(eq, "equipo");
-            const sec = col(eq, "sector_mapa");
-            const est = String(col(eq, "estado") || "").toUpperCase();
-            const det = col(eq, "detalle") || "Sin observaciones";
-            const coord = COORDS_MAPA_PLANTA.find(c => c.sector.toLowerCase() === String(sec).toLowerCase()) || { x: 50, y: 50 };
+            return { nombre, sector, estado, detalle, nivel };
+        });
 
-            let colorPin = "bg-emerald-500 border-emerald-200";
-            if (est.includes("FUERA")) colorPin = "bg-red-500 border-red-200 animate-pulse";
-            else if (est.includes("REPARACI")) colorPin = "bg-amber-500 border-amber-200";
+    setText("total_eq_criticos", `${equipos.length} equipos`);
+
+    // 1. Marcadores sobre el plano aéreo
+    const capa = document.getElementById("capa_marcadores_planta");
+    if (capa) {
+        capa.innerHTML = COORDS_MAPA_PLANTA.map(pt => {
+            const ptNorm = normalizeTxt(pt.sector);
+            const relacionados = equipos.filter(eq => {
+                const secNorm = normalizeTxt(eq.sector);
+                if (!secNorm) return false;
+                return secNorm.includes(ptNorm) || ptNorm.includes(secNorm);
+            });
+
+            let dotClass = "bg-slate-400 border-slate-950";
+            if (relacionados.length > 0) {
+                const maxNivel = Math.max(...relacionados.map(e => e.nivel));
+                if (maxNivel === 3) {
+                    dotClass = "bg-red-500 border-slate-950 shadow-[0_0_8px_#ef4444]";
+                } else if (maxNivel === 2) {
+                    dotClass = "bg-amber-400 border-slate-950 shadow-[0_0_8px_#fbbf24]";
+                } else {
+                    dotClass = "bg-emerald-400 border-slate-950 shadow-[0_0_8px_#10b981]";
+                }
+            }
 
             return `
-                <div style="left:${coord.x}%; top:${coord.y}%;" title="${nombre} (${sec}) - ${est}: ${det}"
-                     class="absolute -translate-x-1/2 -translate-y-1/2 group cursor-pointer z-10">
-                    <span class="block w-4 h-4 rounded-full border-2 shadow-lg ${colorPin}"></span>
-                    <div class="hidden group-hover:block absolute bottom-6 left-1/2 -translate-x-1/2 w-52 bg-slate-950/95 border border-slate-700 rounded-lg p-2.5 text-xs shadow-xl z-20 pointer-events-none">
-                        <p class="font-bold text-white">${nombre}</p>
-                        <p class="text-cyan-400 text-[11px]">${sec}</p>
-                        <p class="text-slate-300 mt-1">${est}</p>
-                        <p class="text-slate-400 text-[10px] mt-0.5">${det}</p>
-                    </div>
+                <div style="left:${pt.x}%; top:${pt.y}%;" class="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10">
+                    <span class="w-3 h-3 rounded-full border-2 ${dotClass} mb-0.5"></span>
+                    <span class="bg-slate-950/90 border border-slate-600/80 text-white text-[10px] font-semibold px-2 py-0.5 rounded shadow-md whitespace-nowrap">
+                        ${pt.sector}
+                    </span>
                 </div>
             `;
         }).join("");
     }
 
-    const tbodyEq = document.getElementById("tabla_equipos_criticos");
-    if (tbodyEq) {
+    // 2. Tarjetas de Listado General de Equipos Críticos con recuadro amarillo debajo
+    const lista = document.getElementById("lista_equipos_criticos");
+    if (lista) {
         if (!equipos.length) {
-            tbodyEq.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-slate-500 italic">Sin equipos críticos cargados</td></tr>`;
+            lista.innerHTML = `<div class="text-center py-8 text-slate-500 text-sm italic col-span-full">Sin equipos críticos registrados</div>`;
         } else {
-            tbodyEq.innerHTML = equipos.map(eq => {
-                const est = String(col(eq, "estado") || "");
-                let badge = "bg-emerald-950 text-emerald-400 border-emerald-700";
-                if (/fuera/i.test(est)) badge = "bg-red-950 text-red-400 border-red-700";
-                else if (/reparaci/i.test(est)) badge = "bg-amber-950 text-amber-400 border-amber-700";
+            lista.innerHTML = equipos.map(eq => {
+                let badgeClass = "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
+                let dotClass = "bg-emerald-400";
+
+                if (eq.nivel === 2) {
+                    badgeClass = "bg-amber-500/15 text-amber-300 border-amber-500/30";
+                    dotClass = "bg-amber-400 animate-pulse";
+                } else if (eq.nivel === 3) {
+                    badgeClass = "bg-red-500/15 text-red-400 border-red-500/30";
+                    dotClass = "bg-red-500";
+                }
+
+                const mostrarRecuadro = eq.nivel === 2 || eq.nivel === 3 || eq.detalle !== "";
+                const textoDetalle = eq.detalle || (eq.nivel === 3 ? "EQUIPO FUERA DE SERVICIO" : "EN REPARACIÓN");
+
+                const detalleHTML = mostrarRecuadro
+                    ? `<div class="mt-3 text-xs bg-slate-950/80 text-amber-200 px-3 py-2 rounded-lg border border-amber-500/30 flex items-center gap-2">
+                           <i data-lucide="wrench" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
+                           <span class="font-medium uppercase tracking-wide">${textoDetalle}</span>
+                       </div>`
+                    : "";
 
                 return `
-                    <tr class="border-b border-slate-700/60 hover:bg-slate-900/50 text-sm">
-                        <td class="py-3 px-4 text-white font-semibold">${col(eq, "equipo")}</td>
-                        <td class="py-3 px-4 text-slate-300">${col(eq, "sector_mapa")}</td>
-                        <td class="py-3 px-4"><span class="text-xs font-semibold px-2.5 py-1 rounded-full border ${badge}">${est}</span></td>
-                        <td class="py-3 px-4 text-slate-400 text-xs">${col(eq, "detalle") || "—"}</td>
-                    </tr>
+                    <div class="bg-slate-900 rounded-xl p-4 border border-slate-700/80 hover:border-slate-600 transition flex flex-col justify-between">
+                        <div class="flex justify-between items-start gap-2">
+                            <div>
+                                <div class="font-bold text-white text-sm uppercase">${eq.nombre}</div>
+                                <div class="text-[11px] text-slate-400 uppercase mt-0.5">${eq.sector || "SECTOR GENERAL"}</div>
+                            </div>
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border flex items-center gap-1.5 shrink-0 ${badgeClass}">
+                                <span class="w-2 h-2 rounded-full ${dotClass}"></span>
+                                ${eq.estado}
+                            </span>
+                        </div>
+                        ${detalleHTML}
+                    </div>
                 `;
             }).join("");
+
+            if (typeof lucide !== "undefined") lucide.createIcons();
         }
     }
 }
@@ -934,9 +998,9 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
     }
 
     const hsNormTot = sumCol(rowsPrincipal, "hs_normales");
-    const hsExtraTot = sumCol(rowsPrincipal, "hs_extra");
+    const hsExtTot = sumCol(rowsPrincipal, "hs_extra");
     setText("gest_rrhh_hs_normales_tot", fmtInt(hsNormTot));
-    setText("gest_rrhh_hs_extra_tot", fmtInt(hsExtraTot));
+    setText("gest_rrhh_hs_extra_tot", fmtInt(hsExtTot));
 
     const rrhhMes = {};
     rowsPrincipal.forEach(r => {
@@ -998,7 +1062,6 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
         });
     }
 
-    // Gráfico Coste de Biosólidos y RSU ($)
     const costosMes = {};
     rowsPrincipal.forEach(r => {
         const f = col(r, "fecha");
@@ -1046,7 +1109,6 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
         });
     }
 
-    // Gráfico de barras: Totalizado Biosólidos M1/M2 y RSU M1/M2
     const totBioM1 = sumCol(rowsPrincipal, "biosolidos_ton_m1");
     const totBioM2 = sumCol(rowsPrincipal, "biosolidos_ton_m2");
     const totRsuM1 = sumCol(rowsPrincipal, "cant_rsu_m1");
@@ -1084,7 +1146,6 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
         });
     }
 
-    // 4. Combustible de Vehículos (lee la columna exacta tipo_vehiculo)
     const totLitros = sumCol(rowsCombustible, "litros");
     const totPlataComb = sumCol(rowsCombustible, "plata");
     setText("gest_litros_combustible_total", `${fmtInt(totLitros)} L`);
@@ -1104,7 +1165,6 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
         `).join("");
     }
 
-    // Inversiones (Obras y Equipamiento) y Explotaciones (Reparaciones)
     setText("gest_inv_obras", fmtMoney(sumCol(rowsPrincipal, "inv_obras")));
     setText("gest_inv_equipamiento", fmtMoney(sumCol(rowsPrincipal, "inv_equipamiento")));
     setText("gest_exp_reparaciones", fmtMoney(sumCol(rowsPrincipal, "exp_reparaciones")));
