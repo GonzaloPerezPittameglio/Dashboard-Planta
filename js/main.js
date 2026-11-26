@@ -141,7 +141,7 @@ function baseOptions() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: { labels: { color: "#cbd5e1", font: { size: 11 } } }
+            legend: { labels: { color: "#ffffff", font: { size: 11 } } }
         },
         scales: {
             x: { ticks: { color: "#94a3b8", font: { size: 11 } }, grid: { color: "#1e293b" } },
@@ -332,13 +332,14 @@ function renderResumen(rows) {
     destroyChart("chartEnergiaSectores");
     const ctxES = document.getElementById("chartEnergiaSectores");
     if (ctxES) {
+        const labelsSets = ["M1 - TS1", "M1 - TS2", "M1 - TS3", "M2 - TS1", "M2 - TS2", "M2 - TS3"];
         const valoresSets = [eM1Ts1, eM1Ts2, eM1Ts3, eM2Ts1, eM2Ts2, eM2Ts3];
         const totalSets = valoresSets.reduce((a, b) => a + b, 0);
 
         charts["chartEnergiaSectores"] = new Chart(ctxES, {
             type: "pie",
             data: {
-                labels: ["M1 - TS1", "M1 - TS2", "M1 - TS3", "M2 - TS1", "M2 - TS2", "M2 - TS3"],
+                labels: labelsSets,
                 datasets: [{
                     label: "Energía (kWh)",
                     data: valoresSets,
@@ -352,34 +353,34 @@ function renderResumen(rows) {
                     ],
                     borderColor: "#0f172a",
                     borderWidth: 2,
-                    hoverOffset: 8
+                    hoverOffset: 6
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 layout: {
-                    padding: { left: 8, right: 16, top: 6, bottom: 6 }
+                    padding: { left: 4, right: 12, top: 4, bottom: 4 }
                 },
                 plugins: {
                     legend: {
                         position: "right",
                         align: "center",
                         labels: {
-                            color: "#e2e8f0",
+                            color: "#ffffff",
                             font: { size: 12, weight: "500" },
-                            padding: 14,
-                            usePointStyle: true,
-                            pointStyle: "circle",
+                            padding: 12,
+                            boxWidth: 12,
                             generateLabels: (chart) => {
                                 const ds = chart.data.datasets[0];
                                 return chart.data.labels.map((label, i) => {
                                     const val = ds.data[i] || 0;
                                     return {
-                                        text: `${label}  (${fmtInt(val)} kWh)`,
+                                        text: `${label} (${fmtInt(val)} kWh)`,
                                         fillStyle: ds.backgroundColor[i],
                                         strokeStyle: ds.borderColor,
                                         lineWidth: ds.borderWidth,
+                                        fontColor: "#ffffff",
                                         hidden: !chart.getDataVisibility(i),
                                         index: i
                                     };
@@ -389,8 +390,8 @@ function renderResumen(rows) {
                     },
                     tooltip: {
                         backgroundColor: "#0f172a",
-                        titleColor: "#f8fafc",
-                        bodyColor: "#cbd5e1",
+                        titleColor: "#ffffff",
+                        bodyColor: "#ffffff",
                         borderColor: "#334155",
                         borderWidth: 1,
                         padding: 10,
@@ -797,7 +798,7 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
                 maintainAspectRatio: false,
                 interaction: { mode: "index", intersect: false },
                 plugins: {
-                    legend: { labels: { color: "#cbd5e1", font: { size: 11 } } },
+                    legend: { labels: { color: "#ffffff", font: { size: 11 } } },
                     tooltip: {
                         callbacks: {
                             label: (ctx) => {
@@ -961,7 +962,7 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
             options: {
                 ...baseOptions(),
                 plugins: {
-                    legend: { labels: { color: "#cbd5e1", font: { size: 11 } } },
+                    legend: { labels: { color: "#ffffff", font: { size: 11 } } },
                     tooltip: {
                         callbacks: {
                             label: (ctx) => `${ctx.dataset.label}: ${fmtMoney(ctx.parsed.y || 0)}`
@@ -1062,7 +1063,7 @@ function renderHorizontalBar(id, labels, data, color) {
             plugins: { legend: { display: false } },
             scales: {
                 x: { beginAtZero: true, ticks: { color: "#94a3b8", precision: 0 }, grid: { color: "#1e293b" } },
-                y: { ticks: { color: "#cbd5e1", font: { size: 11 } }, grid: { display: false } }
+                y: { ticks: { color: "#ffffff", font: { size: 11 } }, grid: { display: false } }
             }
         }
     });
@@ -1079,7 +1080,7 @@ function renderDoughnut(id, labels, data, colors) {
             responsive: true,
             maintainAspectRatio: false,
             cutout: "65%",
-            plugins: { legend: { position: "bottom", labels: { color: "#cbd5e1", font: { size: 11 } } } }
+            plugins: { legend: { position: "bottom", labels: { color: "#ffffff", font: { size: 11 } } } }
         }
     });
 }
