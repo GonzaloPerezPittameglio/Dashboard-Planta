@@ -273,10 +273,10 @@
                 </div>
             </div>
 
-            <!-- Gráfico de Energía por Sectores -->
+            <!-- Gráfico de Torta: Energía Total por Módulo -->
             <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
                 <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-wider">ENERGÍA TOTAL POR MÓDULO</h3>
-                <div class="h-64 relative"><canvas id="chartEnergiaSectores"></canvas></div>
+                <div class="h-72 relative"><canvas id="chartEnergiaSectores"></canvas></div>
             </div>
         </div>
 
@@ -929,9 +929,8 @@
                     </div>
                 </div>
 
-                <!-- NUEVOS GRÁFICOS: Coste de Biosólidos y RSU ($) + Totalizado Biosólidos y RSU M1/M2 -->
+                <!-- Gráficos: Coste de Biosólidos y RSU ($) + Totalizado Biosólidos y RSU M1/M2 -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Gráfico 1: Coste de Biosólidos y RSU ($) -->
                     <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
                         <div class="flex items-center justify-between gap-2 mb-4 border-b border-slate-700 pb-3">
                             <div class="flex items-center gap-2">
@@ -943,7 +942,6 @@
                         <div class="h-64 relative"><canvas id="chartCostoBiosolidosYRSU"></canvas></div>
                     </div>
 
-                    <!-- Gráfico 2: Un solo gráfico de barras con Totalizado Biosólidos M1/M2 y RSU M1/M2 -->
                     <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
                         <div class="flex items-center justify-between gap-2 mb-4 border-b border-slate-700 pb-3">
                             <div class="flex items-center gap-2">
@@ -992,6 +990,41 @@
                 </div>
             </section>
 
+            <!-- ========================================================= -->
+            <!-- BLOQUE 4: INVERSIONES Y EXPLOTACIONES (SIN GRÁFICOS)       -->
+            <!-- ========================================================= -->
+            <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Apartado Inversiones (Obras y Equipamiento - sin gráfico) -->
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                    <div class="flex items-center gap-2.5 mb-4 border-b border-slate-700 pb-3">
+                        <i data-lucide="landmark" class="w-5 h-5 text-cyan-400"></i>
+                        <h2 class="text-base font-bold text-white uppercase tracking-wider">Inversiones</h2>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="bg-slate-900 rounded-xl p-4 border border-slate-700">
+                            <div class="text-xs text-slate-400 uppercase tracking-wider mb-1">Obras</div>
+                            <div class="text-2xl font-bold text-cyan-400" id="gest_inv_obras">$ 0</div>
+                        </div>
+                        <div class="bg-slate-900 rounded-xl p-4 border border-slate-700">
+                            <div class="text-xs text-slate-400 uppercase tracking-wider mb-1">Equipamiento</div>
+                            <div class="text-2xl font-bold text-emerald-400" id="gest_inv_equipamiento">$ 0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Apartado Explotaciones (Reparaciones - sin gráfico) -->
+                <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700 shadow-xl">
+                    <div class="flex items-center gap-2.5 mb-4 border-b border-slate-700 pb-3">
+                        <i data-lucide="hammer" class="w-5 h-5 text-amber-400"></i>
+                        <h2 class="text-base font-bold text-white uppercase tracking-wider">Explotaciones</h2>
+                    </div>
+                    <div class="bg-slate-900 rounded-xl p-4 border border-slate-700">
+                        <div class="text-xs text-slate-400 uppercase tracking-wider mb-1">Reparaciones</div>
+                        <div class="text-2xl font-bold text-amber-400" id="gest_exp_reparaciones">$ 0</div>
+                    </div>
+                </div>
+            </section>
+
         </div>
     </main>
 
@@ -1007,6 +1040,6 @@
     </div>
 
     <!-- Script Principal -->
-    <script src="js/main.js?v=4"></script>
+    <script src="js/main.js?v=5"></script>
 </body>
 </html>
