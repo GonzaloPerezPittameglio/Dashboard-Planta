@@ -15,31 +15,43 @@ const SHEETS = {
 let rawDataPrincipal = [];
 let charts = {};
 
+// Coordenadas exactas sobre mapa-planta.jpg (idénticas a la captura)
 const COORDS_MAPA_PLANTA = [
-    { sector: "DESHIDRATACIÓN (M1)", x: 43, y: 24 },
-    { sector: "DESHIDRATACIÓN (M2)", x: 49, y: 24 },
-    { sector: "CLARIFICADOR A (M1)", x: 63, y: 38 },
-    { sector: "SILO DE LODOS", x: 26, y: 22 },
-    { sector: "Pretratamiento M1", x: 18, y: 44 },
-    { sector: "Pretratamiento M2", x: 23, y: 56 },
-    { sector: "Sedimentador Primario M1", x: 35, y: 39 },
-    { sector: "Sedimentador Primario M2", x: 38, y: 58 },
-    { sector: "Reactor Biológico M1", x: 48, y: 41 },
-    { sector: "Reactor Biológico M2", x: 52, y: 62 },
-    { sector: "Sedimentador Secundario M2", x: 68, y: 58 },
-    { sector: "Cloración / Desinfección", x: 78, y: 48 },
-    { sector: "Espesador M1", x: 29, y: 26 },
-    { sector: "Espesador M2", x: 34, y: 26 },
-    { sector: "Digestor Anaeróbico", x: 20, y: 19 },
-    { sector: "Gasómetro M1", x: 14, y: 23 },
-    { sector: "Gasómetro M2", x: 14, y: 31 },
-    { sector: "Sopladores M1", x: 45, y: 74 },
-    { sector: "Sopladores M2", x: 55, y: 74 },
-    { sector: "Flotación M1", x: 59, y: 23 },
-    { sector: "Flotación M2", x: 64, y: 23 },
-    { sector: "Sala de Tableros", x: 72, y: 74 },
-    { sector: "Laboratorio M1", x: 84, y: 33 },
-    { sector: "Pañol M1", x: 86, y: 65 }
+    // Zona Izquierda (M2 y Digestión)
+    { sector: "Silo de Lodos", x: 5.5, y: 15 },
+    { sector: "Deshidratación M2", x: 5.2, y: 27 },
+    { sector: "Estación Transformadora 3", x: 4.8, y: 37 },
+    { sector: "Gasómetro", x: 16.5, y: 12 },
+    { sector: "Caldera", x: 13.0, y: 22 },
+    { sector: "Digestor", x: 14.5, y: 31 },
+    { sector: "Flotador", x: 19.5, y: 22 },
+    { sector: "Espesador", x: 23.8, y: 28 },
+    { sector: "Depósito de Hidrocarburo", x: 27.5, y: 19 },
+    { sector: "Reactor 1", x: 16.0, y: 51 },
+    { sector: "Reactor 2", x: 16.0, y: 58 },
+    { sector: "Reactor 3", x: 16.0, y: 65 },
+    { sector: "Reactor 4", x: 16.0, y: 72 },
+    { sector: "Sala de Soplantes M2", x: 10.5, y: 71 },
+    { sector: "Clarificador 1", x: 24.5, y: 49 },
+    { sector: "Clarificador 2", x: 31.0, y: 50 },
+    { sector: "Cámara de Distribución de Clarificadores", x: 28.0, y: 58 },
+    { sector: "Clarificador 3", x: 24.5, y: 67 },
+    { sector: "Clarificador 4", x: 31.0, y: 68 },
+
+    // Zona Central (M1)
+    { sector: "Deshidratación M1", x: 39.5, y: 53 },
+    { sector: "Grupo Electrógeno", x: 39.5, y: 64 },
+    { sector: "Sala Soplantes M1", x: 41.8, y: 72 },
+    { sector: "Clarificador C", x: 47.0, y: 49 },
+    { sector: "Clarificador B", x: 52.5, y: 46 },
+    { sector: "Clarificador A", x: 57.5, y: 49 },
+    { sector: "Reactor C", x: 47.0, y: 72 },
+    { sector: "Reactor B", x: 52.0, y: 72 },
+    { sector: "Reactor A", x: 57.0, y: 72 },
+    { sector: "Pretratamiento M1", x: 64.0, y: 81 },
+
+    // Zona Derecha
+    { sector: "Sedimentador", x: 87.5, y: 75 }
 ];
 
 // ============================================================================
@@ -328,7 +340,7 @@ function renderResumen(rows) {
     renderSimpleBar("chartMensualArenas", mLabels, mLabels.map(k => mensual[k].arenas), "Arenas (Ton)", "#fb923c");
     renderSimpleBar("chartMensualPolimero", mLabels, mLabels.map(k => mensual[k].polimero), "Polímero (Kg)", "#818cf8");
 
-    // Gráfico de Torta: ENERGÍA TOTAL POR MÓDULO (Set 1, 2 y 3 de M1 y M2)
+    // Gráfico de Rosquilla: ENERGÍA TOTAL POR MÓDULO (Set 1, 2 y 3 de M1 y M2)
     destroyChart("chartEnergiaSectores");
     const ctxES = document.getElementById("chartEnergiaSectores");
     if (ctxES) {
@@ -516,66 +528,123 @@ function abrirModalDesvio(fecha, motivo) {
 }
 
 // ============================================================================
-// 3. FUNCIONAMIENTO
+// 3. FUNCIONAMIENTO (MAPA DE PLANTA + EQUIPOS CRÍTICOS CON RECUADRO AMARILLO)
 // ============================================================================
+function normalizeTxt(str) {
+    return String(str || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[()]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
 function renderFuncionamiento(rowsPrincipal, rowsEquipos) {
     const rsuTot = sumCol(rowsPrincipal, "cant_rsu") || (sumCol(rowsPrincipal, "cant_rsu_m1") + sumCol(rowsPrincipal, "cant_rsu_m2"));
     setText("func_cant_rsu", fmtInt(rsuTot));
     setText("func_cant_ot", fmtInt(sumCol(rowsPrincipal, "cant_ot")));
 
-    const equipos = rowsEquipos.filter(r => col(r, "equipo") !== "");
+    const equipos = rowsEquipos
+        .filter(r => String(col(r, "equipo")).trim() !== "")
+        .map(r => {
+            const nombre = String(col(r, "equipo")).trim();
+            const sector = String(col(r, "sector_mapa") || "").trim();
+            const estado = String(col(r, "estado") || "OPERATIVO").trim();
+            const detalle = String(col(r, "detalle") || "").trim();
+            const estNorm = normalizeTxt(estado);
+
+            let nivel = 1; // 1 = Operativo (verde), 2 = En Reparación (amarillo), 3 = Fuera de Servicio (rojo)
+            if (estNorm.includes("reparaci")) nivel = 2;
+            if (estNorm.includes("fuera")) nivel = 3;
+
+            return { nombre, sector, estado, detalle, nivel };
+        });
+
     setText("total_eq_criticos", `${equipos.length} equipos`);
 
+    // 1. Marcadores sobre el plano aéreo
     const capa = document.getElementById("capa_marcadores_planta");
     if (capa) {
         capa.innerHTML = COORDS_MAPA_PLANTA.map(pt => {
-            const match = equipos.find(eq =>
-                String(col(eq, "sector_mapa")).toLowerCase().includes(pt.sector.toLowerCase()) ||
-                pt.sector.toLowerCase().includes(String(col(eq, "sector_mapa")).toLowerCase())
-            );
-            let dotColor = "bg-slate-400";
-            if (match) {
-                const est = String(col(match, "estado"));
-                if (/fuera/i.test(est)) dotColor = "bg-red-500 shadow-[0_0_8px_#ef4444]";
-                else if (/reparaci/i.test(est)) dotColor = "bg-amber-400 shadow-[0_0_8px_#fbbf24]";
-                else dotColor = "bg-emerald-400 shadow-[0_0_8px_#10b981]";
+            const ptNorm = normalizeTxt(pt.sector);
+            const relacionados = equipos.filter(eq => {
+                const secNorm = normalizeTxt(eq.sector);
+                if (!secNorm) return false;
+                return secNorm.includes(ptNorm) || ptNorm.includes(secNorm);
+            });
+
+            // Estado predominante: Fuera de servicio (rojo) > En reparación (amarillo) > Operativo (verde) > Sin novedad (gris)
+            let dotClass = "bg-slate-400 border-slate-950";
+            if (relacionados.length > 0) {
+                const maxNivel = Math.max(...relacionados.map(e => e.nivel));
+                if (maxNivel === 3) {
+                    dotClass = "bg-red-500 border-slate-950 shadow-[0_0_8px_#ef4444]";
+                } else if (maxNivel === 2) {
+                    dotClass = "bg-amber-400 border-slate-950 shadow-[0_0_8px_#fbbf24]";
+                } else {
+                    dotClass = "bg-emerald-400 border-slate-950 shadow-[0_0_8px_#10b981]";
+                }
             }
+
             return `
-                <div style="left:${pt.x}%; top:${pt.y}%;" class="absolute -translate-x-1/2 -translate-y-1/2 flex items-center gap-1">
-                    <span class="w-2.5 h-2.5 rounded-full ${dotColor} border border-slate-950"></span>
-                    <span class="text-[9px] font-semibold text-white bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-700/80 whitespace-nowrap">${pt.sector}</span>
+                <div style="left:${pt.x}%; top:${pt.y}%;" class="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10">
+                    <span class="w-3 h-3 rounded-full border-2 ${dotClass} mb-0.5"></span>
+                    <span class="bg-slate-950/90 border border-slate-600/80 text-white text-[10px] font-semibold px-2 py-0.5 rounded shadow-md whitespace-nowrap">
+                        ${pt.sector}
+                    </span>
                 </div>
             `;
         }).join("");
     }
 
+    // 2. Tarjetas de Listado General de Equipos Críticos
     const lista = document.getElementById("lista_equipos_criticos");
     if (lista) {
         if (!equipos.length) {
-            lista.innerHTML = `<div class="text-center py-8 text-slate-500 text-sm italic col-span-full">Sin equipos críticos registrados</div>`;
+            lista.innerHTML = `<div class="text-center py-8 text-slate-500 text-sm italic col-span-full">Sin equipos críticos registrados en la hoja Equipos_Criticos</div>`;
         } else {
             lista.innerHTML = equipos.map(eq => {
-                const nombre = col(eq, "equipo");
-                const sector = col(eq, "sector_mapa") || "General";
-                const estado = col(eq, "estado") || "OPERATIVO";
-                const detalle = col(eq, "detalle") || "Sin novedades";
-                let badge = "bg-emerald-950 text-emerald-400 border-emerald-800";
-                if (/fuera/i.test(estado)) badge = "bg-red-950 text-red-400 border-red-800";
-                else if (/reparaci/i.test(estado)) badge = "bg-amber-950 text-amber-400 border-amber-800";
+                let badgeClass = "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
+                let dotClass = "bg-emerald-400";
+
+                if (eq.nivel === 2) {
+                    badgeClass = "bg-amber-500/15 text-amber-300 border-amber-500/30";
+                    dotClass = "bg-amber-400 animate-pulse";
+                } else if (eq.nivel === 3) {
+                    badgeClass = "bg-red-500/15 text-red-400 border-red-500/30";
+                    dotClass = "bg-red-500";
+                }
+
+                // Recuadro amarillo inferior cuando está en Reparación, Fuera de Servicio o tiene detalle
+                const mostrarRecuadro = eq.nivel === 2 || eq.nivel === 3 || eq.detalle !== "";
+                const textoDetalle = eq.detalle || (eq.nivel === 3 ? "EQUIPO FUERA DE SERVICIO" : "EN REPARACIÓN");
+
+                const detalleHTML = mostrarRecuadro
+                    ? `<div class="mt-3 text-xs bg-slate-950/80 text-amber-200 px-3 py-2 rounded-lg border border-amber-500/30 flex items-center gap-2">
+                           <i data-lucide="wrench" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
+                           <span class="font-medium uppercase tracking-wide">${textoDetalle}</span>
+                       </div>`
+                    : "";
 
                 return `
-                    <div class="bg-slate-900 rounded-xl p-4 border border-slate-700 flex flex-col justify-between gap-2">
-                        <div class="flex items-start justify-between gap-2">
+                    <div class="bg-slate-900 rounded-xl p-4 border border-slate-700/80 hover:border-slate-600 transition flex flex-col justify-between">
+                        <div class="flex justify-between items-start gap-2">
                             <div>
-                                <div class="text-sm font-bold text-white">${nombre}</div>
-                                <div class="text-xs text-cyan-400">${sector}</div>
+                                <div class="font-bold text-white text-sm uppercase">${eq.nombre}</div>
+                                <div class="text-[11px] text-slate-400 uppercase mt-0.5">${eq.sector || "SECTOR GENERAL"}</div>
                             </div>
-                            <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${badge}">${estado}</span>
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border flex items-center gap-1.5 shrink-0 ${badgeClass}">
+                                <span class="w-2 h-2 rounded-full ${dotClass}"></span>
+                                ${eq.estado}
+                            </span>
                         </div>
-                        <p class="text-xs text-slate-400 border-t border-slate-800 pt-2">${detalle}</p>
+                        ${detalleHTML}
                     </div>
                 `;
             }).join("");
+
+            if (typeof lucide !== "undefined") lucide.createIcons();
         }
     }
 }
