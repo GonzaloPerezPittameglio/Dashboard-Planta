@@ -648,7 +648,6 @@ function renderMantenimiento(rows) {
 // 5. CONTROL Y GESTIÓN
 // ============================================================================
 function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustible) {
-    // 1. PAÑOL: Valorizado, Gráfico Ítems vs Plata Mensual y Tabla Mensual con Totalizado Abajo
     const panolValorizado = rowsPanol.reduce((acc, r) => {
         const valTot = num(col(r, "valor_total"));
         if (valTot > 0) return acc + valTot;
@@ -676,13 +675,11 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
     setText("gest_panol_plata_tot", fmtMoney(totPlata));
     setText("gest_plata_panol_consumo", fmtMoney(totPlata));
 
-    // Totalizado abajo de la tabla mensual
     setText("tabla_panol_tot_items", fmtInt(totItems));
     setText("tabla_panol_tot_plata", fmtMoney(totPlata));
 
     const mPanolLabels = Object.keys(panolMes);
 
-    // Tabla Mensual de Pañol (Ítems y Plata)
     const tbodyPanolMes = document.getElementById("tabla_panol_mensual");
     if (tbodyPanolMes) {
         if (!mPanolLabels.length) {
@@ -698,30 +695,37 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
         }
     }
 
-    // Gráfico Combinado: Consumo Mensual Pañol Ítems vs Consumo Mensual Pañol Plata ($)
+    // Gráfico de Líneas: Consumo Mensual Pañol Ítems vs Consumo Mensual Pañol Plata ($)
     destroyChart("chartPanolItemsVsPlata");
-    const ctxPanolCombo = document.getElementById("chartPanolItemsVsPlata");
-    if (ctxPanolCombo) {
-        charts["chartPanolItemsVsPlata"] = new Chart(ctxPanolCombo, {
-            type: "bar",
+    const ctxPanolLine = document.getElementById("chartPanolItemsVsPlata");
+    if (ctxPanolLine) {
+        charts["chartPanolItemsVsPlata"] = new Chart(ctxPanolLine, {
+            type: "line",
             data: {
                 labels: mPanolLabels,
                 datasets: [
                     {
                         label: "Consumo Plata ($)",
                         data: mPanolLabels.map(m => panolMes[m].plata),
-                        backgroundColor: "#10b981",
-                        borderRadius: 6,
+                        borderColor: "#10b981",
+                        backgroundColor: "rgba(16, 185, 129, 0.14)",
+                        fill: true,
+                        tension: 0.35,
+                        borderWidth: 2.5,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
                         yAxisID: "y"
                     },
                     {
                         label: "Consumo Ítems (Cant.)",
                         data: mPanolLabels.map(m => panolMes[m].items),
-                        type: "line",
                         borderColor: "#22d3ee",
-                        backgroundColor: "#22d3ee",
+                        backgroundColor: "rgba(34, 211, 238, 0.10)",
+                        fill: false,
+                        tension: 0.35,
                         borderWidth: 2.5,
-                        tension: 0.3,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
                         yAxisID: "y1"
                     }
                 ]
@@ -729,17 +733,41 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: "#cbd5e1", font: { size: 11 } } } },
+                interaction: { mode: "index", intersect: false },
+                plugins: {
+                    legend: { labels: { color: "#cbd5e1", font: { size: 11 } } },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => {
+                                const val = ctx.parsed.y || 0;
+                                return ctx.dataset.yAxisID === "y"
+                                    ? `${ctx.dataset.label}: ${fmtMoney(val)}`
+                                    : `${ctx.dataset.label}: ${fmtInt(val)}`;
+                            }
+                        }
+                    }
+                },
                 scales: {
-                    x: { ticks: { color: "#94a3b8" }, grid: { color: "#1e293b" } },
-                    y: { type: "linear", position: "left", beginAtZero: true, ticks: { color: "#10b981" }, grid: { color: "#1e293b" } },
-                    y1: { type: "linear", position: "right", beginAtZero: true, ticks: { color: "#22d3ee" }, grid: { drawOnChartArea: false } }
+                    x: { ticks: { color: "#94a3b8", font: { size: 11 } }, grid: { color: "#1e293b" } },
+                    y: {
+                        type: "linear",
+                        position: "left",
+                        beginAtZero: true,
+                        ticks: { color: "#34d399", font: { size: 11 } },
+                        grid: { color: "#1e293b" }
+                    },
+                    y1: {
+                        type: "linear",
+                        position: "right",
+                        beginAtZero: true,
+                        ticks: { color: "#22d3ee", font: { size: 11 } },
+                        grid: { drawOnChartArea: false }
+                    }
                 }
             }
         });
     }
 
-    // Top 10 Menos Rotación y Top 5 Más Caros
     const itemsPanol = rowsPanol.filter(r => col(r, "codigo") !== "" || col(r, "descripcion") !== "");
     const menosRot = [...itemsPanol].sort((a, b) => num(col(a, "salidas")) - num(col(b, "salidas"))).slice(0, 10);
     const masCaros = [...itemsPanol].sort((a, b) => num(col(b, "precio_unitario")) - num(col(a, "precio_unitario"))).slice(0, 5);
@@ -769,7 +797,6 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
         `).join("");
     }
 
-    // 2. RRHH: Horas Normales / Extra
     const hsNormTot = sumCol(rowsPrincipal, "hs_normales");
     const hsExtraTot = sumCol(rowsPrincipal, "hs_extra");
     setText("gest_rrhh_hs_normales_tot", fmtInt(hsNormTot));
@@ -800,7 +827,6 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
     renderSimpleBar("chartRrhhHsNormalesSector", secLabels, secLabels.map(s => secMap[s].norm), "Hs Normales", "#10b981");
     renderSimpleBar("chartRrhhHsExtraSector", secLabels, secLabels.map(s => secMap[s].ext), "Hs Extra", "#f59e0b");
 
-    // 3. PLATA CONSUMIDA (RRHH, Energía y Combustible)
     const pNorm = sumCol(rowsPrincipal, "plata_hs_normales") || sumCol(rowsRrhh, "plata_hs_normales");
     const pExt = sumCol(rowsPrincipal, "plata_hs_extra") || sumCol(rowsRrhh, "plata_hs_extra");
     const pLic = sumCol(rowsPrincipal, "plata_hs_licencia") || sumCol(rowsRrhh, "plata_hs_licencia");
