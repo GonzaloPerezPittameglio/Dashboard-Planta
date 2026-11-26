@@ -328,21 +328,34 @@ function renderResumen(rows) {
     renderSimpleBar("chartMensualArenas", mLabels, mLabels.map(k => mensual[k].arenas), "Arenas (Ton)", "#fb923c");
     renderSimpleBar("chartMensualPolimero", mLabels, mLabels.map(k => mensual[k].polimero), "Polímero (Kg)", "#818cf8");
 
+    // Gráfico de Torta: ENERGÍA TOTAL POR MÓDULO
     destroyChart("chartEnergiaSectores");
     const ctxES = document.getElementById("chartEnergiaSectores");
     if (ctxES) {
         charts["chartEnergiaSectores"] = new Chart(ctxES, {
-            type: "bar",
+            type: "pie",
             data: {
-                labels: ["M1 - TS1", "M1 - TS2", "M1 - TS3", "M2 - TS1", "M2 - TS2", "M2 - TS3"],
+                labels: ["Módulo 1", "Módulo 2"],
                 datasets: [{
                     label: "Energía (kWh)",
-                    data: [eM1Ts1, eM1Ts2, eM1Ts3, eM2Ts1, eM2Ts2, eM2Ts3],
-                    backgroundColor: ["#22d3ee", "#06b6d4", "#0891b2", "#34d399", "#10b981", "#059669"],
-                    borderRadius: 6
+                    data: [eM1, eM2],
+                    backgroundColor: ["#22d3ee", "#10b981"],
+                    borderColor: "#1e293b",
+                    borderWidth: 2
                 }]
             },
-            options: { ...baseOptions(), plugins: { legend: { display: false } } }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: "bottom", labels: { color: "#cbd5e1", font: { size: 12 } } },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `${ctx.label}: ${fmtInt(ctx.parsed || 0)} kWh`
+                        }
+                    }
+                }
+            }
         });
     }
 }
@@ -697,7 +710,6 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
         }
     }
 
-    // Gráfico de Líneas: Consumo Mensual Pañol Ítems vs Consumo Mensual Pañol Plata ($)
     destroyChart("chartPanolItemsVsPlata");
     const ctxPanolLine = document.getElementById("chartPanolItemsVsPlata");
     if (ctxPanolLine) {
@@ -864,9 +876,7 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
         });
     }
 
-    // ========================================================================
-    // NUEVO 1: Gráfico Coste de Biosólidos y RSU ($)
-    // ========================================================================
+    // Gráfico Coste de Biosólidos y RSU ($)
     const costosMes = {};
     rowsPrincipal.forEach(r => {
         const f = col(r, "fecha");
@@ -914,9 +924,7 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
         });
     }
 
-    // ========================================================================
-    // NUEVO 2: Un solo gráfico de barras con Totalizado Biosólidos M1/M2 y RSU M1/M2
-    // ========================================================================
+    // Gráfico de barras: Totalizado Biosólidos M1/M2 y RSU M1/M2
     const totBioM1 = sumCol(rowsPrincipal, "biosolidos_ton_m1");
     const totBioM2 = sumCol(rowsPrincipal, "biosolidos_ton_m2");
     const totRsuM1 = sumCol(rowsPrincipal, "cant_rsu_m1");
@@ -972,6 +980,11 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
             </tr>
         `).join("");
     }
+
+    // Inversiones (Obras y Equipamiento) y Explotaciones (Reparaciones)
+    setText("gest_inv_obras", fmtMoney(sumCol(rowsPrincipal, "inv_obras")));
+    setText("gest_inv_equipamiento", fmtMoney(sumCol(rowsPrincipal, "inv_equipamiento")));
+    setText("gest_exp_reparaciones", fmtMoney(sumCol(rowsPrincipal, "exp_reparaciones")));
 }
 
 // ============================================================================
