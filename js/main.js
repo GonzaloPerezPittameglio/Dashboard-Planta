@@ -1,5 +1,4 @@
 const SHEET_ID = "17QH5BKXgwZJexRd34iD4tC_nJckI4HVT1TrK3yGiCOA";
-
 function getSheetUrl(sheetName) {
     return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}&_t=${Date.now()}`;
 }
@@ -16,30 +15,41 @@ let rawDataPrincipal = [];
 let charts = {};
 
 const COORDS_MAPA_PLANTA = [
-    { sector: "DESHIDRATACIÓN (M1)", x: 43, y: 24 },
-    { sector: "DESHIDRATACIÓN (M2)", x: 49, y: 24 },
-    { sector: "CLARIFICADOR A (M1)", x: 63, y: 38 },
-    { sector: "SILO DE LODOS", x: 26, y: 22 },
-    { sector: "Pretratamiento M1", x: 18, y: 44 },
-    { sector: "Pretratamiento M2", x: 23, y: 56 },
-    { sector: "Sedimentador Primario M1", x: 35, y: 39 },
-    { sector: "Sedimentador Primario M2", x: 38, y: 58 },
-    { sector: "Reactor Biológico M1", x: 48, y: 41 },
-    { sector: "Reactor Biológico M2", x: 52, y: 62 },
-    { sector: "Sedimentador Secundario M2", x: 68, y: 58 },
-    { sector: "Cloración / Desinfección", x: 78, y: 48 },
-    { sector: "Espesador M1", x: 29, y: 26 },
-    { sector: "Espesador M2", x: 34, y: 26 },
-    { sector: "Digestor Anaeróbico", x: 20, y: 19 },
-    { sector: "Gasómetro M1", x: 14, y: 23 },
-    { sector: "Gasómetro M2", x: 14, y: 31 },
-    { sector: "Sopladores M1", x: 45, y: 74 },
-    { sector: "Sopladores M2", x: 55, y: 74 },
-    { sector: "Flotación M1", x: 59, y: 23 },
-    { sector: "Flotación M2", x: 64, y: 23 },
-    { sector: "Sala de Tableros", x: 72, y: 74 },
-    { sector: "Laboratorio M1", x: 84, y: 33 },
-    { sector: "Pañol M1", x: 86, y: 65 }
+    // Zona Izquierda (M2 y Digestión)
+    { sector: "Silo de Lodos", x: 5.5, y: 15 },
+    { sector: "Deshidratación M2", x: 5.2, y: 27 },
+    { sector: "Estación Transformadora 3", x: 4.8, y: 37 },
+    { sector: "Gasómetro", x: 16.5, y: 12 },
+    { sector: "Caldera", x: 13.0, y: 22 },
+    { sector: "Digestor", x: 14.5, y: 31 },
+    { sector: "Flotador", x: 19.5, y: 22 },
+    { sector: "Espesador", x: 23.8, y: 28 },
+    { sector: "Depósito de Hidrocarburo", x: 27.5, y: 19 },
+    { sector: "Reactor 1", x: 16.0, y: 51 },
+    { sector: "Reactor 2", x: 16.0, y: 58 },
+    { sector: "Reactor 3", x: 16.0, y: 65 },
+    { sector: "Reactor 4", x: 16.0, y: 72 },
+    { sector: "Sala de Soplantes M2", x: 10.5, y: 71 },
+    { sector: "Clarificador 1", x: 24.5, y: 49 },
+    { sector: "Clarificador 2", x: 31.0, y: 50 },
+    { sector: "Cámara de Distribución de Clarificadores", x: 28.0, y: 58 },
+    { sector: "Clarificador 3", x: 24.5, y: 67 },
+    { sector: "Clarificador 4", x: 31.0, y: 68 },
+
+    // Zona Central (M1)
+    { sector: "Deshidratación M1", x: 39.5, y: 53 },
+    { sector: "Grupo Electrógeno", x: 39.5, y: 64 },
+    { sector: "Sala Soplantes M1", x: 41.8, y: 72 },
+    { sector: "Clarificador C", x: 47.0, y: 49 },
+    { sector: "Clarificador B", x: 52.5, y: 46 },
+    { sector: "Clarificador A", x: 57.5, y: 49 },
+    { sector: "Reactor C", x: 47.0, y: 72 },
+    { sector: "Reactor B", x: 52.0, y: 72 },
+    { sector: "Reactor A", x: 57.0, y: 72 },
+    { sector: "Pretratamiento M1", x: 64.0, y: 81 },
+
+    // Zona Derecha
+    { sector: "Sedimentador", x: 87.5, y: 75 }
 ];
 
 // ============================================================================
@@ -100,14 +110,21 @@ function fmtInt(n) {
 }
 
 function fmtDec(n, dec = 1) {
-    return (n || 0).toLocaleString("es-AR", {
-        minimumFractionDigits: dec,
-        maximumFractionDigits: dec
-    });
+    return (n || 0).toLocaleString("es-AR", { minimumFractionDigits: dec, maximumFractionDigits: dec });
 }
 
 function fmtMoney(n) {
     return "$ " + Math.round(n || 0).toLocaleString("es-AR");
+}
+
+function normalizeTxt(str) {
+    return String(str || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[()]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
 }
 
 function getMonthKey(fechaStr) {
@@ -141,13 +158,65 @@ function baseOptions() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: { labels: { color: "#ffffff", font: { size: 11 } } }
+            legend: { labels: { color: "#cbd5e1", font: { size: 11 } } }
         },
         scales: {
             x: { ticks: { color: "#94a3b8", font: { size: 11 } }, grid: { color: "#1e293b" } },
             y: { ticks: { color: "#94a3b8", font: { size: 11 } }, grid: { color: "#1e293b" }, beginAtZero: true }
         }
     };
+}
+
+function renderSimpleBar(canvasId, labels, data, label, color) {
+    destroyChart(canvasId);
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    charts[canvasId] = new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels,
+            datasets: [{ label, data, backgroundColor: color, borderRadius: 4 }]
+        },
+        options: baseOptions()
+    });
+}
+
+function renderHorizontalBar(canvasId, labels, data, color) {
+    destroyChart(canvasId);
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    charts[canvasId] = new Chart(ctx, {
+        type: "bar",
+        data: {
+            labels,
+            datasets: [{ label: "Cantidad", data, backgroundColor: color, borderRadius: 4 }]
+        },
+        options: {
+            ...baseOptions(),
+            indexAxis: "y",
+            plugins: { legend: { display: false } }
+        }
+    });
+}
+
+function renderDoughnut(canvasId, labels, data, colors) {
+    destroyChart(canvasId);
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    charts[canvasId] = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+            labels,
+            datasets: [{ data, backgroundColor: colors, borderColor: "#1e293b", borderWidth: 2 }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: "bottom", labels: { color: "#cbd5e1", font: { size: 11 } } }
+            }
+        }
+    });
 }
 
 // ============================================================================
@@ -328,29 +397,17 @@ function renderResumen(rows) {
     renderSimpleBar("chartMensualArenas", mLabels, mLabels.map(k => mensual[k].arenas), "Arenas (Ton)", "#fb923c");
     renderSimpleBar("chartMensualPolimero", mLabels, mLabels.map(k => mensual[k].polimero), "Polímero (Kg)", "#818cf8");
 
-    // Gráfico de Torta: ENERGÍA TOTAL POR MÓDULO (Set 1, 2 y 3 de M1 y M2)
     destroyChart("chartEnergiaSectores");
     const ctxES = document.getElementById("chartEnergiaSectores");
     if (ctxES) {
-        const labelsSets = ["M1 - TS1", "M1 - TS2", "M1 - TS3", "M2 - TS1", "M2 - TS2", "M2 - TS3"];
-        const valoresSets = [eM1Ts1, eM1Ts2, eM1Ts3, eM2Ts1, eM2Ts2, eM2Ts3];
-        const totalSets = valoresSets.reduce((a, b) => a + b, 0);
-
         charts["chartEnergiaSectores"] = new Chart(ctxES, {
-            type: "doughnut",
+            type: "pie",
             data: {
-                labels: labelsSets,
+                labels: ["Módulo 1", "Módulo 2"],
                 datasets: [{
                     label: "Energía (kWh)",
-                    data: valoresSets,
-                    backgroundColor: [
-                        "#22d3ee",
-                        "#06b6d4",
-                        "#0284c7",
-                        "#34d399",
-                        "#10b981",
-                        "#059669"
-                    ],
+                    data: [eM1, eM2],
+                    backgroundColor: ["#22d3ee", "#10b981"],
                     borderColor: "#1e293b",
                     borderWidth: 2
                 }]
@@ -358,30 +415,11 @@ function renderResumen(rows) {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: "65%",
                 plugins: {
-                    legend: {
-                        position: "right",
-                        labels: {
-                            color: "#ffffff",
-                            font: { size: 13, weight: "500" },
-                            padding: 14,
-                            boxWidth: 14
-                        }
-                    },
+                    legend: { position: "bottom", labels: { color: "#cbd5e1", font: { size: 12 } } },
                     tooltip: {
-                        backgroundColor: "#0f172a",
-                        titleColor: "#ffffff",
-                        bodyColor: "#ffffff",
-                        borderColor: "#334155",
-                        borderWidth: 1,
-                        padding: 10,
                         callbacks: {
-                            label: (ctx) => {
-                                const val = ctx.parsed || 0;
-                                const pct = totalSets > 0 ? ((val / totalSets) * 100).toFixed(1) : "0.0";
-                                return ` ${ctx.label}: ${fmtInt(val)} kWh (${pct}%)`;
-                            }
+                            label: (ctx) => `${ctx.label}: ${fmtInt(ctx.parsed || 0)} kWh`
                         }
                     }
                 }
@@ -475,37 +513,34 @@ function updateChartLimites(param, btn) {
         document.querySelectorAll(".chart-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active");
     }
-
-    const limites = { dbo_ent: 250, dbo_sal: 50, dqo_sal: 250, mes_sal: 70 };
-    const limiteVal = limites[param] || 50;
-
     const rowsF = rawDataPrincipal.filter(r => col(r, "fecha") !== "");
     const labels = rowsF.map(r => col(r, "fecha"));
-    const dataM1 = rowsF.map(r => num(col(r, `${param}_m1`)));
-    const dataM2 = rowsF.map(r => num(col(r, `${param}_m2`)));
+    const limites = { dbo_ent: null, dbo_sal: 50, dqo_sal: 250, mes_sal: 35 };
+    const lim = limites[param];
+
+    const datasets = [
+        { label: "Módulo 1", data: rowsF.map(r => num(col(r, `${param}_m1`))), borderColor: "#22d3ee", tension: 0.3 },
+        { label: "Módulo 2", data: rowsF.map(r => num(col(r, `${param}_m2`))), borderColor: "#34d399", tension: 0.3 }
+    ];
+    if (lim !== null) {
+        datasets.push({
+            label: `Límite (${lim})`,
+            data: labels.map(() => lim),
+            borderColor: "#ef4444",
+            borderDash: [6, 6],
+            pointRadius: 0
+        });
+    }
 
     destroyChart("chartLimitesLine");
     const ctx = document.getElementById("chartLimitesLine");
-    if (!ctx) return;
-
-    charts["chartLimitesLine"] = new Chart(ctx, {
-        type: "line",
-        data: {
-            labels,
-            datasets: [
-                { label: "Módulo 1", data: dataM1, borderColor: "#22d3ee", tension: 0.3 },
-                { label: "Módulo 2", data: dataM2, borderColor: "#34d399", tension: 0.3 },
-                {
-                    label: `Límite Norma (${limiteVal} mg/L)`,
-                    data: labels.map(() => limiteVal),
-                    borderColor: "#ef4444",
-                    borderDash: [6, 6],
-                    pointRadius: 0
-                }
-            ]
-        },
-        options: baseOptions()
-    });
+    if (ctx) {
+        charts["chartLimitesLine"] = new Chart(ctx, {
+            type: "line",
+            data: { labels, datasets },
+            options: baseOptions()
+        });
+    }
 }
 
 function abrirModalDesvio(fecha, motivo) {
@@ -516,66 +551,111 @@ function abrirModalDesvio(fecha, motivo) {
 }
 
 // ============================================================================
-// 3. FUNCIONAMIENTO
+// 3. FUNCIONAMIENTO (PLANO DE PLANTA + EQUIPOS CRÍTICOS COMO LA IMAGEN)
 // ============================================================================
 function renderFuncionamiento(rowsPrincipal, rowsEquipos) {
     const rsuTot = sumCol(rowsPrincipal, "cant_rsu") || (sumCol(rowsPrincipal, "cant_rsu_m1") + sumCol(rowsPrincipal, "cant_rsu_m2"));
     setText("func_cant_rsu", fmtInt(rsuTot));
     setText("func_cant_ot", fmtInt(sumCol(rowsPrincipal, "cant_ot")));
 
-    const equipos = rowsEquipos.filter(r => col(r, "equipo") !== "");
+    const equipos = (rowsEquipos || [])
+        .filter(r => String(col(r, "equipo")).trim() !== "")
+        .map(r => {
+            const nombre = String(col(r, "equipo")).trim();
+            const sector = String(col(r, "sector_mapa") || "").trim();
+            const estado = String(col(r, "estado") || "OPERATIVO").trim();
+            const detalle = String(col(r, "detalle") || "").trim();
+            const estNorm = normalizeTxt(estado);
+
+            let nivel = 1; // 1 = Operativo, 2 = En Reparación, 3 = Fuera de Servicio
+            if (estNorm.includes("reparaci")) nivel = 2;
+            if (estNorm.includes("fuera")) nivel = 3;
+
+            return { nombre, sector, estado, detalle, nivel };
+        });
+
     setText("total_eq_criticos", `${equipos.length} equipos`);
 
+    // 1. Marcadores sobre el plano aéreo
     const capa = document.getElementById("capa_marcadores_planta");
     if (capa) {
         capa.innerHTML = COORDS_MAPA_PLANTA.map(pt => {
-            const match = equipos.find(eq =>
-                String(col(eq, "sector_mapa")).toLowerCase().includes(pt.sector.toLowerCase()) ||
-                pt.sector.toLowerCase().includes(String(col(eq, "sector_mapa")).toLowerCase())
-            );
-            let dotColor = "bg-slate-400";
-            if (match) {
-                const est = String(col(match, "estado"));
-                if (/fuera/i.test(est)) dotColor = "bg-red-500 shadow-[0_0_8px_#ef4444]";
-                else if (/reparaci/i.test(est)) dotColor = "bg-amber-400 shadow-[0_0_8px_#fbbf24]";
-                else dotColor = "bg-emerald-400 shadow-[0_0_8px_#10b981]";
+            const ptNorm = normalizeTxt(pt.sector);
+            const relacionados = equipos.filter(eq => {
+                const secNorm = normalizeTxt(eq.sector);
+                if (!secNorm) return false;
+                return secNorm.includes(ptNorm) || ptNorm.includes(secNorm);
+            });
+
+            let dotClass = "bg-slate-400 border-slate-950";
+            if (relacionados.length > 0) {
+                const maxNivel = Math.max(...relacionados.map(e => e.nivel));
+                if (maxNivel === 3) {
+                    dotClass = "bg-red-500 border-slate-950 shadow-[0_0_8px_#ef4444]";
+                } else if (maxNivel === 2) {
+                    dotClass = "bg-amber-400 border-slate-950 shadow-[0_0_8px_#fbbf24]";
+                } else {
+                    dotClass = "bg-emerald-400 border-slate-950 shadow-[0_0_8px_#10b981]";
+                }
             }
+
             return `
-                <div style="left:${pt.x}%; top:${pt.y}%;" class="absolute -translate-x-1/2 -translate-y-1/2 flex items-center gap-1">
-                    <span class="w-2.5 h-2.5 rounded-full ${dotColor} border border-slate-950"></span>
-                    <span class="text-[9px] font-semibold text-white bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-700/80 whitespace-nowrap">${pt.sector}</span>
+                <div style="left:${pt.x}%; top:${pt.y}%;" class="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10">
+                    <span class="w-3 h-3 rounded-full border-2 ${dotClass} mb-0.5"></span>
+                    <span class="bg-slate-950/90 border border-slate-600/80 text-white text-[10px] font-semibold px-2 py-0.5 rounded shadow-md whitespace-nowrap">
+                        ${pt.sector}
+                    </span>
                 </div>
             `;
         }).join("");
     }
 
+    // 2. Tarjetas de Listado General de Equipos Críticos con recuadro amarillo debajo
     const lista = document.getElementById("lista_equipos_criticos");
     if (lista) {
         if (!equipos.length) {
             lista.innerHTML = `<div class="text-center py-8 text-slate-500 text-sm italic col-span-full">Sin equipos críticos registrados</div>`;
         } else {
             lista.innerHTML = equipos.map(eq => {
-                const nombre = col(eq, "equipo");
-                const sector = col(eq, "sector_mapa") || "General";
-                const estado = col(eq, "estado") || "OPERATIVO";
-                const detalle = col(eq, "detalle") || "Sin novedades";
-                let badge = "bg-emerald-950 text-emerald-400 border-emerald-800";
-                if (/fuera/i.test(estado)) badge = "bg-red-950 text-red-400 border-red-800";
-                else if (/reparaci/i.test(estado)) badge = "bg-amber-950 text-amber-400 border-amber-800";
+                let badgeClass = "bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
+                let dotClass = "bg-emerald-400";
+
+                if (eq.nivel === 2) {
+                    badgeClass = "bg-amber-500/15 text-amber-300 border-amber-500/30";
+                    dotClass = "bg-amber-400 animate-pulse";
+                } else if (eq.nivel === 3) {
+                    badgeClass = "bg-red-500/15 text-red-400 border-red-500/30";
+                    dotClass = "bg-red-500";
+                }
+
+                const mostrarRecuadro = eq.nivel === 2 || eq.nivel === 3 || eq.detalle !== "";
+                const textoDetalle = eq.detalle || (eq.nivel === 3 ? "EQUIPO FUERA DE SERVICIO" : "EN REPARACIÓN");
+
+                const detalleHTML = mostrarRecuadro
+                    ? `<div class="mt-3 text-xs bg-slate-950/80 text-amber-200 px-3 py-2 rounded-lg border border-amber-500/30 flex items-center gap-2">
+                           <i data-lucide="wrench" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
+                           <span class="font-medium uppercase tracking-wide">${textoDetalle}</span>
+                       </div>`
+                    : "";
 
                 return `
-                    <div class="bg-slate-900 rounded-xl p-4 border border-slate-700 flex flex-col justify-between gap-2">
-                        <div class="flex items-start justify-between gap-2">
+                    <div class="bg-slate-900 rounded-xl p-4 border border-slate-700/80 hover:border-slate-600 transition flex flex-col justify-between">
+                        <div class="flex justify-between items-start gap-2">
                             <div>
-                                <div class="text-sm font-bold text-white">${nombre}</div>
-                                <div class="text-xs text-cyan-400">${sector}</div>
+                                <div class="font-bold text-white text-sm uppercase">${eq.nombre}</div>
+                                <div class="text-[11px] text-slate-400 uppercase mt-0.5">${eq.sector || "SECTOR GENERAL"}</div>
                             </div>
-                            <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${badge}">${estado}</span>
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border flex items-center gap-1.5 shrink-0 ${badgeClass}">
+                                <span class="w-2 h-2 rounded-full ${dotClass}"></span>
+                                ${eq.estado}
+                            </span>
                         </div>
-                        <p class="text-xs text-slate-400 border-t border-slate-800 pt-2">${detalle}</p>
+                        ${detalleHTML}
                     </div>
                 `;
             }).join("");
+
+            if (typeof lucide !== "undefined") lucide.createIcons();
         }
     }
 }
@@ -693,187 +773,147 @@ function renderMantenimiento(rows) {
 // 5. CONTROL Y GESTIÓN
 // ============================================================================
 function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustible) {
-    const panolValorizado = rowsPanol.reduce((acc, r) => {
-        const valTot = num(col(r, "valor_total"));
-        if (valTot > 0) return acc + valTot;
-        return acc + (num(col(r, "stock")) * num(col(r, "precio_unitario")));
-    }, 0);
+    let panolValorizado = 0;
+    const itemsPanol = [];
 
-    const panolMes = {};
-    let totItems = 0, totPlata = 0;
+    rowsPanol.forEach(r => {
+        const codigo = String(col(r, "codigo") || "").trim();
+        const desc = String(col(r, "descripcion") || "").trim();
+        const stock = num(col(r, "stock_actual"));
+        const precio = num(col(r, "precio_unitario"));
+        const salidas = num(col(r, "salidas_totales"));
+        if (codigo || desc) {
+            panolValorizado += stock * precio;
+            itemsPanol.push({ codigo, desc, stock, precio, salidas });
+        }
+    });
+
+    let totPanolItems = 0, totPanolPlata = 0;
+    const tbodyPanolMensual = document.getElementById("tabla_panol_mensual");
+    const filasPanolHtml = [];
+    const panolLabels = [], panolItemsArr = [], panolPlataArr = [];
 
     rowsPrincipal.forEach(r => {
         const f = col(r, "fecha");
-        const items = num(col(r, "panol_items_consumidos"));
-        const plata = num(col(r, "panol_plata_consumida"));
-        if (!f && items === 0 && plata === 0) return;
-        const k = getMonthKey(f);
-        if (!panolMes[k]) panolMes[k] = { items: 0, plata: 0 };
-        panolMes[k].items += items;
-        panolMes[k].plata += plata;
-        totItems += items;
-        totPlata += plata;
+        const it = num(col(r, "panol_items_consumidos"));
+        const pl = num(col(r, "panol_plata_consumida"));
+        if (f && (it > 0 || pl > 0)) {
+            const mes = getMonthKey(f);
+            totPanolItems += it;
+            totPanolPlata += pl;
+            panolLabels.push(mes);
+            panolItemsArr.push(it);
+            panolPlataArr.push(pl);
+            filasPanolHtml.push(`
+                <tr class="border-b border-slate-700/50">
+                    <td class="py-2 px-3 text-slate-200">${mes}</td>
+                    <td class="py-2 px-3 text-right text-cyan-400 font-semibold">${fmtInt(it)}</td>
+                    <td class="py-2 px-3 text-right text-emerald-400 font-semibold">${fmtMoney(pl)}</td>
+                </tr>
+            `);
+        }
     });
 
     setText("gest_panol_valorizado", fmtMoney(panolValorizado));
-    setText("gest_panol_items_tot", fmtInt(totItems));
-    setText("gest_panol_plata_tot", fmtMoney(totPlata));
-    setText("gest_plata_panol_consumo", fmtMoney(totPlata));
+    setText("gest_panol_items_tot", fmtInt(totPanolItems));
+    setText("gest_panol_plata_tot", fmtMoney(totPanolPlata));
+    setText("gest_plata_panol_consumo", fmtMoney(totPanolPlata));
+    setText("tabla_panol_tot_items", fmtInt(totPanolItems));
+    setText("tabla_panol_tot_plata", fmtMoney(totPanolPlata));
 
-    setText("tabla_panol_tot_items", fmtInt(totItems));
-    setText("tabla_panol_tot_plata", fmtMoney(totPlata));
-
-    const mPanolLabels = Object.keys(panolMes);
-
-    const tbodyPanolMes = document.getElementById("tabla_panol_mensual");
-    if (tbodyPanolMes) {
-        if (!mPanolLabels.length) {
-            tbodyPanolMes.innerHTML = `<tr><td colspan="3" class="text-center py-6 text-slate-500 italic">Sin consumos registrados</td></tr>`;
-        } else {
-            tbodyPanolMes.innerHTML = mPanolLabels.map(m => `
-                <tr class="border-b border-slate-700/60 hover:bg-slate-900/50">
-                    <td class="py-2.5 px-3 text-slate-200 font-medium">${m}</td>
-                    <td class="py-2.5 px-3 text-right text-cyan-400 font-semibold">${fmtInt(panolMes[m].items)}</td>
-                    <td class="py-2.5 px-3 text-right text-emerald-400 font-semibold">${fmtMoney(panolMes[m].plata)}</td>
-                </tr>
-            `).join("");
-        }
+    if (tbodyPanolMensual) {
+        tbodyPanolMensual.innerHTML = filasPanolHtml.length
+            ? filasPanolHtml.join("")
+            : `<tr><td colspan="3" class="text-center py-6 text-slate-500 text-xs italic">Sin consumos mensuales registrados</td></tr>`;
     }
 
     destroyChart("chartPanolItemsVsPlata");
-    const ctxPanolLine = document.getElementById("chartPanolItemsVsPlata");
-    if (ctxPanolLine) {
-        charts["chartPanolItemsVsPlata"] = new Chart(ctxPanolLine, {
+    const ctxPanol = document.getElementById("chartPanolItemsVsPlata");
+    if (ctxPanol) {
+        charts["chartPanolItemsVsPlata"] = new Chart(ctxPanol, {
             type: "line",
             data: {
-                labels: mPanolLabels,
+                labels: panolLabels,
                 datasets: [
-                    {
-                        label: "Consumo Plata ($)",
-                        data: mPanolLabels.map(m => panolMes[m].plata),
-                        borderColor: "#10b981",
-                        backgroundColor: "rgba(16, 185, 129, 0.14)",
-                        fill: true,
-                        tension: 0.35,
-                        borderWidth: 2.5,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        yAxisID: "y"
-                    },
-                    {
-                        label: "Consumo Ítems (Cant.)",
-                        data: mPanolLabels.map(m => panolMes[m].items),
-                        borderColor: "#22d3ee",
-                        backgroundColor: "rgba(34, 211, 238, 0.10)",
-                        fill: false,
-                        tension: 0.35,
-                        borderWidth: 2.5,
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        yAxisID: "y1"
-                    }
+                    { label: "Ítems Consumidos", data: panolItemsArr, borderColor: "#22d3ee", yAxisID: "y", tension: 0.3 },
+                    { label: "Plata Consumida ($)", data: panolPlataArr, borderColor: "#10b981", yAxisID: "y1", tension: 0.3 }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: { mode: "index", intersect: false },
-                plugins: {
-                    legend: { labels: { color: "#ffffff", font: { size: 11 } } },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => {
-                                const val = ctx.parsed.y || 0;
-                                return ctx.dataset.yAxisID === "y"
-                                    ? `${ctx.dataset.label}: ${fmtMoney(val)}`
-                                    : `${ctx.dataset.label}: ${fmtInt(val)}`;
-                            }
-                        }
-                    }
-                },
+                plugins: { legend: { labels: { color: "#cbd5e1", font: { size: 11 } } } },
                 scales: {
-                    x: { ticks: { color: "#94a3b8", font: { size: 11 } }, grid: { color: "#1e293b" } },
-                    y: {
-                        type: "linear",
-                        position: "left",
-                        beginAtZero: true,
-                        ticks: { color: "#34d399", font: { size: 11 } },
-                        grid: { color: "#1e293b" }
-                    },
-                    y1: {
-                        type: "linear",
-                        position: "right",
-                        beginAtZero: true,
-                        ticks: { color: "#22d3ee", font: { size: 11 } },
-                        grid: { drawOnChartArea: false }
-                    }
+                    x: { ticks: { color: "#94a3b8" }, grid: { color: "#1e293b" } },
+                    y: { type: "linear", position: "left", ticks: { color: "#22d3ee" }, grid: { color: "#1e293b" }, beginAtZero: true },
+                    y1: { type: "linear", position: "right", ticks: { color: "#10b981" }, grid: { drawOnChartArea: false }, beginAtZero: true }
                 }
             }
         });
     }
 
-    const itemsPanol = rowsPanol.filter(r => col(r, "codigo") !== "" || col(r, "descripcion") !== "");
-    const menosRot = [...itemsPanol].sort((a, b) => num(col(a, "salidas")) - num(col(b, "salidas"))).slice(0, 10);
-    const masCaros = [...itemsPanol].sort((a, b) => num(col(b, "precio_unitario")) - num(col(a, "precio_unitario"))).slice(0, 5);
-
-    const tbRot = document.getElementById("tabla_panol_menos_rotacion");
-    if (tbRot && menosRot.length) {
-        tbRot.innerHTML = menosRot.map((it, i) => `
-            <tr class="border-b border-slate-700/60 text-xs">
-                <td class="py-2 px-3 text-slate-400">#${i + 1}</td>
-                <td class="py-2 px-3 text-cyan-400 font-mono">${col(it, "codigo")}</td>
-                <td class="py-2 px-3 text-slate-200">${col(it, "descripcion")}</td>
-                <td class="py-2 px-3 text-right text-white font-semibold">${fmtInt(num(col(it, "stock")))}</td>
-                <td class="py-2 px-3 text-right text-amber-400 font-semibold">${fmtInt(num(col(it, "salidas")))}</td>
-            </tr>
-        `).join("");
+    const menosRot = [...itemsPanol].sort((a, b) => a.salidas - b.salidas).slice(0, 10);
+    const tbodyRot = document.getElementById("tabla_panol_menos_rotacion");
+    if (tbodyRot) {
+        tbodyRot.innerHTML = menosRot.length
+            ? menosRot.map((it, i) => `
+                <tr class="border-b border-slate-700/50 text-xs">
+                    <td class="py-2 px-3 text-slate-400">#${i + 1}</td>
+                    <td class="py-2 px-3 text-cyan-400 font-mono">${it.codigo}</td>
+                    <td class="py-2 px-3 text-slate-200">${it.desc}</td>
+                    <td class="py-2 px-3 text-right text-white font-semibold">${fmtInt(it.stock)}</td>
+                    <td class="py-2 px-3 text-right text-sky-400 font-bold">${fmtInt(it.salidas)}</td>
+                </tr>
+            `).join("")
+            : `<tr><td colspan="5" class="text-center py-6 text-slate-500 text-xs italic">Sin ítems en Pañol</td></tr>`;
     }
 
-    const tbCaros = document.getElementById("tabla_panol_mas_caros");
-    if (tbCaros && masCaros.length) {
-        tbCaros.innerHTML = masCaros.map((it, i) => `
-            <tr class="border-b border-slate-700/60 text-xs">
-                <td class="py-2 px-3 text-slate-400">#${i + 1}</td>
-                <td class="py-2 px-3 text-cyan-400 font-mono">${col(it, "codigo")}</td>
-                <td class="py-2 px-3 text-slate-200">${col(it, "descripcion")}</td>
-                <td class="py-2 px-3 text-right text-amber-400 font-bold">${fmtMoney(num(col(it, "precio_unitario")))}</td>
-            </tr>
-        `).join("");
+    const masCaros = [...itemsPanol].sort((a, b) => b.precio - a.precio).slice(0, 5);
+    const tbodyCaros = document.getElementById("tabla_panol_mas_caros");
+    if (tbodyCaros) {
+        tbodyCaros.innerHTML = masCaros.length
+            ? masCaros.map((it, i) => `
+                <tr class="border-b border-slate-700/50 text-xs">
+                    <td class="py-2 px-3 text-amber-400 font-bold">#${i + 1}</td>
+                    <td class="py-2 px-3 text-cyan-400 font-mono">${it.codigo}</td>
+                    <td class="py-2 px-3 text-slate-200">${it.desc}</td>
+                    <td class="py-2 px-3 text-right text-amber-400 font-bold">${fmtMoney(it.precio)}</td>
+                </tr>
+            `).join("")
+            : `<tr><td colspan="4" class="text-center py-6 text-slate-500 text-xs italic">Sin ítems en Pañol</td></tr>`;
     }
 
     const hsNormTot = sumCol(rowsPrincipal, "hs_normales");
-    const hsExtraTot = sumCol(rowsPrincipal, "hs_extra");
+    const hsExtTot = sumCol(rowsPrincipal, "hs_extra");
     setText("gest_rrhh_hs_normales_tot", fmtInt(hsNormTot));
-    setText("gest_rrhh_hs_extra_tot", fmtInt(hsExtraTot));
+    setText("gest_rrhh_hs_extra_tot", fmtInt(hsExtTot));
 
-    const rrhhMes = {};
+    const rrhhMensual = {};
     rowsPrincipal.forEach(r => {
         const f = col(r, "fecha");
         if (!f) return;
         const k = getMonthKey(f);
-        if (!rrhhMes[k]) rrhhMes[k] = { norm: 0, ext: 0 };
-        rrhhMes[k].norm += num(col(r, "hs_normales"));
-        rrhhMes[k].ext += num(col(r, "hs_extra"));
+        if (!rrhhMensual[k]) rrhhMensual[k] = { norm: 0, ext: 0 };
+        rrhhMensual[k].norm += num(col(r, "hs_normales"));
+        rrhhMensual[k].ext += num(col(r, "hs_extra"));
     });
-    const mRrhhLabels = Object.keys(rrhhMes);
-    renderSimpleBar("chartRrhhHsNormalesMensual", mRrhhLabels, mRrhhLabels.map(k => rrhhMes[k].norm), "Hs Normales", "#10b981");
-    renderSimpleBar("chartRrhhHsExtraMensual", mRrhhLabels, mRrhhLabels.map(k => rrhhMes[k].ext), "Hs Extra", "#f59e0b");
+    const rLabels = Object.keys(rrhhMensual);
+    renderSimpleBar("chartRrhhHsNormalesMensual", rLabels, rLabels.map(k => rrhhMensual[k].norm), "Hs Normales", "#10b981");
+    renderSimpleBar("chartRrhhHsExtraMensual", rLabels, rLabels.map(k => rrhhMensual[k].ext), "Hs Extra", "#f59e0b");
 
-    const secMap = {};
+    const secNorm = {}, secExt = {};
     rowsRrhh.forEach(r => {
-        const s = col(r, "sector");
+        const s = String(col(r, "sector") || "").trim();
         if (!s) return;
-        if (!secMap[s]) secMap[s] = { norm: 0, ext: 0 };
-        secMap[s].norm += num(col(r, "hs_normales"));
-        secMap[s].ext += num(col(r, "hs_extra"));
+        secNorm[s] = (secNorm[s] || 0) + num(col(r, "hs_normales"));
+        secExt[s] = (secExt[s] || 0) + num(col(r, "hs_extra"));
     });
-    const secLabels = Object.keys(secMap);
-    renderSimpleBar("chartRrhhHsNormalesSector", secLabels, secLabels.map(s => secMap[s].norm), "Hs Normales", "#10b981");
-    renderSimpleBar("chartRrhhHsExtraSector", secLabels, secLabels.map(s => secMap[s].ext), "Hs Extra", "#f59e0b");
+    renderHorizontalBar("chartRrhhHsNormalesSector", Object.keys(secNorm), Object.values(secNorm), "#10b981");
+    renderHorizontalBar("chartRrhhHsExtraSector", Object.keys(secExt), Object.values(secExt), "#f59e0b");
 
-    const pNorm = sumCol(rowsPrincipal, "plata_hs_normales") || sumCol(rowsRrhh, "plata_hs_normales");
-    const pExt = sumCol(rowsPrincipal, "plata_hs_extra") || sumCol(rowsRrhh, "plata_hs_extra");
-    const pLic = sumCol(rowsPrincipal, "plata_hs_licencia") || sumCol(rowsRrhh, "plata_hs_licencia");
+    const pNorm = sumCol(rowsPrincipal, "plata_hs_normales");
+    const pExt = sumCol(rowsPrincipal, "plata_hs_extra");
+    const pLic = sumCol(rowsPrincipal, "plata_hs_licencia");
     setText("gest_plata_rrhh_normales", fmtMoney(pNorm));
     setText("gest_plata_rrhh_extra", fmtMoney(pExt));
     setText("gest_plata_rrhh_licencia", fmtMoney(pLic));
@@ -885,183 +925,89 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
     const cM2Ts1 = sumCol(rowsPrincipal, "costo_energia_m2_ts1");
     const cM2Ts2 = sumCol(rowsPrincipal, "costo_energia_m2_ts2");
     const cM2Ts3 = sumCol(rowsPrincipal, "costo_energia_m2_ts3");
-    const costoEnergiaTot = sumCol(rowsPrincipal, "costo_energia_total") || (cM1Ts1 + cM1Ts2 + cM1Ts3 + cM2Ts1 + cM2Ts2 + cM2Ts3);
-    setText("gest_plata_energia_total", fmtMoney(costoEnergiaTot));
+    const cEnergiaTot = sumCol(rowsPrincipal, "costo_energia_total") || (cM1Ts1 + cM1Ts2 + cM1Ts3 + cM2Ts1 + cM2Ts2 + cM2Ts3);
 
-    destroyChart("chartCostoEnergiaSectores");
-    const ctxCE = document.getElementById("chartCostoEnergiaSectores");
-    if (ctxCE) {
-        charts["chartCostoEnergiaSectores"] = new Chart(ctxCE, {
-            type: "bar",
-            data: {
-                labels: ["M1 - TS1", "M1 - TS2", "M1 - TS3", "M2 - TS1", "M2 - TS2", "M2 - TS3"],
-                datasets: [{
-                    label: "Coste ($)",
-                    data: [cM1Ts1, cM1Ts2, cM1Ts3, cM2Ts1, cM2Ts2, cM2Ts3],
-                    backgroundColor: "#facc15",
-                    borderRadius: 6
-                }]
-            },
-            options: { ...baseOptions(), plugins: { legend: { display: false } } }
-        });
-    }
+    setText("gest_plata_energia_total", fmtMoney(cEnergiaTot));
+    renderSimpleBar(
+        "chartCostoEnergiaSectores",
+        ["M1 TS1", "M1 TS2", "M1 TS3", "M2 TS1", "M2 TS2", "M2 TS3"],
+        [cM1Ts1, cM1Ts2, cM1Ts3, cM2Ts1, cM2Ts2, cM2Ts3],
+        "Coste ($)",
+        "#facc15"
+    );
 
-    // Gráfico Coste de Biosólidos y RSU ($)
-    const costosMes = {};
+    const bioRsuMensual = {};
     rowsPrincipal.forEach(r => {
         const f = col(r, "fecha");
         if (!f) return;
         const k = getMonthKey(f);
-        if (!costosMes[k]) costosMes[k] = { bio: 0, rsu: 0 };
-        costosMes[k].bio += num(col(r, "costo_biosolidos"));
-        costosMes[k].rsu += num(col(r, "costo_rsu"));
+        if (!bioRsuMensual[k]) bioRsuMensual[k] = { bio: 0, rsu: 0 };
+        bioRsuMensual[k].bio += num(col(r, "costo_biosolidos"));
+        bioRsuMensual[k].rsu += num(col(r, "costo_rsu"));
     });
-    const mCostosLabels = Object.keys(costosMes);
-
+    const bLabels = Object.keys(bioRsuMensual);
     destroyChart("chartCostoBiosolidosYRSU");
-    const ctxCostos = document.getElementById("chartCostoBiosolidosYRSU");
-    if (ctxCostos) {
-        charts["chartCostoBiosolidosYRSU"] = new Chart(ctxCostos, {
+    const ctxBR = document.getElementById("chartCostoBiosolidosYRSU");
+    if (ctxBR) {
+        charts["chartCostoBiosolidosYRSU"] = new Chart(ctxBR, {
             type: "bar",
             data: {
-                labels: mCostosLabels,
+                labels: bLabels,
                 datasets: [
-                    {
-                        label: "Coste Biosólidos ($)",
-                        data: mCostosLabels.map(k => costosMes[k].bio),
-                        backgroundColor: "#f59e0b",
-                        borderRadius: 6
-                    },
-                    {
-                        label: "Coste RSU ($)",
-                        data: mCostosLabels.map(k => costosMes[k].rsu),
-                        backgroundColor: "#38bdf8",
-                        borderRadius: 6
-                    }
+                    { label: "Biosólidos ($)", data: bLabels.map(k => bioRsuMensual[k].bio), backgroundColor: "#d97706", borderRadius: 4 },
+                    { label: "RSU ($)", data: bLabels.map(k => bioRsuMensual[k].rsu), backgroundColor: "#06b6d4", borderRadius: 4 }
                 ]
             },
-            options: {
-                ...baseOptions(),
-                plugins: {
-                    legend: { labels: { color: "#ffffff", font: { size: 11 } } },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => `${ctx.dataset.label}: ${fmtMoney(ctx.parsed.y || 0)}`
-                        }
-                    }
-                }
-            }
+            options: baseOptions()
         });
     }
 
-    // Gráfico de barras: Totalizado Biosólidos M1/M2 y RSU M1/M2
-    const totBioM1 = sumCol(rowsPrincipal, "biosolidos_ton_m1");
-    const totBioM2 = sumCol(rowsPrincipal, "biosolidos_ton_m2");
-    const totRsuM1 = sumCol(rowsPrincipal, "cant_rsu_m1");
-    const totRsuM2 = sumCol(rowsPrincipal, "cant_rsu_m2");
+    renderSimpleBar(
+        "chartTotalizadoBiosolidosYRSU",
+        ["Biosólidos M1 (Ton)", "Biosólidos M2 (Ton)", "RSU M1", "RSU M2"],
+        [
+            sumCol(rowsPrincipal, "biosolidos_ton_m1"),
+            sumCol(rowsPrincipal, "biosolidos_ton_m2"),
+            sumCol(rowsPrincipal, "cant_rsu_m1"),
+            sumCol(rowsPrincipal, "cant_rsu_m2")
+        ],
+        "Acumulado",
+        "#22d3ee"
+    );
 
-    destroyChart("chartTotalizadoBiosolidosYRSU");
-    const ctxTotBioRsu = document.getElementById("chartTotalizadoBiosolidosYRSU");
-    if (ctxTotBioRsu) {
-        charts["chartTotalizadoBiosolidosYRSU"] = new Chart(ctxTotBioRsu, {
-            type: "bar",
-            data: {
-                labels: ["Biosólidos M1", "Biosólidos M2", "RSU M1", "RSU M2"],
-                datasets: [{
-                    label: "Totalizado",
-                    data: [totBioM1, totBioM2, totRsuM1, totRsuM2],
-                    backgroundColor: ["#f59e0b", "#d97706", "#22d3ee", "#0284c7"],
-                    borderRadius: 6
-                }]
-            },
-            options: {
-                ...baseOptions(),
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => {
-                                const val = ctx.parsed.y || 0;
-                                const unidad = ctx.dataIndex < 2 ? "Ton" : "unidades";
-                                return `${ctx.label}: ${fmtDec(val, 1)} ${unidad}`;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-    }
+    let totLitros = 0, totPlataComb = 0;
+    const filasComb = [];
+    rowsCombustible.forEach(r => {
+        const marca = String(col(r, "marca") || "").trim();
+        const modelo = String(col(r, "modelo") || "").trim();
+        const tipo = String(col(r, "tipo_vehiculo") || "").trim();
+        const litros = num(col(r, "litros_consumidos"));
+        const plata = num(col(r, "plata_consumida"));
+        if (marca || modelo || litros > 0 || plata > 0) {
+            totLitros += litros;
+            totPlataComb += plata;
+            filasComb.push(`
+                <tr class="border-b border-slate-700/50 text-sm">
+                    <td class="py-3 px-4 text-white font-medium">${marca}</td>
+                    <td class="py-3 px-4 text-slate-300">${modelo}</td>
+                    <td class="py-3 px-4 text-slate-400">${tipo}</td>
+                    <td class="py-3 px-4 text-right text-cyan-400 font-semibold">${fmtInt(litros)} L</td>
+                    <td class="py-3 px-4 text-right text-rose-400 font-bold">${fmtMoney(plata)}</td>
+                </tr>
+            `);
+        }
+    });
 
-    const vehiculos = rowsCombustible.filter(r => col(r, "marca") !== "" || col(r, "modelo") !== "");
-    const totLitros = vehiculos.reduce((a, r) => a + num(col(r, "litros")), 0);
-    const totPlataComb = vehiculos.reduce((a, r) => a + num(col(r, "plata")), 0);
     setText("gest_litros_combustible_total", `${fmtInt(totLitros)} L`);
     setText("gest_plata_combustible_total", fmtMoney(totPlataComb));
-
-    const tbComb = document.getElementById("tabla_combustible_vehiculos");
-    if (tbComb && vehiculos.length) {
-        tbComb.innerHTML = vehiculos.map(v => `
-            <tr class="border-b border-slate-700/60 text-sm">
-                <td class="py-3 px-4 text-white font-semibold">${col(v, "marca")}</td>
-                <td class="py-3 px-4 text-slate-300">${col(v, "modelo")}</td>
-                <td class="py-3 px-4 text-slate-400">${col(v, "tipo")}</td>
-                <td class="py-3 px-4 text-right text-cyan-400 font-semibold">${fmtInt(num(col(v, "litros")))} L</td>
-                <td class="py-3 px-4 text-right text-rose-400 font-bold">${fmtMoney(num(col(v, "plata")))}</td>
-            </tr>
-        `).join("");
+    const tbodyComb = document.getElementById("tabla_combustible_vehiculos");
+    if (tbodyComb) {
+        tbodyComb.innerHTML = filasComb.length
+            ? filasComb.join("")
+            : `<tr><td colspan="5" class="text-center py-6 text-slate-500 text-sm italic">Sin registros de vehículos cargados aún</td></tr>`;
     }
 
-    // Inversiones (Obras y Equipamiento) y Explotaciones (Reparaciones)
-    setText("gest_inv_obras", fmtMoney(sumCol(rowsPrincipal, "inv_obras")));
-    setText("gest_inv_equipamiento", fmtMoney(sumCol(rowsPrincipal, "inv_equipamiento")));
-    setText("gest_exp_reparaciones", fmtMoney(sumCol(rowsPrincipal, "exp_reparaciones")));
-}
-
-// ============================================================================
-// HELPERS DE GRÁFICOS
-// ============================================================================
-function renderSimpleBar(id, labels, data, label, color) {
-    destroyChart(id);
-    const ctx = document.getElementById(id);
-    if (!ctx) return;
-    charts[id] = new Chart(ctx, {
-        type: "bar",
-        data: { labels, datasets: [{ label, data, backgroundColor: color, borderRadius: 6 }] },
-        options: { ...baseOptions(), plugins: { legend: { display: false } } }
-    });
-}
-
-function renderHorizontalBar(id, labels, data, color) {
-    destroyChart(id);
-    const ctx = document.getElementById(id);
-    if (!ctx) return;
-    charts[id] = new Chart(ctx, {
-        type: "bar",
-        data: { labels, datasets: [{ label: "Intervenciones", data, backgroundColor: color, borderRadius: 4 }] },
-        options: {
-            ...baseOptions(),
-            indexAxis: "y",
-            plugins: { legend: { display: false } },
-            scales: {
-                x: { beginAtZero: true, ticks: { color: "#94a3b8", precision: 0 }, grid: { color: "#1e293b" } },
-                y: { ticks: { color: "#ffffff", font: { size: 11 } }, grid: { display: false } }
-            }
-        }
-    });
-}
-
-function renderDoughnut(id, labels, data, colors) {
-    destroyChart(id);
-    const ctx = document.getElementById(id);
-    if (!ctx) return;
-    charts[id] = new Chart(ctx, {
-        type: "doughnut",
-        data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 0 }] },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: "65%",
-            plugins: { legend: { position: "bottom", labels: { color: "#ffffff", font: { size: 11 } } } }
-        }
-    });
+    setText("gest_inv_obras", fmtMoney(sumCol(rowsPrincipal, "inversion_obras")));
+    setText("gest_inv_equipamiento", fmtMoney(sumCol(rowsPrincipal, "inversion_equipamiento")));
+    setText("gest_exp_reparaciones", fmtMoney(sumCol(rowsPrincipal, "explotacion_reparaciones")));
 }
