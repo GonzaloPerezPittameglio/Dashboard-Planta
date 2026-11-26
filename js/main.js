@@ -337,7 +337,7 @@ function renderResumen(rows) {
         const totalSets = valoresSets.reduce((a, b) => a + b, 0);
 
         charts["chartEnergiaSectores"] = new Chart(ctxES, {
-            type: "pie",
+            type: "doughnut",
             data: {
                 labels: labelsSets,
                 datasets: [{
@@ -351,41 +351,22 @@ function renderResumen(rows) {
                         "#10b981",
                         "#059669"
                     ],
-                    borderColor: "#0f172a",
-                    borderWidth: 2,
-                    hoverOffset: 6
+                    borderColor: "#1e293b",
+                    borderWidth: 2
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                layout: {
-                    padding: { left: 4, right: 12, top: 4, bottom: 4 }
-                },
+                cutout: "65%",
                 plugins: {
                     legend: {
                         position: "right",
-                        align: "center",
                         labels: {
                             color: "#ffffff",
-                            font: { size: 12, weight: "500" },
-                            padding: 12,
-                            boxWidth: 12,
-                            generateLabels: (chart) => {
-                                const ds = chart.data.datasets[0];
-                                return chart.data.labels.map((label, i) => {
-                                    const val = ds.data[i] || 0;
-                                    return {
-                                        text: `${label} (${fmtInt(val)} kWh)`,
-                                        fillStyle: ds.backgroundColor[i],
-                                        strokeStyle: ds.borderColor,
-                                        lineWidth: ds.borderWidth,
-                                        fontColor: "#ffffff",
-                                        hidden: !chart.getDataVisibility(i),
-                                        index: i
-                                    };
-                                });
-                            }
+                            font: { size: 13, weight: "500" },
+                            padding: 14,
+                            boxWidth: 14
                         }
                     },
                     tooltip: {
@@ -399,7 +380,7 @@ function renderResumen(rows) {
                             label: (ctx) => {
                                 const val = ctx.parsed || 0;
                                 const pct = totalSets > 0 ? ((val / totalSets) * 100).toFixed(1) : "0.0";
-                                return ` ${fmtInt(val)} kWh (${pct}%)`;
+                                return ` ${ctx.label}: ${fmtInt(val)} kWh (${pct}%)`;
                             }
                         }
                     }
