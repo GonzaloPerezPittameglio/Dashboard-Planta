@@ -49,8 +49,10 @@ const COORDS_MAPA_PLANTA = [
     { sector: "Reactor A", x: 57.0, y: 72 },
     { sector: "Pretratamiento M1", x: 64.0, y: 81 },
 
-    // Zona Derecha
-    { sector: "Sedimentador", x: 87.5, y: 75 }
+   // Zona Derecha
+    { sector: "Sedimentador 1", x: 84.5, y: 75 },
+    { sector: "Sedimentador 2", x: 90.5, y: 75 }
+
 ];
 
 // ============================================================================
@@ -159,7 +161,7 @@ function baseOptions() {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: { labels: { color: "#cbd5e1", font: { size: 11 } } }
+            legend: { labels: { color: "#ffffff", font: { size: 11 } } }
         },
         scales: {
             x: { ticks: { color: "#94a3b8", font: { size: 11 } }, grid: { color: "#1e293b" } },
@@ -198,16 +200,22 @@ function renderDoughnut(canvasId, labels, data, colors) {
             datasets: [{
                 data,
                 backgroundColor: colors,
-                borderColor: "#0f172a",
-                borderWidth: 2
+                borderWidth: 0
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: "62%",
+            cutout: "60%",
             plugins: {
-                legend: { position: "bottom", labels: { color: "#cbd5e1", font: { size: 11 } } }
+                legend: {
+                    position: "bottom",
+                    labels: {
+                        color: "#ffffff",
+                        font: { size: 12 },
+                        padding: 14
+                    }
+                }
             }
         }
     });
@@ -419,7 +427,7 @@ function renderResumen(rows) {
     renderSimpleBar("chartMensualArenas", mLabels, mLabels.map(k => mensual[k].arenas), "Arenas (Ton)", "#fb923c");
     renderSimpleBar("chartMensualPolimero", mLabels, mLabels.map(k => mensual[k].polimero), "Polímero (Kg)", "#818cf8");
 
-    // Gráfico Tipo Rosquilla: ENERGÍA TOTAL POR MÓDULO (letras blancas)
+    // Gráfico Tipo Rosquilla: ENERGÍA TOTAL POR MÓDULO (idéntico a Criticidad de Correctivos, sin bordes negros y letras blancas)
     destroyChart("chartEnergiaSectores");
     const ctxES = document.getElementById("chartEnergiaSectores");
     if (ctxES) {
@@ -429,9 +437,15 @@ function renderResumen(rows) {
         charts["chartEnergiaSectores"] = new Chart(ctxES, {
             type: "doughnut",
             data: {
-                labels: ["M1 - TS1", "M1 - TS2", "M1 - TS3", "M2 - TS1", "M2 - TS2", "M2 - TS3"],
+                labels: [
+                    `M1 - TS1 (${fmtInt(eM1Ts1)} kWh)`,
+                    `M1 - TS2 (${fmtInt(eM1Ts2)} kWh)`,
+                    `M1 - TS3 (${fmtInt(eM1Ts3)} kWh)`,
+                    `M2 - TS1 (${fmtInt(eM2Ts1)} kWh)`,
+                    `M2 - TS2 (${fmtInt(eM2Ts2)} kWh)`,
+                    `M2 - TS3 (${fmtInt(eM2Ts3)} kWh)`
+                ],
                 datasets: [{
-                    label: "Energía (kWh)",
                     data: valoresSets,
                     backgroundColor: [
                         "#22d3ee",
@@ -441,51 +455,27 @@ function renderResumen(rows) {
                         "#10b981",
                         "#059669"
                     ],
-                    borderColor: "#0f172a",
-                    borderWidth: 2,
-                    hoverOffset: 8
+                    borderWidth: 0
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: "62%",
-                layout: {
-                    padding: { left: 8, right: 16, top: 6, bottom: 6 }
-                },
+                cutout: "60%",
                 plugins: {
                     legend: {
-                        position: "right",
-                        align: "center",
+                        position: "bottom",
                         labels: {
                             color: "#ffffff",
-                            font: { size: 12, weight: "600" },
-                            padding: 14,
-                            usePointStyle: true,
-                            pointStyle: "circle",
-                            generateLabels: (chart) => {
-                                const ds = chart.data.datasets[0];
-                                return chart.data.labels.map((label, i) => {
-                                    const val = ds.data[i] || 0;
-                                    return {
-                                        text: `${label}  (${fmtInt(val)} kWh)`,
-                                        fontColor: "#ffffff",
-                                        fillStyle: ds.backgroundColor[i],
-                                        strokeStyle: ds.borderColor,
-                                        lineWidth: ds.borderWidth,
-                                        hidden: !chart.getDataVisibility(i),
-                                        index: i
-                                    };
-                                });
-                            }
+                            font: { size: 12 },
+                            padding: 14
                         }
                     },
                     tooltip: {
                         backgroundColor: "#0f172a",
                         titleColor: "#ffffff",
                         bodyColor: "#ffffff",
-                        borderColor: "#334155",
-                        borderWidth: 1,
+                        borderWidth: 0,
                         padding: 10,
                         callbacks: {
                             label: (ctx) => {
@@ -627,7 +617,7 @@ function abrirModalDesvio(fecha, motivo) {
 }
 
 // ============================================================================
-// 3. FUNCIONAMIENTO (PLANO DE PLANTA + EQUIPOS CRÍTICOS COMO LA IMAGEN)
+// 3. FUNCIONAMIENTO
 // ============================================================================
 function renderFuncionamiento(rowsPrincipal, rowsEquipos) {
     const rsuTot = sumCol(rowsPrincipal, "cant_rsu") || (sumCol(rowsPrincipal, "cant_rsu_m1") + sumCol(rowsPrincipal, "cant_rsu_m2"));
@@ -643,7 +633,7 @@ function renderFuncionamiento(rowsPrincipal, rowsEquipos) {
             const detalle = String(col(r, "detalle") || "").trim();
             const estNorm = normalizeTxt(estado);
 
-            let nivel = 1; // 1 = Operativo, 2 = En Reparación, 3 = Fuera de Servicio
+            let nivel = 1;
             if (estNorm.includes("reparaci")) nivel = 2;
             if (estNorm.includes("fuera")) nivel = 3;
 
@@ -652,7 +642,6 @@ function renderFuncionamiento(rowsPrincipal, rowsEquipos) {
 
     setText("total_eq_criticos", `${equipos.length} equipos`);
 
-    // 1. Marcadores sobre el plano aéreo
     const capa = document.getElementById("capa_marcadores_planta");
     if (capa) {
         capa.innerHTML = COORDS_MAPA_PLANTA.map(pt => {
@@ -686,7 +675,6 @@ function renderFuncionamiento(rowsPrincipal, rowsEquipos) {
         }).join("");
     }
 
-    // 2. Tarjetas de Listado General de Equipos Críticos con recuadro amarillo debajo
     const lista = document.getElementById("lista_equipos_criticos");
     if (lista) {
         if (!equipos.length) {
@@ -935,7 +923,7 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
                 maintainAspectRatio: false,
                 interaction: { mode: "index", intersect: false },
                 plugins: {
-                    legend: { labels: { color: "#cbd5e1", font: { size: 11 } } },
+                    legend: { labels: { color: "#ffffff", font: { size: 11 } } },
                     tooltip: {
                         callbacks: {
                             label: (ctx) => {
@@ -1098,7 +1086,7 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
             options: {
                 ...baseOptions(),
                 plugins: {
-                    legend: { labels: { color: "#cbd5e1", font: { size: 11 } } },
+                    legend: { labels: { color: "#ffffff", font: { size: 11 } } },
                     tooltip: {
                         callbacks: {
                             label: (ctx) => `${ctx.dataset.label}: ${fmtMoney(ctx.parsed.y || 0)}`
