@@ -427,7 +427,7 @@ function renderResumen(rows) {
     renderSimpleBar("chartMensualArenas", mLabels, mLabels.map(k => mensual[k].arenas), "Arenas (Ton)", "#fb923c");
     renderSimpleBar("chartMensualPolimero", mLabels, mLabels.map(k => mensual[k].polimero), "Polímero (Kg)", "#818cf8");
 
-    // Gráfico Tipo Rosquilla: ENERGÍA TOTAL POR MÓDULO (idéntico a Criticidad de Correctivos, sin bordes negros y letras blancas)
+   // GRAFICO DE ENERGÍA TOTAL POR MÓDULO
     destroyChart("chartEnergiaSectores");
     const ctxES = document.getElementById("chartEnergiaSectores");
     if (ctxES) {
@@ -437,13 +437,13 @@ function renderResumen(rows) {
         charts["chartEnergiaSectores"] = new Chart(ctxES, {
             type: "doughnut",
             data: {
-                labels: [
-                    `M1 - TS1 (${fmtInt(eM1Ts1)} kWh)`,
-                    `M1 - TS2 (${fmtInt(eM1Ts2)} kWh)`,
-                    `M1 - TS3 (${fmtInt(eM1Ts3)} kWh)`,
-                    `M2 - TS1 (${fmtInt(eM2Ts1)} kWh)`,
-                    `M2 - TS2 (${fmtInt(eM2Ts2)} kWh)`,
-                    `M2 - TS3 (${fmtInt(eM2Ts3)} kWh)`
+               labels: [
+                    "M1 - TS1 - Mantenimiento, Deshidratación",
+                    "M1 - TS2 -",
+                    "M1 - TS3 -",
+                    "M2 - TS1 - Pretratamiento",
+                    "M2 - TS2 - Recirculación de Lodos",
+                    "M2 - TS3 -"
                 ],
                 datasets: [{
                     data: valoresSets,
@@ -464,7 +464,8 @@ function renderResumen(rows) {
                 cutout: "60%",
                 plugins: {
                     legend: {
-                        position: "bottom",
+                        position: "right",
+                        align: "center",
                         labels: {
                             color: "#ffffff",
                             font: { size: 12 },
@@ -488,6 +489,7 @@ function renderResumen(rows) {
                 }
             }
         });
+    }
     }
 }
 
