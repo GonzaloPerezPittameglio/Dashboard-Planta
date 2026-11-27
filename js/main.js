@@ -49,10 +49,9 @@ const COORDS_MAPA_PLANTA = [
     { sector: "Reactor A", x: 57.0, y: 72 },
     { sector: "Pretratamiento M1", x: 64.0, y: 81 },
 
-   // Zona Derecha
+    // Zona Derecha
     { sector: "Sedimentador 1", x: 84.5, y: 75 },
     { sector: "Sedimentador 2", x: 90.5, y: 75 }
-
 ];
 
 // ============================================================================
@@ -427,7 +426,7 @@ function renderResumen(rows) {
     renderSimpleBar("chartMensualArenas", mLabels, mLabels.map(k => mensual[k].arenas), "Arenas (Ton)", "#fb923c");
     renderSimpleBar("chartMensualPolimero", mLabels, mLabels.map(k => mensual[k].polimero), "Polímero (Kg)", "#818cf8");
 
-   // GRAFICO DE ENERGÍA TOTAL POR MÓDULO
+    // GRAFICO DE ENERGÍA TOTAL POR MÓDULO
     destroyChart("chartEnergiaSectores");
     const ctxES = document.getElementById("chartEnergiaSectores");
     if (ctxES) {
@@ -437,7 +436,7 @@ function renderResumen(rows) {
         charts["chartEnergiaSectores"] = new Chart(ctxES, {
             type: "doughnut",
             data: {
-               labels: [
+                labels: [
                     "M1 - TS1 - Mantenimiento, Deshidratación",
                     "M1 - TS2 -",
                     "M1 - TS3 -",
@@ -1157,4 +1156,162 @@ function renderControlYGestion(rowsPrincipal, rowsPanol, rowsRrhh, rowsCombustib
     setText("gest_inv_obras", fmtMoney(sumCol(rowsPrincipal, "inv_obras")));
     setText("gest_inv_equipamiento", fmtMoney(sumCol(rowsPrincipal, "inv_equipamiento")));
     setText("gest_exp_reparaciones", fmtMoney(sumCol(rowsPrincipal, "exp_reparaciones")));
+
+    renderCostePlantaInteractivo(rowsPrincipal, rowsRrhh);
+}
+
+// ============================================================================
+// GRÁFICO INTERACTIVO DE DOBLE NIVEL: COSTE TOTAL DE PLANTA
+// ============================================================================
+function renderCostePlantaInteractivo(rowsPrincipal, rowsRrhh) {
+    // 1. Sub-datos de ENERGÍA ($)
+    const eM1Ts1 = sumCol(rowsPrincipal, "costo_energia_m1_ts1");
+    const eM1Ts2 = sumCol(rowsPrincipal, "costo_energia_m1_ts2");
+    const eM1Ts3 = sumCol(rowsPrincipal, "costo_energia_m1_ts3");
+    const eM2Ts1 = sumCol(rowsPrincipal, "costo_energia_m2_ts1");
+    const eM2Ts2 = sumCol(rowsPrincipal, "costo_energia_m2_ts2");
+    const eM2Ts3 = sumCol(rowsPrincipal, "costo_energia_m2_ts3");
+    const totEnergia = eM1Ts1 + eM1Ts2 + eM1Ts3 + eM2Ts1 + eM2Ts2 + eM2Ts3;
+
+    // 2. Sub-datos de HORAS ($)
+    const hsNorm = sumCol(rowsPrincipal, "plata_hs_normales") || sumCol(rowsRrhh, "plata_hs_normales");
+    const hsExt = sumCol(rowsPrincipal, "plata_hs_extra") || sumCol(rowsRrhh, "plata_hs_extra");
+    const hsLic = sumCol(rowsPrincipal, "plata_hs_licencia") || sumCol(rowsRrhh, "plata_hs_licencia");
+    const totHoras = hsNorm + hsExt + hsLic;
+
+    // 3. Sub-datos de COSTES OPERATIVOS E INVERSIONES ($)
+    const cRsu = sumCol(rowsPrincipal, "costo_rsu");
+    const cBio = sumCol(rowsPrincipal, "costo_biosolidos");
+    const cPanol = sumCol(rowsPrincipal, "panol_plata_consumida");
+    const cInvExp = sumCol(rowsPrincipal, "inv_obras") + sumCol(rowsPrincipal, "inv_equipamiento") + sumCol(rowsPrincipal, "exp_reparaciones");
+    const totCostes = cRsu + cBio + cPanol + cInvExp;
+
+    // Total General de Planta
+    const totalPlanta = totEnergia + totHoras + totCostes;
+    setText("coste_planta_total", fmtMoney(totalPlanta));
+
+    // Configuración de los 3 sub-gráficos
+    const subgraficos = [
+        {
+            titulo: "Desglose: Energía (M1 y M2)",
+            subtotal: totEnergia,
+            labels: ["M1 - TS1", "M1 - TS2", "M1 - TS3", "M2 - TS1", "M2 - TS2", "M2 - TS3"],
+            data: [eM1Ts1, eM1Ts2, eM1Ts3, eM2Ts1, eM2Ts2, eM2Ts3],
+            colors: ["#fde047", "#facc15", "#eab308", "#38bdf8", "#0284c7", "#0369a1"]
+        },
+        {
+            titulo: "Desglose: Horas de Personal",
+            subtotal: totHoras,
+            labels: ["Horas Normales", "Horas Extra", "Horas Licencia"],
+            data: [hsNorm, hsExt, hsLic],
+            colors: ["#10b981", "#34d399", "#059669"]
+        },
+        {
+            titulo: "Desglose: Costes e Inversiones",
+            subtotal: totCostes,
+            labels: ["Coste RSU", "Coste Biosólidos (M1 y M2)", "Consumo Pañol", "Inversiones y Explotaciones"],
+            data: [cRsu, cBio, cPanol, cInvExp],
+            colors: ["#fb923c", "#d97706", "#a78bfa", "#6366f1"]
+        }
+    ];
+
+    function dibujarSubgrafico(indice) {
+        const cfg = subgraficos[indice] || subgraficos[0];
+        setText("titulo_subgrafico_costes", cfg.titulo);
+        setText("subtotal_subgrafico_costes", fmtMoney(cfg.subtotal));
+
+        destroyChart("chartCostePlantaDetalle");
+        const ctxDet = document.getElementById("chartCostePlantaDetalle");
+        if (!ctxDet) return;
+
+        charts["chartCostePlantaDetalle"] = new Chart(ctxDet, {
+            type: "doughnut",
+            data: {
+                labels: cfg.labels,
+                datasets: [{
+                    data: cfg.data,
+                    backgroundColor: cfg.colors,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: "55%",
+                plugins: {
+                    legend: {
+                        position: "right",
+                        labels: { color: "#ffffff", font: { size: 11 }, padding: 12 }
+                    },
+                    tooltip: {
+                        backgroundColor: "#0f172a",
+                        titleColor: "#ffffff",
+                        bodyColor: "#ffffff",
+                        callbacks: {
+                            label: (ctx) => {
+                                const val = ctx.parsed || 0;
+                                const pct = cfg.subtotal > 0 ? ((val / cfg.subtotal) * 100).toFixed(1) : "0.0";
+                                return ` ${fmtMoney(val)} (${pct}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Dibujar Gráfico Principal (Energía, Horas, Costes)
+    destroyChart("chartCostePlantaPrincipal");
+    const ctxPrin = document.getElementById("chartCostePlantaPrincipal");
+    if (ctxPrin) {
+        charts["chartCostePlantaPrincipal"] = new Chart(ctxPrin, {
+            type: "doughnut",
+            data: {
+                labels: ["Energía", "Horas", "Costes"],
+                datasets: [{
+                    data: [totEnergia, totHoras, totCostes],
+                    backgroundColor: ["#facc15", "#10b981", "#fb923c"],
+                    hoverOffset: 10,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: "55%",
+                onHover: (event, elements) => {
+                    if (event.native && event.native.target) {
+                        event.native.target.style.cursor = elements.length ? "pointer" : "default";
+                    }
+                },
+                onClick: (event, elements) => {
+                    if (elements.length > 0) {
+                        const idx = elements[0].index;
+                        dibujarSubgrafico(idx);
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: "right",
+                        labels: { color: "#ffffff", font: { size: 12, weight: "bold" }, padding: 16 }
+                    },
+                    tooltip: {
+                        backgroundColor: "#0f172a",
+                        titleColor: "#ffffff",
+                        bodyColor: "#ffffff",
+                        callbacks: {
+                            label: (ctx) => {
+                                const val = ctx.parsed || 0;
+                                const pct = totalPlanta > 0 ? ((val / totalPlanta) * 100).toFixed(1) : "0.0";
+                                return ` ${fmtMoney(val)} (${pct}%) — Clic para ver detalle`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Inicia mostrando Energía a la derecha
+    dibujarSubgrafico(0);
 }
